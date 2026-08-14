@@ -1,0 +1,16 @@
+{
+  "timestamp": "2026-08-14T14:10:02.408Z",
+  "processes": {
+    "mcp_server": 0,
+    "estimated_agents": 0
+  },
+  "swarm": {
+    "active": false,
+    "agent_count": 0,
+    "coordination_active": false
+  },
+  "integration": {
+    "mcp_active": false
+  },
+  "_initialized": true
+}

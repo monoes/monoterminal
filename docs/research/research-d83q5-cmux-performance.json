@@ -1,0 +1,102 @@
+{
+  "research_session": {
+    "timestamp": "2026-08-14T08:30:00Z",
+    "agent": "researcher",
+    "task": "D8.3.Q5 - cmux performance benchmarks",
+    "critical_limitations": [
+      "cmux launched Feb 2026 (POST training cutoff Jan 2025)",
+      "WebSearch and WebFetch tools BLOCKED - cannot access GitHub issues, documentation, or benchmarks",
+      "NO specific cmux performance benchmarks exist in training data",
+      "cmux is NOT a traditional multiplexer - it's a macOS GUI app wrapping Ghostty"
+    ]
+  },
+  "findings": {
+    "question_id": "D8.3.Q5",
+    "question": "cmux performance benchmarks: sessions per instance, memory usage per session, client connection limits, network bandwidth per client",
+    "answer": "NO QUANTITATIVE BENCHMARKS AVAILABLE. cmux (manaflow-ai/cmux) launched Feb 2026, post-training cutoff. Architectural analysis suggests cmux is NOT comparable to traditional multiplexers (tmux/screen): it's a macOS GUI application (Swift + Ghostty) with vertical tabs, NOT a client-server architecture. Traditional metrics (sessions per instance, client connections) do not apply - cmux is single-user, single-machine. Based on architecture findings: (1) Each tab is a separate Ghostty instance with Unix socket IPC, (2) No documented client/server protocol exists, (3) ~5k lines codebase suggests lightweight design. Performance would be limited by: macOS memory/process limits, Ghostty's rendering overhead per tab, Swift UI framework constraints. Comparison baseline: tmux supports 100+ sessions per instance with ~10-50MB base memory + 2-5MB per session; Ghostty uses GPU rendering (Metal on macOS) which is memory-intensive but fast. CONCLUSION: Specific cmux benchmarks do NOT exist in accessible sources. Would require: (1) GitHub issue search for user-reported performance data, (2) cmux repository benchmark suite analysis, (3) Manual testing with htop/Activity Monitor.",
+    "architectural_context": {
+      "cmux_is_not_a_multiplexer": "cmux is a macOS terminal GUI with vertical tabs, NOT a client-server multiplexer like tmux",
+      "architecture": "Swift UI wrapper around Ghostty terminal emulator core",
+      "session_model": "Each vertical tab = separate Ghostty instance with Unix socket IPC",
+      "networking": "NO client-server protocol - single macOS application only",
+      "codebase_size": "~5k lines (suggests lightweight but limited scope)"
+    },
+    "comparison_baseline_tmux": {
+      "note": "tmux metrics provided as reference since cmux benchmarks unavailable",
+      "sessions_per_instance": "100-500 sessions typical, 1000+ sessions tested in extreme scenarios",
+      "memory_per_session": "Base memory ~10-50MB, additional 2-5MB per session (varies with scrollback buffer size)",
+      "client_connections": "Multiple clients can attach to same session simultaneously (collaborative editing)",
+      "bandwidth_per_client": "Minimal for text-only (1-10 Kbps typical, bursts to 100 Kbps during heavy output)",
+      "data_quality": "RECONSTRUCTED_FROM_TRAINING",
+      "sources_concept": [
+        "General tmux architecture knowledge from training",
+        "Terminal multiplexer performance patterns from training data"
+      ]
+    },
+    "ghostty_rendering_implications": {
+      "note": "cmux uses Ghostty core, so Ghostty performance affects cmux",
+      "gpu_rendering": "Metal (macOS) GPU-accelerated text rendering - high FPS but memory-intensive",
+      "memory_overhead": "GPU texture cache for glyphs increases memory per instance vs traditional terminal",
+      "performance_advantage": "Smooth scrolling, high FPS rendering (60+ FPS)",
+      "memory_disadvantage": "Higher per-tab memory vs tmux sessions (GPU buffers, texture atlases)"
+    },
+    "metrics": {
+      "sessions_per_instance": "NOT APPLICABLE - cmux uses tabs, not sessions; architectural limit unknown",
+      "memory_per_session_mb": "UNAVAILABLE - no benchmarks exist; estimated 50-200MB per tab (Ghostty + Metal overhead)",
+      "client_connections_limit": "NOT APPLICABLE - cmux is single-user macOS app, not client-server",
+      "bandwidth_per_client_mbps": "NOT APPLICABLE - no network protocol exists in cmux"
+    },
+    "sources": [
+      "NONE - no cmux performance benchmarks found in training data or accessible files",
+      "https://github.com/manaflow-ai/cmux (architecture findings from D8.3.Q1-Q4)",
+      "Tmux comparison data from general training knowledge"
+    ],
+    "data_quality": "UNAVAILABLE - cmux post-training, web tools blocked",
+    "confidence": "VERY LOW - architectural inference only, NO actual benchmarks"
+  },
+  "blockers": [
+    {
+      "blocker": "cmux launched Feb 2026 (post-training cutoff)",
+      "impact": "Zero cmux-specific benchmark data in training corpus",
+      "recommendation": "CRITICAL: Approve WebSearch to access GitHub issues/discussions at manaflow-ai/cmux"
+    },
+    {
+      "blocker": "WebSearch and WebFetch tools blocked",
+      "impact": "Cannot search GitHub issues, cmux documentation, user reports, or comparison benchmarks",
+      "recommendation": "CRITICAL: Approve web tools to search 'cmux performance', 'cmux memory usage', 'cmux benchmarks'"
+    },
+    {
+      "blocker": "cmux is NOT a traditional multiplexer",
+      "impact": "Standard multiplexer metrics (sessions, clients, bandwidth) don't apply to GUI app architecture",
+      "recommendation": "Reframe research question: Focus on 'tabs per instance', 'memory per tab', 'macOS resource limits'"
+    },
+    {
+      "blocker": "No benchmark suite found in project files",
+      "impact": "Cannot verify if cmux repository includes performance tests or benchmark results",
+      "recommendation": "Manual testing required: Launch cmux, open 10/50/100 tabs, measure with Activity Monitor"
+    }
+  ],
+  "recommended_research_approach": {
+    "if_web_tools_approved": [
+      "Search GitHub: 'repo:manaflow-ai/cmux (performance OR benchmark OR memory OR scalability)'",
+      "Search web: 'cmux performance benchmarks'",
+      "Search web: 'cmux vs tmux resource usage'",
+      "Check cmux Issues: filter by labels 'performance', 'bug' for user reports",
+      "Check cmux Discussions: search for 'memory', 'slow', 'lag', 'resource'"
+    ],
+    "if_web_tools_blocked": [
+      "Manual testing: Install cmux on macOS, open 10/20/50/100 tabs with htop/Activity Monitor",
+      "Measure: Memory usage (private, shared, GPU), CPU usage, tab open/close latency",
+      "Baseline: Compare single Ghostty instance vs cmux with 1 tab (measure wrapper overhead)",
+      "Stress test: Open tabs until performance degrades or system limits reached"
+    ]
+  },
+  "gap_assessment": {
+    "question_answerable": "NO - not with current tool access and training data",
+    "minimum_sources_met": "NO - zero authoritative sources (requirement: minimum 2)",
+    "quantitative_metrics": "NO - no numbers with units available",
+    "cross_verification": "IMPOSSIBLE - no sources to verify against",
+    "actionable_depth": "NO - findings do NOT enable architectural decisions without actual benchmarks"
+  },
+  "conclusion": "D8.3.Q5 CANNOT BE COMPLETED with current limitations. cmux performance benchmarks DO NOT EXIST in accessible sources. Recommend: (1) Approve WebSearch/WebFetch for GitHub/web research, OR (2) Manual testing with Activity Monitor, OR (3) Mark finding as 'UNAVAILABLE' and proceed without this data point."
+}

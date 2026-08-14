@@ -1,0 +1,10 @@
+{
+  "timestamp": "2026-08-14T14:10:07.732Z",
+  "structure": {
+    "hasPackageJson": false,
+    "hasTsConfig": false,
+    "hasClaudeConfig": true,
+    "hasMonomind": true
+  },
+  "scannedAt": 1786716607732
+}

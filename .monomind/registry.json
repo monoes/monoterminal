@@ -1,0 +1,1792 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-08-14T14:10:11.026Z",
+  "totalAgents": 89,
+  "agents": [
+    {
+      "slug": "arch-system-design",
+      "name": "system-architect",
+      "version": "1.0.0",
+      "category": "default",
+      "description": "Expert agent for system architecture design, patterns, and high-level technical decisions",
+      "capabilities": [],
+      "taskTypes": [
+        "system-design",
+        "architecture-review",
+        "technology-decision",
+        "component-design"
+      ],
+      "tools": [],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\architecture\\system-design\\arch-system-design.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "crdt-synchronizer",
+      "name": "crdt-synchronizer",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Implements Conflict-free Replicated Data Types for eventually consistent state synchronization",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\consensus\\crdt-synchronizer.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "quorum-manager",
+      "name": "quorum-manager",
+      "version": "2.0.0",
+      "category": "default",
+      "description": "Runs confidence-weighted vote tallies over subagent votes and manages membership thresholds for monomind's single-process consensus primitives",
+      "capabilities": [],
+      "taskTypes": [
+        "vote-tally",
+        "threshold-selection",
+        "decision-audit"
+      ],
+      "tools": [],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\consensus\\quorum-manager.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "security-manager",
+      "name": "security-manager",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Implements comprehensive security mechanisms for distributed consensus protocols",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\consensus\\security-manager.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "coder",
+      "name": "coder",
+      "version": "1.0.0",
+      "category": "default",
+      "description": "Implementation specialist for writing clean, efficient code",
+      "capabilities": [],
+      "taskTypes": [
+        "feature-implementation",
+        "code-refactoring",
+        "bug-fix",
+        "api-development"
+      ],
+      "tools": [],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\core\\coder.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "coordinator",
+      "name": "coordinator",
+      "version": "1.0.0",
+      "category": "default",
+      "description": "Lead coordinator that routes work to specialists, maintains org state, and governs approvals",
+      "capabilities": [],
+      "taskTypes": [
+        "orchestration",
+        "task-routing",
+        "approval-review",
+        "status-reporting",
+        "hive-orchestration"
+      ],
+      "tools": [],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\core\\coordinator.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "planner",
+      "name": "planner",
+      "version": "1.0.0",
+      "category": "default",
+      "description": "Strategic planning and task orchestration agent",
+      "capabilities": [],
+      "taskTypes": [
+        "task-planning",
+        "sprint-planning",
+        "dependency-analysis",
+        "resource-allocation"
+      ],
+      "tools": [],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\core\\planner.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "researcher",
+      "name": "researcher",
+      "version": "1.0.0",
+      "category": "default",
+      "description": "Deep research and information gathering specialist",
+      "capabilities": [],
+      "taskTypes": [
+        "code-analysis",
+        "technology-research",
+        "dependency-audit",
+        "documentation-review"
+      ],
+      "tools": [],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\core\\researcher.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "reviewer",
+      "name": "reviewer",
+      "version": "1.0.0",
+      "category": "default",
+      "description": "Code review and quality assurance specialist",
+      "capabilities": [],
+      "taskTypes": [
+        "code-review",
+        "security-audit",
+        "quality-assessment",
+        "standards-check"
+      ],
+      "tools": [],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\core\\reviewer.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "tester",
+      "name": "tester",
+      "version": "1.0.0",
+      "category": "default",
+      "description": "Comprehensive testing and quality assurance specialist",
+      "capabilities": [],
+      "taskTypes": [
+        "test-design",
+        "test-implementation",
+        "coverage-analysis",
+        "regression-testing"
+      ],
+      "tools": [],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\core\\tester.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "design-monodesign",
+      "name": "Monodesign",
+      "version": "1.1.0",
+      "category": "default",
+      "description": "The unified frontend design intelligence agent for monomind. Handles all frontend design tasks — UI/component systems, brand strategy, UX research, visual storytelling, CSS architecture, design critique, image prompts, inclusive representation, whimsy/delight, and antipattern detection. Delegates to the monodesign skill for its knowledge base.",
+      "capabilities": [],
+      "taskTypes": [
+        "ui-design",
+        "component-system",
+        "brand-identity",
+        "ux-research",
+        "design-critique",
+        "design-system",
+        "visual-storytelling",
+        "image-prompts",
+        "css-architecture",
+        "accessibility-audit"
+      ],
+      "tools": [
+        "Read, Write, Edit, Bash, WebSearch, WebFetch"
+      ],
+      "triggers": [
+        {
+          "pattern": "\\\\b(design|redesign|ui|ux|component|brand|visual|layout|typography|css|theme|color|motion|animate|accessible|wcag|responsive)\\\\b",
+          "mode": "inject"
+        },
+        {
+          "pattern": "\\\\b(critique|audit|polish|distill|harden|onboard|delight|whimsy|persona|research|usability|image prompt)\\\\b",
+          "mode": "inject"
+        }
+      ],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\design\\design-monodesign.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "engineering-ai-data-remediation-engineer",
+      "name": "AI Data Remediation Engineer",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Specialist in self-healing data pipelines — uses air-gapped local SLMs and semantic clustering to automatically detect, classify, and fix data anomalies at scale. Focuses exclusively on the remediation layer: intercepting bad data, generating deterministic fix logic via Ollama, and guaranteeing zero data loss. Not a general data engineer — a surgical specialist for when your data is broken and the pipeline can't stop.",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\engineering\\engineering-ai-data-remediation-engineer.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "engineering-ai-engineer",
+      "name": "AI Engineer",
+      "version": "1.0.0",
+      "category": "default",
+      "description": "Expert AI/ML engineer specializing in machine learning model development, deployment, and integration into production systems. Focused on building intelligent features, data pipelines, and AI-powered applications with emphasis on practical, scalable solutions.",
+      "capabilities": [],
+      "taskTypes": [
+        "model-development",
+        "ml-pipeline-setup",
+        "model-deployment",
+        "ai-feature-integration"
+      ],
+      "tools": [
+        "Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\engineering\\engineering-ai-engineer.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "engineering-autonomous-optimization-architect",
+      "name": "Autonomous Optimization Architect",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Intelligent system governor that continuously shadow-tests APIs for performance while enforcing strict financial and security guardrails against runaway costs.",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Read, Write, Edit, Glob, Grep, WebSearch, WebFetch"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\engineering\\engineering-autonomous-optimization-architect.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "engineering-backend-architect",
+      "name": "Backend Architect",
+      "version": "1.0.0",
+      "category": "default",
+      "description": "Senior backend architect specializing in scalable system design, database architecture, API development, and cloud infrastructure. Builds robust, secure, performant server-side applications and microservices",
+      "capabilities": [],
+      "taskTypes": [
+        "system-design",
+        "api-architecture",
+        "database-design",
+        "cloud-infrastructure"
+      ],
+      "tools": [
+        "Read, Write, Edit, Glob, Grep, WebSearch, WebFetch"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\engineering\\engineering-backend-architect.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "engineering-code-reviewer",
+      "name": "Code Reviewer",
+      "version": "1.0.0",
+      "category": "default",
+      "description": "Expert code reviewer who provides constructive, actionable feedback focused on correctness, maintainability, security, and performance — not style preferences.",
+      "capabilities": [],
+      "taskTypes": [
+        "code-review",
+        "quality-assessment",
+        "security-review",
+        "refactoring-review"
+      ],
+      "tools": [
+        "Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\engineering\\engineering-code-reviewer.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "engineering-data-engineer",
+      "name": "Data Engineer",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Expert data engineer specializing in building reliable data pipelines, lakehouse architectures, and scalable data infrastructure. Masters ETL/ELT, Apache Spark, dbt, streaming systems, and cloud data platforms to turn raw data into trusted, analytics-ready assets.",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\engineering\\engineering-data-engineer.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "engineering-database-optimizer",
+      "name": "Database Optimizer",
+      "version": "1.0.0",
+      "category": "default",
+      "description": "Expert database specialist focusing on schema design, query optimization, indexing strategies, and performance tuning for PostgreSQL, MySQL, and modern databases like Supabase and PlanetScale.",
+      "capabilities": [],
+      "taskTypes": [
+        "query-optimization",
+        "schema-design",
+        "index-tuning",
+        "performance-profiling"
+      ],
+      "tools": [
+        "Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch"
+      ],
+      "triggers": [
+        {
+          "pattern": "\\\\b(slow.?quer|explain.?anal|query.?plan|index.?tun|n[+]1.?problem)\\\\b",
+          "mode": "inject"
+        },
+        {
+          "pattern": "\\\\b(EXPLAIN|VACUUM|autovacuum|table.?scan|missing.?index|seq.?scan)\\\\b",
+          "mode": "inject"
+        }
+      ],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\engineering\\engineering-database-optimizer.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "engineering-devops-automator",
+      "name": "DevOps Automator",
+      "version": "1.0.0",
+      "category": "default",
+      "description": "Expert DevOps engineer specializing in infrastructure automation, CI/CD pipeline development, and cloud operations",
+      "capabilities": [],
+      "taskTypes": [
+        "pipeline-setup",
+        "infrastructure-automation",
+        "deployment-configuration",
+        "monitoring-setup"
+      ],
+      "tools": [
+        "Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch"
+      ],
+      "triggers": [
+        {
+          "pattern": "\\\\b(dockerfile|docker.?compose|docker.?image|docker.?container)\\\\b",
+          "mode": "inject"
+        },
+        {
+          "pattern": "\\\\b(kubernetes|k8s|helm|pod|deployment\\\\.yaml)\\\\b",
+          "mode": "inject"
+        },
+        {
+          "pattern": "\\\\b(ci.?cd|github.?actions|jenkins|circleci|gitlab.?ci|pipeline)\\\\b",
+          "mode": "inject"
+        }
+      ],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\engineering\\engineering-devops-automator.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "engineering-embedded-firmware-engineer",
+      "name": "Embedded Firmware Engineer",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Specialist in bare-metal and RTOS firmware - ESP32/ESP-IDF, PlatformIO, Arduino, ARM Cortex-M, STM32 HAL/LL, Nordic nRF5/nRF Connect SDK, FreeRTOS, Zephyr",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\engineering\\engineering-embedded-firmware-engineer.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "engineering-feishu-integration-developer",
+      "name": "Feishu Integration Developer",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Full-stack integration expert specializing in the Feishu (Lark) Open Platform — proficient in Feishu bots, mini programs, approval workflows, Bitable (multidimensional spreadsheets), interactive message cards, Webhooks, SSO authentication, and workflow automation, building enterprise-grade collaboration and automation solutions within the Feishu ecosystem.",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\engineering\\engineering-feishu-integration-developer.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "engineering-frontend-developer",
+      "name": "Frontend Developer",
+      "version": "1.0.0",
+      "category": "default",
+      "description": "Expert frontend developer specializing in modern web technologies, React/Vue/Angular frameworks, UI implementation, and performance optimization",
+      "capabilities": [],
+      "taskTypes": [
+        "ui-implementation",
+        "frontend-architecture",
+        "accessibility-audit",
+        "performance-optimization"
+      ],
+      "tools": [
+        "Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch"
+      ],
+      "triggers": [
+        {
+          "pattern": "\\\\b(react|vue\\\\.?js|angular|svelte|next\\\\.?js|nuxt\\\\.?js|remix)\\\\b",
+          "mode": "inject"
+        },
+        {
+          "pattern": "\\\\b(tailwind|css.?module|styled.?component|sass|scss|flexbox|css.?grid)\\\\b",
+          "mode": "inject"
+        }
+      ],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\engineering\\engineering-frontend-developer.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "engineering-git-workflow-master",
+      "name": "Git Workflow Master",
+      "version": "1.0.0",
+      "category": "default",
+      "description": "Expert in Git workflows, branching strategies, and version control best practices including conventional commits, rebasing, worktrees, and CI-friendly branch management.",
+      "capabilities": [],
+      "taskTypes": [
+        "workflow-setup",
+        "branch-strategy",
+        "history-cleanup",
+        "release-management"
+      ],
+      "tools": [
+        "Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch"
+      ],
+      "triggers": [
+        {
+          "pattern": "\\\\bgit\\\\s+(blame|log|rebase|bisect|cherry.?pick|stash|worktree)\\\\b",
+          "mode": "inject"
+        },
+        {
+          "pattern": "\\\\b(merge.?conflict|branch.?strateg|gitflow|conventional.?commit|squash)\\\\b",
+          "mode": "inject"
+        }
+      ],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\engineering\\engineering-git-workflow-master.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "engineering-incident-response-commander",
+      "name": "Incident Response Commander",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Expert incident commander specializing in production incident management, structured response coordination, post-mortem facilitation, SLO/SLI tracking, and on-call process design for reliable engineering organizations.",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\engineering\\engineering-incident-response-commander.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "engineering-mobile-app-builder",
+      "name": "Mobile App Builder",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Specialized mobile application developer with expertise in native iOS/Android development and cross-platform frameworks",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch"
+      ],
+      "triggers": [
+        {
+          "pattern": "\\\\b(react.?native|flutter|swift|kotlin|swiftui|jetpack.?compose)\\\\b",
+          "mode": "inject"
+        },
+        {
+          "pattern": "\\\\b(xcode|android.?studio|ios.?app|android.?app|app.?store|play.?store)\\\\b",
+          "mode": "inject"
+        }
+      ],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\engineering\\engineering-mobile-app-builder.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "engineering-rapid-prototyper",
+      "name": "Rapid Prototyper",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Specialized in ultra-fast proof-of-concept development and MVP creation using efficient tools and frameworks",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\engineering\\engineering-rapid-prototyper.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "engineering-security-engineer",
+      "name": "Security Engineer",
+      "version": "1.0.0",
+      "category": "default",
+      "description": "Expert application security engineer specializing in threat modeling, vulnerability assessment, secure code review, and security architecture design for modern web and cloud-native applications.",
+      "capabilities": [],
+      "taskTypes": [
+        "security-audit",
+        "vulnerability-scan",
+        "cve-remediation",
+        "code-security-review"
+      ],
+      "tools": [
+        "Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch"
+      ],
+      "triggers": [
+        {
+          "pattern": "\\\\b(jwt|oauth|saml|oidc|csrf|xss|sql.injection|ssrf|rce|lfi|session\\\\W{0,3}(hijack|fixation|token\\\\W{0,3}theft)\\\\w*|auth\\\\w*\\\\W{0,3}(bypass|bug|vuln|flaw|exploit)\\\\w*)\\\\b",
+          "mode": "inject"
+        },
+        {
+          "pattern": "CVE-\\\\d{4}-\\\\d+",
+          "mode": "inject"
+        },
+        {
+          "pattern": "\\\\b(vuln(erability)?|pentest|penetration.?test|security.?audit|threat.?model)\\\\b",
+          "mode": "inject"
+        }
+      ],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\engineering\\engineering-security-engineer.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "engineering-senior-developer",
+      "name": "Senior Developer",
+      "version": "1.0.0",
+      "category": "default",
+      "description": "Premium implementation specialist - Masters Laravel/Livewire/FluxUI, advanced CSS, Three.js integration",
+      "capabilities": [],
+      "taskTypes": [
+        "feature-implementation",
+        "full-stack-development",
+        "ui-polish",
+        "integration-development"
+      ],
+      "tools": [
+        "Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\engineering\\engineering-senior-developer.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "engineering-software-architect",
+      "name": "Software Architect",
+      "version": "1.0.0",
+      "category": "default",
+      "description": "Expert software architect specializing in system design, domain-driven design, architectural patterns, and technical decision-making for scalable, maintainable systems.",
+      "capabilities": [],
+      "taskTypes": [
+        "architecture-design",
+        "technology-selection",
+        "system-decomposition",
+        "architectural-review"
+      ],
+      "tools": [
+        "Read, Write, Edit, Glob, Grep, WebSearch, WebFetch"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\engineering\\engineering-software-architect.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "engineering-solidity-smart-contract-engineer",
+      "name": "Solidity Smart Contract Engineer",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Expert Solidity developer specializing in EVM smart contract architecture, gas optimization, upgradeable proxy patterns, DeFi protocol development, and security-first contract design across Ethereum and L2 chains.",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch"
+      ],
+      "triggers": [
+        {
+          "pattern": "\\\\b(solidity|\\\\.sol|smart.?contract|web3|ether[sj]?|hardhat|truffle|foundry)\\\\b",
+          "mode": "takeover"
+        },
+        {
+          "pattern": "\\\\b(defi|evm|ethereum|polygon|optimism|arbitrum|nft|erc.?20|erc.?721)\\\\b",
+          "mode": "inject"
+        }
+      ],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\engineering\\engineering-solidity-smart-contract-engineer.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "engineering-sre",
+      "name": "SRE (Site Reliability Engineer)",
+      "version": "1.0.0",
+      "category": "default",
+      "description": "Expert site reliability engineer specializing in SLOs, error budgets, observability, chaos engineering, and toil reduction for production systems at scale.",
+      "capabilities": [],
+      "taskTypes": [
+        "slo-definition",
+        "observability-setup",
+        "incident-response",
+        "reliability-review"
+      ],
+      "tools": [
+        "Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch"
+      ],
+      "triggers": [
+        {
+          "pattern": "\\\\b(slo|sla|sli|error.?budget|availability|uptime|reliability)\\\\b",
+          "mode": "inject"
+        },
+        {
+          "pattern": "\\\\b(incident|runbook|postmortem|on.?call|pagerduty|alertmanager)\\\\b",
+          "mode": "inject"
+        }
+      ],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\engineering\\engineering-sre.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "engineering-technical-writer",
+      "name": "Technical Writer",
+      "version": "1.0.0",
+      "category": "default",
+      "description": "Expert technical writer specializing in developer documentation, API references, README files, and tutorials. Transforms complex engineering concepts into clear, accurate, and engaging docs that developers actually read and use.",
+      "capabilities": [],
+      "taskTypes": [
+        "api-documentation",
+        "tutorial-writing",
+        "readme-authoring",
+        "documentation-review"
+      ],
+      "tools": [
+        "Read, Write, Edit, Glob, Grep, WebSearch, WebFetch"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\engineering\\engineering-technical-writer.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "engineering-threat-detection-engineer",
+      "name": "Threat Detection Engineer",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Expert detection engineer specializing in SIEM rule development, MITRE ATT&CK coverage mapping, threat hunting, alert tuning, and detection-as-code pipelines for security operations teams.",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch"
+      ],
+      "triggers": [
+        {
+          "pattern": "\\\\b(siem|splunk|sentinel|elastic|detection.?rule|sigma.?rule|yara)\\\\b",
+          "mode": "inject"
+        },
+        {
+          "pattern": "\\\\b(mitre|att.?ck|threat.?hunt|ioc|ttp|malware|ransomware|apt)\\\\b",
+          "mode": "inject"
+        }
+      ],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\engineering\\engineering-threat-detection-engineer.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "engineering-wechat-mini-program-developer",
+      "name": "WeChat Mini Program Developer",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Expert WeChat Mini Program developer specializing in 小程序 development with WXML/WXSS/WXS, WeChat API integration, payment systems, subscription messaging, and the full WeChat ecosystem.",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\engineering\\engineering-wechat-mini-program-developer.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "code-review-swarm",
+      "name": "code-review-swarm",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "|",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "mcp__monomind__swarm_init, mcp__monomind__agent_spawn, Bash, Read, Write, TodoWrite"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\github\\code-review-swarm.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "github-modes",
+      "name": "github-modes",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "|",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "mcp__monomind__swarm_init, mcp__monomind__agent_spawn, Bash, TodoWrite, Read, Write"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\github\\github-modes.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "issue-tracker",
+      "name": "issue-tracker",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "|",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "mcp__monomind__swarm_init, mcp__monomind__agent_spawn, mcp__monomind__memory_store, Bash, TodoWrite, Read, Write"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\github\\issue-tracker.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "multi-repo-swarm",
+      "name": "multi-repo-swarm",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Cross-repository swarm orchestration for organization-wide automation and intelligent collaboration",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Bash, Read, Write, Edit, Glob, Grep, LS, TodoWrite, mcp__monomind__swarm_init, mcp__monomind__agent_spawn, mcp__monomind__swarm_status, mcp__monomind__memory_usage, mcp__monomind__github_repo_analyze, mcp__monomind__github_pr_manage, mcp__monomind__github_sync_coord, mcp__monomind__github_metrics"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\github\\multi-repo-swarm.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "pr-manager",
+      "name": "pr-manager",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "|",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Bash, Read, Write, Edit, Glob, Grep, LS, TodoWrite, mcp__monomind__swarm_init, mcp__monomind__agent_spawn, mcp__monomind__swarm_status, mcp__monomind__memory_store, mcp__monomind__github_pr_manage, mcp__monomind__github_code_review, mcp__monomind__github_metrics"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\github\\pr-manager.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "project-board-sync",
+      "name": "project-board-sync",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "|",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Bash, Read, Write, Edit, Glob, Grep, LS, TodoWrite, mcp__monomind__swarm_init, mcp__monomind__agent_spawn, mcp__monomind__swarm_status, mcp__monomind__memory_usage, mcp__monomind__github_repo_analyze, mcp__monomind__github_pr_manage, mcp__monomind__github_issue_track, mcp__monomind__github_metrics, mcp__monomind__workflow_create, mcp__monomind__workflow_execute"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\github\\project-board-sync.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "release-manager",
+      "name": "release-manager",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "|",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Bash, Read, Write, Edit, TodoWrite, TodoRead, Task, WebFetch, mcp__github__create_pull_request, mcp__github__merge_pull_request, mcp__github__create_branch, mcp__github__push_files, mcp__github__create_issue, mcp__monomind__swarm_init, mcp__monomind__agent_spawn, mcp__monomind__memory_store"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\github\\release-manager.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "repo-architect",
+      "name": "repo-architect",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "|",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Bash, Read, Write, Edit, LS, Glob, TodoWrite, TodoRead, Task, WebFetch, mcp__github__create_repository, mcp__github__fork_repository, mcp__github__search_repositories, mcp__github__push_files, mcp__github__create_or_update_file, mcp__monomind__swarm_init, mcp__monomind__agent_spawn, mcp__monomind__memory_store"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\github\\repo-architect.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "swarm-issue",
+      "name": "swarm-issue",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "|",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "mcp__github__get_issue, mcp__github__create_issue, mcp__github__update_issue, mcp__github__list_issues, mcp__github__create_issue_comment, mcp__monomind__swarm_init, mcp__monomind__agent_spawn, mcp__monomind__memory_usage, TodoWrite, TodoRead, Bash, Grep, Read, Write"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\github\\swarm-issue.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "swarm-pr",
+      "name": "swarm-pr",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "|",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "mcp__github__get_pull_request, mcp__github__create_pull_request, mcp__github__update_pull_request, mcp__github__list_pull_requests, mcp__github__create_pr_comment, mcp__github__get_pr_diff, mcp__github__merge_pull_request, mcp__monomind__swarm_init, mcp__monomind__agent_spawn, mcp__monomind__memory_usage, mcp__monomind__coordination_sync, TodoWrite, TodoRead, Bash, Grep, Read, Write, Edit"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\github\\swarm-pr.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "sync-coordinator",
+      "name": "sync-coordinator",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "|",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "mcp__github__push_files, mcp__github__create_or_update_file, mcp__github__get_file_contents, mcp__github__create_pull_request, mcp__github__search_repositories, mcp__github__list_repositories, mcp__monomind__swarm_init, mcp__monomind__agent_spawn, mcp__monomind__memory_store, mcp__monomind__coordination_sync, mcp__monomind__load_balance, TodoWrite, TodoRead, Bash, Read, Write, Edit, MultiEdit"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\github\\sync-coordinator.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "workflow-automation",
+      "name": "workflow-automation",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "|",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "mcp__github__create_workflow, mcp__github__update_workflow, mcp__github__list_workflows, mcp__github__get_workflow_runs, mcp__github__create_workflow_dispatch, mcp__monomind__swarm_init, mcp__monomind__agent_spawn, mcp__monomind__memory_usage, mcp__monomind__performance_report, mcp__monomind__bottleneck_analyze, mcp__monomind__workflow_create, mcp__monomind__automation_setup, TodoWrite, TodoRead, Bash, Read, Write, Edit, Grep"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\github\\workflow-automation.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "goal-planner",
+      "name": "goal-planner",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "|",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\goal\\goal-planner.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "collective-intelligence-coordinator",
+      "name": "collective-intelligence-coordinator",
+      "version": "2.0.0",
+      "category": "default",
+      "description": "Synthesizes findings from multiple agents into durable shared knowledge — the knowledge graph, pattern store, and memory namespaces other agents read from",
+      "capabilities": [],
+      "taskTypes": [
+        "knowledge-synthesis",
+        "kg-ingest",
+        "contradiction-review"
+      ],
+      "tools": [],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\hive-mind\\collective-intelligence-coordinator.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "scout-explorer",
+      "name": "scout-explorer",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "|",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\hive-mind\\scout-explorer.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "swarm-memory-manager",
+      "name": "swarm-memory-manager",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "|",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\hive-mind\\swarm-memory-manager.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "worker-specialist",
+      "name": "worker-specialist",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "|",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\hive-mind\\worker-specialist.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "marketing-competitive-content",
+      "name": "Competitive Content Strategist",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Expert in competitive positioning content, comparison pages, alternative pages, content strategy, and topic planning. Use for competitor comparison pages (X vs Y), alternative pages (Best X alternatives), content strategy and editorial planning, topic cluster design, or any content that positions your product in a competitive landscape.",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "WebFetch, WebSearch, Read, Write, Edit"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\marketing\\marketing-competitive-content.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "marketing-cro-specialist",
+      "name": "CRO Specialist",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Expert in conversion rate optimization for marketing pages, signup flows, forms, popups, and onboarding. Analyzes why pages aren't converting and delivers prioritized recommendations with test hypotheses. Use for homepage, landing page, pricing page, feature page, signup flow, form optimization, popup strategy, or any surface where visitors aren't taking the desired action.",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "WebFetch, WebSearch, Read, Write, Edit"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\marketing\\marketing-cro-specialist.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "marketing-email-specialist",
+      "name": "Email Marketing Specialist",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Expert in email sequences, drip campaigns, lifecycle email programs, and cold outreach. Write and optimize welcome series, nurture sequences, re-engagement campaigns, onboarding flows, and B2B cold email. Use when the task involves any multi-email automated flow, cold prospecting, or email copywriting.",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "WebFetch, WebSearch, Read, Write, Edit"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\marketing\\marketing-email-specialist.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "marketing-launch-strategist",
+      "name": "Launch Strategist",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Expert in product launches, feature announcements, and go-to-market strategy. Use when planning a product launch, feature release, beta program, waitlist strategy, Product Hunt submission, or any public announcement. Covers pre-launch sequencing, channel strategy, launch day execution, and post-launch iteration.",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "WebFetch, WebSearch, Read, Write, Edit"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\marketing\\marketing-launch-strategist.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "marketing-pricing-strategist",
+      "name": "Pricing Strategist",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Expert in SaaS pricing strategy, packaging, tier structure, and monetization. Use when the task involves pricing decisions, plan restructuring, freemium vs. trial strategy, value metric selection, willingness-to-pay research, or designing a pricing page. Covers both strategic pricing decisions and pricing page design.",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "WebFetch, WebSearch, Read, Write, Edit"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\marketing\\marketing-pricing-strategist.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "benchmark-suite",
+      "name": "Benchmark Suite",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Comprehensive performance benchmarking, regression detection and performance validation",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\optimization\\benchmark-suite.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "load-balancer",
+      "name": "Load Balancing Coordinator",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Dynamic task distribution, work-stealing algorithms and adaptive load balancing",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\optimization\\load-balancer.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "performance-monitor",
+      "name": "Performance Monitor",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Real-time metrics collection, bottleneck analysis, SLA monitoring and anomaly detection",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\optimization\\performance-monitor.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "resource-allocator",
+      "name": "Resource Allocator",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Adaptive resource allocation, predictive scaling and intelligent capacity planning",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\optimization\\resource-allocator.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "topology-optimizer",
+      "name": "Topology Optimizer",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Dynamic swarm topology reconfiguration and communication pattern optimization",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\optimization\\topology-optimizer.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "integration-architect",
+      "name": "v1-integration-architect",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "|",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\specialists\\integration-architect.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "agentic-identity-trust",
+      "name": "Agentic Identity & Trust Architect",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Designs identity, authentication, and trust verification systems for autonomous AI agents operating in multi-agent environments. Ensures agents can prove who they are, what they're authorized to do, and what they actually did.",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Read, Write, Edit, WebSearch, WebFetch"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\specialized\\agentic-identity-trust.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "agents-orchestrator",
+      "name": "Agents Orchestrator",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Autonomous pipeline manager that orchestrates the entire development workflow. You are the leader of this process.",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Read, Write, Edit, Bash, WebSearch, WebFetch"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\specialized\\agents-orchestrator.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "automation-governance-architect",
+      "name": "Automation Governance Architect",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Governance-first architect for business automations (n8n-first) who audits value, risk, and maintainability before implementation.",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Read, Write, Edit, WebSearch, WebFetch"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\specialized\\automation-governance-architect.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "blockchain-security-auditor",
+      "name": "Blockchain Security Auditor",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Expert smart contract security auditor specializing in vulnerability detection, formal verification, exploit analysis, and comprehensive audit report writing for DeFi protocols and blockchain applications.",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Read, Grep, Glob, Bash, WebSearch, WebFetch"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\specialized\\blockchain-security-auditor.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "compliance-auditor",
+      "name": "Compliance Auditor",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Expert technical compliance auditor specializing in SOC 2, ISO 27001, HIPAA, and PCI-DSS audits — from readiness assessment through evidence collection to certification.",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Read, Write, Edit, WebSearch, WebFetch"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\specialized\\compliance-auditor.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "identity-graph-operator",
+      "name": "Identity Graph Operator",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Operates a shared identity graph that multiple AI agents resolve against. Ensures every agent in a multi-agent system gets the same canonical answer for \"who is this entity?\" - deterministically, even under concurrent writes.",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Read, Write, Edit, Bash, Glob, Grep"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\specialized\\identity-graph-operator.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "lsp-index-engineer",
+      "name": "LSP/Index Engineer",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Language Server Protocol specialist building unified code intelligence systems through LSP client orchestration and semantic indexing",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\specialized\\lsp-index-engineer.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "spec-mobile-react-native",
+      "name": "mobile-dev",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Expert agent for React Native mobile application development across iOS and Android",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Read, Write, Edit, WebSearch, WebFetch"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\specialized\\mobile\\spec-mobile-react-native.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "specialized-cultural-intelligence-strategist",
+      "name": "Cultural Intelligence Strategist",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "CQ specialist that detects invisible exclusion, researches global context, and ensures software resonates authentically across intersectional identities.",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Read, Write, Edit, WebSearch, WebFetch"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\specialized\\specialized-cultural-intelligence-strategist.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "specialized-developer-advocate",
+      "name": "Developer Advocate",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Expert developer advocate specializing in building developer communities, creating compelling technical content, optimizing developer experience (DX), and driving platform adoption through authentic engineering engagement. Bridges product and engineering teams with external developers.",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Read, Write, Edit, WebSearch, WebFetch"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\specialized\\specialized-developer-advocate.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "specialized-document-generator",
+      "name": "Document Generator",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Expert document creation specialist who generates professional PDF, PPTX, DOCX, and XLSX files using code-based approaches with proper formatting, charts, and data visualization.",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Read, Write, Edit, WebSearch, WebFetch"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\specialized\\specialized-document-generator.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "specialized-mcp-builder",
+      "name": "MCP Builder",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Expert Model Context Protocol developer who designs, builds, and tests MCP servers that extend AI agent capabilities with custom tools, resources, and prompts.",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Read, Write, Edit, Bash, Glob, Grep"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\specialized\\specialized-mcp-builder.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "specialized-model-qa",
+      "name": "Model QA Specialist",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Independent model QA expert who audits ML and statistical models end-to-end - from documentation review and data reconstruction to replication, calibration testing, interpretability analysis, performance monitoring, and audit-grade reporting.",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Read, Write, Edit, WebSearch, WebFetch"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\specialized\\specialized-model-qa.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "specialized-workflow-architect",
+      "name": "Workflow Architect",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Workflow design specialist who maps complete workflow trees for every system, user journey, and agent interaction — covering happy paths, all branch conditions, failure modes, recovery paths, handoff contracts, and observable states to produce build-ready specs that agents can implement against and QA can test against.",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Read, Write, Edit, WebSearch, WebFetch"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\specialized\\specialized-workflow-architect.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "zk-steward",
+      "name": "ZK Steward",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Zettelkasten knowledge-base steward (note-taking system, NOT zero-knowledge cryptography). Manages interconnected atomic notes in Luhmann's slip-box style; switches perspective to domain experts (Feynman, Munger, Ogilvy) by task. Use for personal knowledge management, note linking, complex task breakdown, and cross-domain decision support. For zero-knowledge proofs or ZK cryptography, use zk-steward is WRONG — use security-architect instead.",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Read, Write, Edit, Bash, Glob, Grep"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\specialized\\zk-steward.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "mesh-coordinator",
+      "name": "mesh-coordinator",
+      "version": "2.0.0",
+      "category": "default",
+      "description": "Coordinates peer-style (non-hierarchical) parallel subagents that share state through memory rather than reporting to a lead",
+      "capabilities": [],
+      "taskTypes": [
+        "parallel-dispatch",
+        "result-reconciliation",
+        "peer-coordination"
+      ],
+      "tools": [],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\swarm\\mesh-coordinator.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "automation-smart-agent",
+      "name": "smart-agent",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Intelligent agent coordination and dynamic spawning specialist",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\templates\\automation-smart-agent.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "coordinator-swarm-init",
+      "name": "swarm-init",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Swarm initialization and topology optimization specialist",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\templates\\coordinator-swarm-init.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "production-validator",
+      "name": "production-validator",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Production validation specialist ensuring applications are fully implemented and deployment-ready",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Read, Write, Edit, Bash, Glob, Grep"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\testing\\production-validator.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "tdd-london-swarm",
+      "name": "tdd-london-swarm",
+      "version": "1.0.0",
+      "category": "default",
+      "description": "TDD London School specialist for mock-driven development within swarm coordination",
+      "capabilities": [],
+      "taskTypes": [
+        "tdd-implementation",
+        "test-design",
+        "behavior-verification",
+        "contract-testing"
+      ],
+      "tools": [
+        "Read, Write, Edit, Bash, Glob, Grep"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\testing\\tdd-london-swarm.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "testing-accessibility-auditor",
+      "name": "Accessibility Auditor",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Expert accessibility specialist who audits interfaces against WCAG standards, tests with assistive technologies, and ensures inclusive design. Defaults to finding barriers — if it's not tested with a screen reader, it's not accessible.",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Read, Write, Edit, Bash, Glob, Grep"
+      ],
+      "triggers": [
+        {
+          "pattern": "\\\\b(a11y|accessibility|wcag|aria|screen.?reader|voiceover|nvda|jaws)\\\\b",
+          "mode": "inject"
+        },
+        {
+          "pattern": "\\\\b(color.?contrast|keyboard.?nav|focus.?trap|alt.?text|semantic.?html)\\\\b",
+          "mode": "inject"
+        }
+      ],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\testing\\testing-accessibility-auditor.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "testing-api-tester",
+      "name": "API Tester",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Expert API testing specialist focused on comprehensive API validation, performance testing, and quality assurance across all systems and third-party integrations",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Read, Write, Edit, Bash, Glob, Grep"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\testing\\testing-api-tester.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "testing-evidence-collector",
+      "name": "Evidence Collector",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Screenshot-obsessed, fantasy-allergic QA specialist - Default to finding 3-5 issues, requires visual proof for everything",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Read, Write, Edit, Bash, Glob, Grep"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\testing\\testing-evidence-collector.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "testing-performance-benchmarker",
+      "name": "Performance Benchmarker",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Expert performance testing and optimization specialist focused on measuring, analyzing, and improving system performance across all applications and infrastructure",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Read, Write, Edit, Bash, Glob, Grep"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\testing\\testing-performance-benchmarker.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "testing-test-results-analyzer",
+      "name": "Test Results Analyzer",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Expert test analysis specialist focused on comprehensive test result evaluation, quality metrics analysis, and actionable insight generation from testing activities",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Read, Write, Edit, Bash, Glob, Grep"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\testing\\testing-test-results-analyzer.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "testing-tool-evaluator",
+      "name": "Tool Evaluator",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Expert technology assessment specialist focused on evaluating, testing, and recommending tools, software, and platforms for business use and productivity optimization",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Read, Write, Edit, Bash, Glob, Grep"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\testing\\testing-tool-evaluator.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    },
+    {
+      "slug": "testing-workflow-optimizer",
+      "name": "Workflow Optimizer",
+      "version": "0.0.0",
+      "category": "default",
+      "description": "Expert process improvement specialist focused on analyzing, optimizing, and automating workflows across all business functions for maximum productivity and efficiency",
+      "capabilities": [],
+      "taskTypes": [],
+      "tools": [
+        "Read, Write, Edit, Bash, Glob, Grep"
+      ],
+      "triggers": [],
+      "deprecated": false,
+      "dependencies": [],
+      "filePath": ".claude\\agents\\testing\\testing-workflow-optimizer.md",
+      "registeredAt": "2026-08-14T14:10:11.026Z",
+      "lastUpdated": "2026-08-14T14:10:11.026Z"
+    }
+  ]
+}

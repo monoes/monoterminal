@@ -1,0 +1,547 @@
+{
+  "batch": 3,
+  "status": "READY_FOR_EXECUTION_PENDING_APPROVAL",
+  "total_targets": 12,
+  "total_research_questions": 50,
+  "approval_gate": "q-1786656852119-ree9",
+  "templates": [
+    {
+      "target": "D1.1",
+      "name": "Base Terminal Emulator Selection",
+      "priority": 5,
+      "search_directive": "Ghostty fork embed pros cons AND terminal emulator codebase comparison AND Alacritty vs WezTerm architecture",
+      "research_questions": [
+        {
+          "id": "D1.1-Q1",
+          "question": "Ghostty architecture analysis: codebase structure, rendering engine, PTY handling, plugin system, license",
+          "finding_template": {
+            "question": "Ghostty architecture analysis",
+            "answer": "[FILL: Codebase language and structure (Zig, modularity), rendering engine (Metal/Vulkan/GPU), PTY handling approach per-OS, plugin/extension capabilities, license terms]",
+            "sources": ["[GitHub: ghostty-org/ghostty]", "[Docs: ghostty.org]", "[Additional sources]"]
+          }
+        },
+        {
+          "id": "D1.1-Q2",
+          "question": "cmux architecture analysis: session management, multiplexing approach, networking layer, codebase quality",
+          "finding_template": {
+            "question": "cmux architecture analysis",
+            "answer": "[FILL: Session management implementation (sockets, persistence), multiplexing vs emulator distinction, networking capabilities (if any), codebase language and quality metrics]",
+            "sources": ["[GitHub: manaflow-ai/cmux]", "[Docs: cmux.com]", "[Additional sources]"]
+          }
+        },
+        {
+          "id": "D1.1-Q3",
+          "question": "Fork vs embed vs build-from-scratch decision matrix: development velocity, maintenance burden, licensing constraints",
+          "finding_template": {
+            "question": "Fork vs embed vs build-from-scratch decision matrix",
+            "answer": "[FILL: Forking pros/cons (control vs upstream tracking), embedding pros/cons (faster start vs integration complexity), build-from-scratch pros/cons (full control vs dev time). Licensing implications per approach.]",
+            "sources": ["[Technical blog: terminal emulator development]", "[Case studies]", "[Additional sources]"]
+          }
+        },
+        {
+          "id": "D1.1-Q4",
+          "question": "Alternative terminal emulator candidates: Alacritty, WezTerm, Rio, architectural comparison",
+          "finding_template": {
+            "question": "Alternative terminal emulator candidates comparison",
+            "answer": "[FILL: Alacritty (Rust, GPU-accelerated, minimalist), WezTerm (Rust, feature-rich, Lua config), Rio (Rust, modern), architectural differences (rendering, PTY, config systems), production readiness]",
+            "sources": ["[GitHub: alacritty/alacritty]", "[GitHub: wez/wezterm]", "[Comparison articles]"]
+          }
+        },
+        {
+          "id": "D1.1-Q5",
+          "question": "Rendering engine options: GPU acceleration approaches, text rendering libraries, performance benchmarks",
+          "finding_template": {
+            "question": "Rendering engine options",
+            "answer": "[FILL: GPU acceleration (Metal on macOS, Vulkan cross-platform, Direct3D Windows), text rendering libraries (FreeType, HarfBuzz, platform-native), performance benchmarks (FPS, latency, memory)]",
+            "sources": ["[Technical docs]", "[Benchmarks]", "[Additional sources]"]
+          }
+        }
+      ]
+    },
+    {
+      "target": "D7.1",
+      "name": "Native vs Framework Decision",
+      "priority": 5,
+      "search_directive": "Tauri vs Electron 2026 performance AND Rust GUI frameworks druid iced egui comparison AND cross-platform desktop development",
+      "research_questions": [
+        {
+          "id": "D7.1-Q1",
+          "question": "Rust + native GUI (druid, iced, egui) evaluation",
+          "finding_template": {
+            "question": "Rust native GUI frameworks evaluation",
+            "answer": "[FILL: druid (production readiness, adoption, limitations), iced (Elm-like, declarative, maturity), egui (immediate mode, simplicity, performance), comparison of development experience and ecosystem maturity]",
+            "sources": ["[GitHub repos]", "[Technical comparisons]", "[Production examples]"]
+          }
+        },
+        {
+          "id": "D7.1-Q2",
+          "question": "Electron evaluation: bundle size, performance, maintenance",
+          "finding_template": {
+            "question": "Electron evaluation for terminal emulator",
+            "answer": "[FILL: Bundle size (typical ~100-200MB), performance characteristics (memory, startup time), maintenance burden (Chromium updates, security patches), suitability for terminal emulator use case]",
+            "sources": ["[Electron docs]", "[Performance benchmarks]", "[Production case studies]"]
+          }
+        },
+        {
+          "id": "D7.1-Q3",
+          "question": "Tauri evaluation: Rust backend, web frontend, size and performance",
+          "finding_template": {
+            "question": "Tauri evaluation",
+            "answer": "[FILL: Bundle size vs Electron (typically 10-20x smaller), Rust backend advantages (security, performance), web frontend integration (React/Vue/Svelte), system webview vs bundled, production readiness 2026]",
+            "sources": ["[Tauri.app docs]", "[Benchmarks vs Electron]", "[Production examples]"]
+          }
+        },
+        {
+          "id": "D7.1-Q4",
+          "question": "Platform-native approach: Swift (macOS), C++/WinUI (Windows), GTK/Qt (Linux)",
+          "finding_template": {
+            "question": "Platform-native GUI approach",
+            "answer": "[FILL: Swift/AppKit for macOS (integration, distribution), C++/WinUI for Windows (modern vs legacy), GTK/Qt for Linux (fragmentation, desktop environment support), development and maintenance complexity of multi-codebase approach]",
+            "sources": ["[Platform docs]", "[Cross-platform case studies]", "[Developer blogs]"]
+          }
+        },
+        {
+          "id": "D7.1-Q5",
+          "question": "Per-platform decision matrix: trade-offs, maintenance burden",
+          "finding_template": {
+            "question": "Platform decision matrix and trade-offs",
+            "answer": "[FILL: Decision criteria (development velocity, native feel, bundle size, maintenance team size), recommendation matrix per platform, hybrid approach feasibility (e.g., Tauri + native rendering)]",
+            "sources": ["[Technical analysis]", "[Multi-platform project retrospectives]"]
+          }
+        }
+      ]
+    },
+    {
+      "target": "D1.3",
+      "name": "Master Process Architecture",
+      "priority": 5,
+      "search_directive": "Unix socket vs TCP IPC performance AND daemon process architecture Rust AND session recovery terminal multiplexer",
+      "research_questions": [
+        {
+          "id": "D1.3-Q1",
+          "question": "Process lifecycle: daemon mode, socket activation, graceful shutdown",
+          "finding_template": {
+            "question": "Master process lifecycle management",
+            "answer": "[FILL: Daemon mode implementation (systemd, launchd integration), socket activation (on-demand start), graceful shutdown (cleanup, session preservation, client notification), crash recovery strategies]",
+            "sources": ["[System programming docs]", "[tmux/screen implementations]", "[Rust daemon libraries]"]
+          }
+        },
+        {
+          "id": "D1.3-Q2",
+          "question": "IPC mechanisms: Unix sockets vs TCP vs named pipes per-OS",
+          "finding_template": {
+            "question": "IPC mechanism comparison",
+            "answer": "[FILL: Unix domain sockets (Linux/macOS - performance, security), TCP localhost (cross-platform, complexity), Windows named pipes (native Windows IPC), performance benchmarks (latency, throughput), security considerations per mechanism]",
+            "sources": ["[IPC performance studies]", "[Rust tokio docs]", "[System programming guides]"]
+          }
+        },
+        {
+          "id": "D1.3-Q3",
+          "question": "State persistence: session recovery, configuration storage",
+          "finding_template": {
+            "question": "State persistence and session recovery",
+            "answer": "[FILL: Session state serialization (PTY state, scrollback, env), configuration storage (format, location), crash recovery (journal, checkpointing), migration strategy for schema changes]",
+            "sources": ["[tmux session recovery]", "[Database persistence patterns]", "[Crash recovery best practices]"]
+          }
+        },
+        {
+          "id": "D1.3-Q4",
+          "question": "Resource management: memory limits, PTY cleanup, zombie processes",
+          "finding_template": {
+            "question": "Resource management and cleanup",
+            "answer": "[FILL: Memory limits per session/client, PTY cleanup on session end, zombie process prevention (SIGCHLD handling), file descriptor limits, resource leak detection]",
+            "sources": ["[System programming docs]", "[PTY management guides]", "[Production debugging stories]"]
+          }
+        }
+      ]
+    },
+    {
+      "target": "D3.1",
+      "name": "P2P Stack Selection",
+      "priority": 5,
+      "search_directive": "libp2p vs WebRTC NAT traversal AND rust-libp2p mobile Android iOS AND P2P networking terminal application",
+      "research_questions": [
+        {
+          "id": "D3.1-Q1",
+          "question": "libp2p evaluation: maturity, language bindings, NAT traversal, mobile support",
+          "finding_template": {
+            "question": "libp2p ecosystem evaluation",
+            "answer": "[FILL: rust-libp2p maturity (production usage, stability), go-libp2p vs rust-libp2p comparison, NAT traversal capabilities (AutoNAT, hole punching success rates), mobile support (Android/iOS compilation, battery impact), transport options]",
+            "sources": ["[libp2p.io docs]", "[GitHub: libp2p/rust-libp2p]", "[Production deployments]"]
+          }
+        },
+        {
+          "id": "D3.1-Q2",
+          "question": "WebRTC evaluation: browser support, native SDKs, signaling requirements",
+          "finding_template": {
+            "question": "WebRTC for P2P terminal",
+            "answer": "[FILL: Browser WebRTC support (desktop/mobile), native SDKs (pion Go, webrtc-rs Rust, Google WebRTC C++), signaling server requirements (architecture, scalability), DataChannel for terminal data streaming]",
+            "sources": ["[WebRTC.org]", "[GitHub: pion/webrtc, webrtc-rs]", "[WebRTC case studies]"]
+          }
+        },
+        {
+          "id": "D3.1-Q3",
+          "question": "Custom P2P vs existing stack: complexity vs control trade-off",
+          "finding_template": {
+            "question": "Custom P2P vs existing stack decision",
+            "answer": "[FILL: Custom P2P pros (full control, minimal dependencies) and cons (NAT traversal complexity, testing burden), existing stack pros (battle-tested, community support) and cons (learning curve, dependency size), recommendation for terminal use case]",
+            "sources": ["[P2P networking guides]", "[Build vs buy analyses]", "[Technical blog posts]"]
+          }
+        },
+        {
+          "id": "D3.1-Q4",
+          "question": "Hybrid approaches: libp2p + WebRTC, fallback strategies",
+          "finding_template": {
+            "question": "Hybrid P2P approaches",
+            "answer": "[FILL: libp2p-webrtc transport (browser-to-native connectivity), fallback strategies (try direct → hole punch → relay), multiple transport support (QUIC, TCP, WebSocket), example architectures]",
+            "sources": ["[libp2p WebRTC transport docs]", "[Hybrid P2P projects]", "[Architecture patterns]"]
+          }
+        }
+      ]
+    },
+    {
+      "target": "D3.2",
+      "name": "NAT Traversal & Connectivity",
+      "priority": 5,
+      "search_directive": "STUN TURN server self-hosting vs hosted AND UDP hole punching success rate 2026 AND carrier-grade NAT mobile networks",
+      "research_questions": [
+        {
+          "id": "D3.2-Q1",
+          "question": "STUN/TURN server requirements and hosting options",
+          "finding_template": {
+            "question": "STUN/TURN infrastructure",
+            "answer": "[FILL: STUN server purpose (public IP discovery), TURN server purpose (relay fallback), self-hosting options (coturn, pion/turn), hosted options (Twilio, Cloudflare Calls, xirsys), cost comparison, scalability considerations]",
+            "sources": ["[coturn GitHub]", "[Hosted service pricing]", "[Deployment guides]"]
+          }
+        },
+        {
+          "id": "D3.2-Q2",
+          "question": "Hole punching techniques: UDP, TCP, reliability across router types",
+          "finding_template": {
+            "question": "Hole punching techniques and reliability",
+            "answer": "[FILL: UDP hole punching (ICE, success rates ~80-90%), TCP hole punching (harder, success rates ~60-70%), router types (symmetric NAT challenges), mobile networks (carrier-grade NAT), best practices for terminal traffic]",
+            "sources": ["[NAT traversal studies]", "[ICE RFC]", "[Real-world success rate reports]"]
+          }
+        },
+        {
+          "id": "D3.2-Q3",
+          "question": "Relay fallback strategies when direct connection fails",
+          "finding_template": {
+            "question": "Relay fallback strategies",
+            "answer": "[FILL: TURN relay as fallback, relay server placement (geographic distribution), bandwidth costs, performance impact (latency increase), quality degradation detection and notification to user]",
+            "sources": ["[WebRTC relay patterns]", "[TURN performance studies]", "[Production debugging]"]
+          }
+        },
+        {
+          "id": "D3.2-Q4",
+          "question": "Mobile network considerations: carrier-grade NAT, IPv6",
+          "finding_template": {
+            "question": "Mobile network P2P challenges",
+            "answer": "[FILL: Carrier-grade NAT (CGNAT) impact on hole punching, IPv6 support on mobile (availability, advantages), mobile network switching (WiFi ↔ cellular, connection recovery), battery impact of keep-alive traffic]",
+            "sources": ["[Mobile NAT traversal research]", "[Carrier network documentation]", "[Mobile P2P case studies]"]
+          }
+        }
+      ]
+    },
+    {
+      "target": "D1.5",
+      "name": "Master Networking Layer",
+      "priority": 5,
+      "search_directive": "PTY output multiplexing AND terminal session streaming compression AND multi-client input aggregation",
+      "research_questions": [
+        {
+          "id": "D1.5-Q1",
+          "question": "Server socket architecture: listening for client connections",
+          "finding_template": {
+            "question": "Server socket architecture",
+            "answer": "[FILL: Socket binding (TCP port vs Unix socket), async I/O framework (tokio, async-std), connection acceptance, TLS termination, client authentication integration, connection pooling]",
+            "sources": ["[Rust async networking]", "[tokio documentation]", "[Server architecture patterns]"]
+          }
+        },
+        {
+          "id": "D1.5-Q2",
+          "question": "Session streaming: PTY output multiplexing to N clients",
+          "finding_template": {
+            "question": "PTY output multiplexing to multiple clients",
+            "answer": "[FILL: Fan-out architecture (broadcast to N clients), late-join handling (scrollback buffer replay), client-specific state (cursor position, viewport), backpressure handling (slow client doesn't block fast clients)]",
+            "sources": ["[tmux multiplexing implementation]", "[Broadcast patterns]", "[Async stream multiplexing]"]
+          }
+        },
+        {
+          "id": "D1.5-Q3",
+          "question": "Input aggregation: multiple clients controlling same session",
+          "finding_template": {
+            "question": "Multi-client input aggregation",
+            "answer": "[FILL: Input merging strategies (sequential vs concurrent), conflict resolution (who wins when simultaneous input), permission model (read-only vs read-write clients), input attribution and logging]",
+            "sources": ["[Collaborative editing patterns]", "[tmux multi-client mode]", "[Input handling best practices]"]
+          }
+        },
+        {
+          "id": "D1.5-Q4",
+          "question": "Bandwidth optimization: compression, delta encoding, smart buffering",
+          "finding_template": {
+            "question": "Bandwidth optimization for terminal streaming",
+            "answer": "[FILL: Compression algorithms (zstd, gzip, adaptive), delta encoding (send only screen changes), smart buffering (coalesce rapid updates), compression ratios for typical terminal output, CPU vs bandwidth trade-off]",
+            "sources": ["[Terminal compression benchmarks]", "[mosh differential scrollback]", "[Bandwidth optimization techniques]"]
+          }
+        }
+      ]
+    },
+    {
+      "target": "D4.1",
+      "name": "Protocol Format",
+      "priority": 5,
+      "search_directive": "Protobuf vs MessagePack vs CBOR performance terminal AND binary protocol framing length-prefixed AND protocol version negotiation backward compatibility",
+      "research_questions": [
+        {
+          "id": "D4.1-Q1",
+          "question": "Binary vs text protocol: Protobuf, MessagePack, CBOR, JSON",
+          "finding_template": {
+            "question": "Protocol serialization format comparison",
+            "answer": "[FILL: Protobuf (schema-driven, versioning, size/performance), MessagePack (schemaless, JSON-compatible, speed), CBOR (RFC standard, extensible), JSON (human-readable, debugging), benchmarks for terminal message types, tooling ecosystem]",
+            "sources": ["[Format benchmarks]", "[Protocol documentation]", "[Production comparisons]"]
+          }
+        },
+        {
+          "id": "D4.1-Q2",
+          "question": "Framing mechanism: length-prefixed, delimited, chunked",
+          "finding_template": {
+            "question": "Protocol framing mechanisms",
+            "answer": "[FILL: Length-prefixed (varint or fixed, header format), delimited (newline, null-terminated, escaping issues), chunked transfer, streaming vs message-oriented, zero-copy considerations]",
+            "sources": ["[Network protocol design]", "[Framing best practices]", "[Implementation examples]"]
+          }
+        },
+        {
+          "id": "D4.1-Q3",
+          "question": "Version negotiation and backward compatibility",
+          "finding_template": {
+            "question": "Protocol versioning and compatibility",
+            "answer": "[FILL: Version negotiation handshake, feature detection, backward compatibility strategies (optional fields, deprecated fields), schema evolution, migration path for breaking changes]",
+            "sources": ["[Protobuf versioning]", "[gRPC compatibility]", "[Protocol evolution patterns]"]
+          }
+        },
+        {
+          "id": "D4.1-Q4",
+          "question": "Extensibility: custom fields, plugin messages",
+          "finding_template": {
+            "question": "Protocol extensibility design",
+            "answer": "[FILL: Custom field namespacing, plugin message types, unknown field handling (ignore vs error), extension registry, protocol buffer Any type or equivalent]",
+            "sources": ["[Extensible protocol design]", "[Plugin architecture patterns]", "[Custom field examples]"]
+          }
+        }
+      ]
+    },
+    {
+      "target": "D4.2",
+      "name": "Message Types",
+      "priority": 5,
+      "search_directive": "terminal multiplexer protocol messages AND PTY streaming protocol design AND session control commands terminal",
+      "research_questions": [
+        {
+          "id": "D4.2-Q1",
+          "question": "Session control: create, attach, detach, resize, close",
+          "finding_template": {
+            "question": "Session control message types",
+            "answer": "[FILL: CreateSession (shell, env, dimensions), AttachSession (session ID, capabilities), DetachSession (graceful vs force), ResizeSession (rows, cols, pixel dimensions), CloseSession (cleanup, notification), message schemas and sequences]",
+            "sources": ["[tmux protocol]", "[Terminal control sequences]", "[Session management patterns]"]
+          }
+        },
+        {
+          "id": "D4.2-Q2",
+          "question": "Data streaming: PTY output, input, bulk transfers",
+          "finding_template": {
+            "question": "Data streaming message types",
+            "answer": "[FILL: PTY output streaming (chunking, sequencing), PTY input (keyboard, mouse, paste), bulk transfers (file upload/download, clipboard), flow control, acknowledgments]",
+            "sources": ["[PTY protocols]", "[Streaming message design]", "[Flow control mechanisms]"]
+          }
+        },
+        {
+          "id": "D4.2-Q3",
+          "question": "Metadata: session list, node info, capabilities",
+          "finding_template": {
+            "question": "Metadata message types",
+            "answer": "[FILL: ListSessions (filtering, pagination), NodeInfo (master node capabilities, version, supported features), ClientCapabilities (terminal size, color depth, features), DiscoveryInfo (for P2P), heartbeat/ping]",
+            "sources": ["[Metadata protocols]", "[Service discovery patterns]", "[Capability negotiation]"]
+          }
+        },
+        {
+          "id": "D4.2-Q4",
+          "question": "Control messages: ping, authentication, error reporting",
+          "finding_template": {
+            "question": "Control message types",
+            "answer": "[FILL: Ping/pong (keepalive, latency measurement), authentication messages (challenge-response, token), error reporting (error codes, context, user messages), notification messages (session events, system alerts)]",
+            "sources": ["[Protocol control messages]", "[Error handling patterns]", "[Authentication protocols]"]
+          }
+        }
+      ]
+    },
+    {
+      "target": "D5.1",
+      "name": "Transport Encryption",
+      "priority": 5,
+      "search_directive": "TLS 1.3 vs DTLS performance comparison AND self-signed certificates terminal application AND perfect forward secrecy implementation",
+      "research_questions": [
+        {
+          "id": "D5.1-Q1",
+          "question": "TLS 1.3 vs DTLS for different transports",
+          "finding_template": {
+            "question": "TLS 1.3 vs DTLS transport encryption",
+            "answer": "[FILL: TLS 1.3 for TCP/Unix sockets (latency, handshake), DTLS for UDP (P2P DataChannel, packet loss resilience), performance comparison (throughput, CPU), QUIC as alternative (combines benefits), Rust libraries (rustls, native-tls)]",
+            "sources": ["[TLS 1.3 RFC]", "[DTLS documentation]", "[Performance benchmarks]"]
+          }
+        },
+        {
+          "id": "D5.1-Q2",
+          "question": "Certificate management: self-signed, Let's Encrypt, custom CA",
+          "finding_template": {
+            "question": "Certificate management strategies",
+            "answer": "[FILL: Self-signed certificates (generation, trust pinning, rotation), Let's Encrypt (ACME protocol, automation, requirements), custom CA (for enterprise, trust distribution), certificate revocation, expiry handling]",
+            "sources": ["[Let's Encrypt docs]", "[Certificate management guides]", "[Terminal emulator TLS examples]"]
+          }
+        },
+        {
+          "id": "D5.1-Q3",
+          "question": "Perfect Forward Secrecy and cipher suite selection",
+          "finding_template": {
+            "question": "PFS and cipher suite configuration",
+            "answer": "[FILL: Perfect Forward Secrecy requirement (ephemeral keys), recommended cipher suites (TLS 1.3 defaults, AES-GCM, ChaCha20-Poly1305), cipher suite ordering, post-quantum readiness]",
+            "sources": ["[TLS security guides]", "[Cipher suite recommendations]", "[rustls configuration]"]
+          }
+        },
+        {
+          "id": "D5.1-Q4",
+          "question": "Performance impact of encryption on terminal streaming",
+          "finding_template": {
+            "question": "Encryption performance impact",
+            "answer": "[FILL: Latency overhead (handshake, per-packet), throughput impact (AES-NI hardware acceleration), CPU usage, battery impact on mobile, benchmarks for terminal workload (typical throughput 10-100KB/s)]",
+            "sources": ["[TLS performance studies]", "[Terminal encryption benchmarks]", "[Hardware acceleration guides]"]
+          }
+        }
+      ]
+    },
+    {
+      "target": "D5.2",
+      "name": "Authentication & Authorization",
+      "priority": 5,
+      "search_directive": "SSH key authentication vs token terminal AND device pairing UX mobile desktop AND multi-factor authentication terminal application",
+      "research_questions": [
+        {
+          "id": "D5.2-Q1",
+          "question": "Client authentication: SSH keys, tokens, certificates, passwords",
+          "finding_template": {
+            "question": "Client authentication mechanisms",
+            "answer": "[FILL: SSH key authentication (public key crypto, key management), bearer tokens (JWT, scope, expiry), client certificates (mTLS), passwords (hashing, storage, weakness), recommendation for terminal use case]",
+            "sources": ["[SSH authentication]", "[JWT best practices]", "[mTLS guides]"]
+          }
+        },
+        {
+          "id": "D5.2-Q2",
+          "question": "Multi-factor authentication options",
+          "finding_template": {
+            "question": "MFA for terminal access",
+            "answer": "[FILL: TOTP (time-based codes, QR setup), WebAuthn/FIDO2 (hardware keys, biometrics), SMS/email codes (UX, security trade-offs), MFA enrollment flow, recovery codes]",
+            "sources": ["[MFA implementation guides]", "[WebAuthn documentation]", "[Terminal MFA examples]"]
+          }
+        },
+        {
+          "id": "D5.2-Q3",
+          "question": "Session-level permissions: read-only, read-write, administrative",
+          "finding_template": {
+            "question": "Session-level permission model",
+            "answer": "[FILL: Permission levels (read-only viewer, read-write collaborator, admin full control), permission enforcement (server-side, client UI hints), dynamic permission changes, audit logging]",
+            "sources": ["[Authorization patterns]", "[tmux multi-user permissions]", "[RBAC design]"]
+          }
+        },
+        {
+          "id": "D5.2-Q4",
+          "question": "Device trust and pairing mechanisms",
+          "finding_template": {
+            "question": "Device pairing for terminal clients",
+            "answer": "[FILL: Pairing flows (QR code, PIN, NFC), device trust (first-use trust, certificate pinning), device management (list, revoke), out-of-band verification, UX for mobile-to-desktop pairing]",
+            "sources": ["[Device pairing patterns]", "[Secure pairing protocols]", "[Mobile app examples]"]
+          }
+        }
+      ]
+    },
+    {
+      "target": "D8.1",
+      "name": "awesome-cmux Repository Analysis (COMPLETION BOOST)",
+      "priority": 5,
+      "current_completeness": 0.70,
+      "target_completeness": 0.85,
+      "search_directive": "cmux GitHub repository activity 2026 AND terminal emulator code quality metrics AND Ghostty contributor statistics",
+      "missing_research_questions": [
+        {
+          "id": "D8.1-Q4",
+          "question": "Activity and maintenance status: last commit dates, contributor counts, issue response times",
+          "finding_template": {
+            "question": "Repository activity and maintenance metrics",
+            "answer": "[FILL: Ghostty last commit date, commit frequency (commits/month), contributor count, issue response median time, PR merge rate, maintenance status (active/maintained/stale)]",
+            "sources": ["[GitHub API: ghostty-org/ghostty]", "[GitHub API: manaflow-ai/cmux]", "[Repository insights]"]
+          }
+        },
+        {
+          "id": "D8.1-Q5",
+          "question": "Code quality indicators: test coverage, documentation quality, architecture assessments",
+          "finding_template": {
+            "question": "Code quality indicators",
+            "answer": "[FILL: Test coverage percentage (if measured), documentation completeness (README, wiki, API docs), codebase size (LOC), architecture clarity (modularity, separation of concerns), linting/formatting standards]",
+            "sources": ["[GitHub: test directories]", "[Documentation sites]", "[Code quality tools output]"]
+          }
+        }
+      ]
+    },
+    {
+      "target": "D8.3",
+      "name": "cmux Deep Dive (COMPLETION BOOST)",
+      "priority": 5,
+      "current_completeness": 0.80,
+      "target_completeness": 0.85,
+      "search_directive": "cmux performance benchmarks AND terminal multiplexer scalability limits AND tmux vs cmux resource usage",
+      "missing_research_questions": [
+        {
+          "id": "D8.3-Q5",
+          "question": "Performance characteristics and scalability limits: benchmarks for max sessions, clients/session, resource usage",
+          "finding_template": {
+            "question": "cmux performance and scalability",
+            "answer": "[FILL: Maximum sessions tested, clients per session limit, memory usage per session/client, CPU usage (idle, active), benchmarks vs tmux/screen, scalability bottlenecks identified]",
+            "sources": ["[GitHub issues: performance]", "[Benchmarking reports]", "[User reports on limits]"]
+          }
+        }
+      ]
+    }
+  ],
+  "execution_strategy": {
+    "parallel_tracks": 4,
+    "track_1": {
+      "name": "Foundational Decisions",
+      "targets": ["D1.1", "D7.1", "D1.3"],
+      "priority": 5,
+      "estimated_time_minutes": 8
+    },
+    "track_2": {
+      "name": "Networking Core",
+      "targets": ["D3.1", "D3.2", "D1.5"],
+      "priority": 5,
+      "estimated_time_minutes": 8
+    },
+    "track_3": {
+      "name": "Protocol & Security",
+      "targets": ["D4.1", "D4.2", "D5.1", "D5.2"],
+      "priority": 5,
+      "estimated_time_minutes": 10
+    },
+    "track_4": {
+      "name": "D8 Completions",
+      "targets": ["D8.1", "D8.3"],
+      "priority": 5,
+      "estimated_time_minutes": 5
+    },
+    "total_estimated_time_minutes": 15,
+    "post_execution": {
+      "update_matrix": true,
+      "recalculate_completeness": true,
+      "report_to_orchestrator": true
+    }
+  }
+}

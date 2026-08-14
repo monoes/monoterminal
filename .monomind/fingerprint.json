@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "root": "C:\\Users\\nokho\\Desktop\\projects\\monoterminal",
+  "totalFiles": 15,
+  "git": false,
+  "scannedAt": "2026-08-14T14:10:00.459Z",
+  "capabilities": {
+    "code": {
+      "confidence": 0,
+      "files": 0,
+      "signals": []
+    },
+    "documents": {
+      "confidence": 0.6666666666666666,
+      "files": 10,
+      "signals": [
+        ".md"
+      ]
+    },
+    "media": {
+      "confidence": 0,
+      "files": 0,
+      "signals": []
+    },
+    "data": {
+      "confidence": 0,
+      "files": 0,
+      "signals": []
+    },
+    "graph": {
+      "confidence": 0,
+      "files": 0,
+      "signals": []
+    },
+    "timeline": {
+      "confidence": 0,
+      "files": 0,
+      "signals": []
+    }
+  },
+  "filesByExtension": {
+    ".json": 5,
+    ".md": 10
+  }
+}

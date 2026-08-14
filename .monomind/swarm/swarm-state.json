@@ -1,0 +1,19 @@
+{
+  "swarms": {
+    "swarm-1786716607370-ad4bf4b43242": {
+      "swarmId": "swarm-1786716607370-ad4bf4b43242",
+      "topology": "hierarchical",
+      "maxAgents": 15,
+      "status": "running",
+      "agents": [],
+      "tasks": [],
+      "config": {
+        "strategy": "development",
+        "v1Mode": false
+      },
+      "createdAt": "2026-08-14T14:10:07.370Z",
+      "updatedAt": "2026-08-14T14:10:07.373Z"
+    }
+  },
+  "version": "3.0.0"
+}

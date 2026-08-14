@@ -1,0 +1,22 @@
+{
+  "timestamp": "2026-08-14T14:10:07.850Z",
+  "mode": "local",
+  "checks": {
+    "envFilesProtected": true,
+    "gitIgnoreExists": false,
+    "noHardcodedSecrets": null
+  },
+  "riskLevel": "medium",
+  "recommendations": [
+    "Add a .gitignore file"
+  ],
+  "findings": [
+    {
+      "id": "no-gitignore",
+      "severity": "medium",
+      "message": "No .gitignore file found — build artifacts, secrets, or local config may be committed accidentally",
+      "source": "checks.gitIgnoreExists"
+    }
+  ],
+  "note": "Install Claude Code CLI for AI-powered security analysis"
+}
