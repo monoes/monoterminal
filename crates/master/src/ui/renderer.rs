@@ -5,10 +5,15 @@
 
 use anyhow::{Context, Result};
 use std::sync::Arc;
+use tokio::sync::mpsc;
+use bytes::Bytes;
 use wgpu;
 use winit::window::Window;
 
 use super::performance::PerformanceMonitor;
+use super::terminal_grid::TerminalGrid;
+use super::vt_parser::VtParser;
+use super::glyph_cache::GlyphCache;
 
 /// Main renderer managing wgpu resources
 pub struct Renderer {
@@ -18,6 +23,17 @@ pub struct Renderer {
     queue: Option<wgpu::Queue>,
     surface: Option<wgpu::Surface<'static>>,
     surface_config: Option<wgpu::SurfaceConfiguration>,
+
+    // egui integration (TODO: Add egui_wgpu_renderer on Day 2)
+    // For now, we prepare the terminal rendering pipeline
+
+    // Terminal rendering state
+    terminal_grid: TerminalGrid,
+    vt_parser: VtParser,
+    glyph_cache: GlyphCache,
+
+    // Mock PTY output channel (Day 1 - will replace with RendererBridge on Day 2)
+    mock_pty_rx: Option<mpsc::Receiver<Bytes>>,
 }
 
 impl Renderer {
@@ -41,7 +57,21 @@ impl Renderer {
             queue: None,
             surface: None,
             surface_config: None,
+
+            // Terminal rendering state (80x24 default)
+            terminal_grid: TerminalGrid::new(24, 80),
+            vt_parser: VtParser::new(),
+            glyph_cache: GlyphCache::new(),
+
+            // Mock channel (Day 1)
+            mock_pty_rx: None,
         })
+    }
+
+    /// Set mock PTY channel for Day 1 testing
+    /// Will be replaced with RendererBridge on Day 2
+    pub fn set_mock_pty_channel(&mut self, rx: mpsc::Receiver<Bytes>) {
+        self.mock_pty_rx = Some(rx);
     }
 
     /// Initialize surface and request adapter/device
@@ -143,7 +173,12 @@ impl Renderer {
 
     /// Render a frame
     /// Target: 8ms GPU render + 5ms VSync = 13ms total
-    pub fn render(&self, _window: &Window, perf: &mut PerformanceMonitor) -> Result<()> {
+    pub fn render(&mut self, _window: &Window, perf: &mut PerformanceMonitor) -> Result<()> {
+        // Process PTY output FIRST (before borrowing self.surface immutably)
+        // This allows mutable borrow of self before immutable borrows begin
+        self.process_pty_output(perf)?;
+
+        // Now borrow surface, device, queue immutably
         let surface = self.surface.as_ref().context("Surface not initialized")?;
         let device = self.device.as_ref().context("Device not initialized")?;
         let queue = self.queue.as_ref().context("Queue not initialized")?;
@@ -183,9 +218,11 @@ impl Renderer {
 
             perf.mark("render_pass");
 
-            // TODO: Actual rendering will go here
-            // - egui UI
-            // - Terminal canvas (glyph rendering)
+            // TODO Day 2: Actual terminal rendering
+            // - Iterate dirty cells in terminal_grid
+            // - Lookup glyphs in glyph_cache
+            // - Draw to texture
+            // - egui UI overlay
         }
 
         // Submit commands
@@ -195,6 +232,26 @@ impl Renderer {
         // Present frame
         output.present();
         perf.mark("present");
+
+        Ok(())
+    }
+
+    /// Process PTY output and update terminal grid
+    /// Target: <2ms parse time per SRS §2.1.1
+    fn process_pty_output(&mut self, perf: &mut PerformanceMonitor) -> Result<()> {
+        // Try to receive PTY data (non-blocking)
+        if let Some(rx) = &mut self.mock_pty_rx {
+            while let Ok(data) = rx.try_recv() {
+                // Parse VT sequences
+                self.vt_parser.feed(&data);
+
+                // Apply changes to terminal grid
+                let changes = self.vt_parser.drain_changes();
+                self.terminal_grid.apply_changes(changes);
+
+                perf.mark("pty_parse");
+            }
+        }
 
         Ok(())
     }
