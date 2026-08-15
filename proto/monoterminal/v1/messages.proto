@@ -1,0 +1,203 @@
+syntax = "proto3";
+package monoterminal.v1;
+
+// ============================================================================
+// Core Envelope (from SRS §3.1.1)
+// ============================================================================
+
+message Envelope {
+  uint64 sequence_number = 1;
+  oneof message {
+    AttachRequest attach_request = 2;
+    AttachResponse attach_response = 3;
+    InputData input_data = 4;
+    OutputData output_data = 5;
+    ResizeRequest resize_request = 6;
+    DetachRequest detach_request = 7;
+    ErrorResponse error_response = 8;
+    DashboardRequest dashboard_request = 9;
+    DashboardResponse dashboard_response = 10;
+    HealthCheckRequest health_check_request = 11;
+    HealthCheckResponse health_check_response = 12;
+    UpgradeRequest upgrade_request = 13;
+    UpgradeResponse upgrade_response = 14;
+    DetectionRequest detection_request = 15;
+    DetectionResponse detection_response = 16;
+    MonitoringData monitoring_data = 17;
+  }
+}
+
+// ============================================================================
+// Request/Response Messages
+// ============================================================================
+
+message AttachRequest {
+  string session_id = 1;         // UUID or empty for new session
+  string auth_token = 2;         // JWT
+  uint32 rows = 3;               // Terminal dimensions
+  uint32 cols = 4;
+  uint64 last_seen_sequence = 5; // For late-joiner sync (0 = full scrollback)
+}
+
+message AttachResponse {
+  string session_id = 1;
+  SessionMetadata metadata = 2;
+  repeated Line scrollback = 3;  // Last 10k lines (Phase 1: in-memory only)
+}
+
+message InputData {
+  bytes data = 1;         // Raw keyboard input (UTF-8)
+  string auth_token = 2;  // JWT Bearer token (EdDSA signed, 15min TTL)
+}
+
+message OutputData {
+  bytes data = 1;          // PTY output chunk
+  uint64 sequence = 2;     // For ordering/dedup
+  CompressionType compression = 3;
+}
+
+message ResizeRequest {
+  uint32 rows = 1;
+  uint32 cols = 2;
+  string auth_token = 3;  // JWT Bearer token (EdDSA signed, 15min TTL)
+}
+
+message DetachRequest {
+  string session_id = 1;  // Session to detach from
+}
+
+message ErrorResponse {
+  ErrorCode code = 1;
+  string message = 2;
+}
+
+message DashboardRequest {
+  string command = 1;  // "status", "agents", "memory", etc.
+  map<string, string> params = 2;
+}
+
+message DashboardResponse {
+  string json_data = 1;  // JSON response from monomind CLI
+  ErrorCode error = 2;
+}
+
+// ============================================================================
+// Supporting Types
+// ============================================================================
+
+message SessionMetadata {
+  string shell_type = 1;      // "cmd.exe", "powershell.exe", etc.
+  string working_dir = 2;     // Current working directory
+  uint32 rows = 3;            // Current dimensions
+  uint32 cols = 4;
+  int64 created_at = 5;       // Unix timestamp (seconds)
+  int64 last_activity = 6;    // Unix timestamp (seconds)
+}
+
+message Line {
+  bytes data = 1;             // Line content (UTF-8, with ANSI codes)
+  uint64 line_number = 2;     // Sequential line number
+}
+
+// ============================================================================
+// Enums
+// ============================================================================
+
+enum CompressionType {
+  NONE = 0;
+  ZSTD = 1;
+}
+
+enum ErrorCode {
+  UNKNOWN = 0;
+  SESSION_NOT_FOUND = 1;
+  AUTH_FAILED = 2;
+  PERMISSION_DENIED = 3;
+  RATE_LIMIT_EXCEEDED = 4;
+  INVALID_REQUEST = 5;
+  SERVER_ERROR = 6;
+}
+
+// ============================================================================
+// Monomind Health Check & Upgrade (SRS §2.4.3)
+// ============================================================================
+
+message HealthCheckRequest {
+  string project_dir = 1;  // Project root to check (defaults to session cwd)
+}
+
+message HealthCheckResponse {
+  bool installed = 1;               // Whether monomind CLI is accessible
+  string version = 2;               // Installed CLI version
+  bool control_server_reachable = 3; // Control server status
+  bool broker_registered = 4;       // Broker registration status
+  int64 last_check_timestamp = 5;   // Unix timestamp (seconds)
+  repeated HealthIssue issues = 6;  // List of detected issues
+}
+
+message HealthIssue {
+  IssueSeverity severity = 1;
+  string message = 2;
+  string resolution = 3;  // Optional suggested resolution
+}
+
+enum IssueSeverity {
+  INFO = 0;
+  WARNING = 1;
+  ERROR = 2;
+}
+
+message UpgradeRequest {
+  string project_dir = 1;  // Project root (defaults to session cwd)
+  bool confirmed = 2;      // User confirmation (required per SRS §2.4.3)
+}
+
+message UpgradeResponse {
+  bool success = 1;
+  string old_version = 2;
+  string new_version = 3;
+  string output = 4;  // Full command output
+}
+
+// ============================================================================
+// Monomind Detection (SRS §2.4.1)
+// ============================================================================
+
+message DetectionRequest {
+  string project_dir = 1;  // Directory to check (typically PTY cwd)
+}
+
+message DetectionResponse {
+  bool found = 1;                      // Whether .monomind/ exists
+  string monomind_root = 2;            // Root directory containing .monomind/ (if found)
+  bool suggest_install = 3;            // Whether to show install suggestion
+  bool dismiss_file_exists = 4;        // Whether user has dismissed the suggestion
+  string banner_text = 5;              // MOTD-style banner to display (if suggest_install)
+}
+
+// ============================================================================
+// Monitoring Data Stream (SRS §2.4.2)
+// ============================================================================
+
+message MonitoringData {
+  // Org Status
+  string org_name = 1;
+  int32 active_agents = 2;
+  int32 running_tasks = 3;
+
+  // Knowledge Graph Stats
+  int64 kg_nodes = 4;
+  int64 kg_relationships = 5;
+  int64 kg_last_updated = 6;  // Unix timestamp (seconds)
+
+  // Run History (last 5 runs)
+  repeated RunSummary recent_runs = 7;
+}
+
+message RunSummary {
+  string run_id = 1;
+  string goal = 2;
+  int64 started_at = 3;   // Unix timestamp
+  int64 completed_at = 4; // 0 if still running
+  string status = 5;      // "running", "completed", "failed"
+}
