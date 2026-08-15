@@ -1,0 +1,72 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/master",
+    "crates/protocol",
+    "crates/monomind-bridge",
+]
+exclude = [
+    "web",  # Node.js/TypeScript frontend - not a Rust crate
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.70"
+authors = ["MONOTERMINAL Team"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/monoterminal/monoterminal"
+
+[workspace.dependencies]
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# Graphics & UI
+wgpu = "0.20"
+egui = "0.28"
+
+# Networking & Protocol
+rustls = "0.21"
+prost = "0.13"
+tonic = "0.12"
+
+# Cryptography & Auth
+ed25519-dalek = "2"
+jsonwebtoken = "9"
+
+# Storage
+rusqlite = { version = "0.31", features = ["bundled"] }
+
+# Compression
+zstd = "0.13"
+
+# Windows-specific
+windows = { version = "0.58", features = [
+    "Win32_System_Console",
+    "Win32_System_Threading",
+    "Win32_System_Pipes",
+    "Win32_System_IO",
+    "Win32_Foundation",
+    "Win32_Storage",
+    "Win32_Storage_FileSystem",
+    "Win32_Security",
+] }
+
+# Rate limiting & utilities
+tower = "0.4"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+anyhow = "1"
+thiserror = "1"
+
+# Build dependencies
+prost-build = "0.13"
+protoc-bin-vendored = "3.0"
+
+# Testing dependencies (dev-dependencies)
+proptest = "1.4"
+insta = "1.34"
+criterion = "0.5"
+tempfile = "3.8"
+tokio-tungstenite = "0.21"
+mockall = "0.12"
