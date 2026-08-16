@@ -1,0 +1,260 @@
+name: Test Suite
+
+on:
+  pull_request:
+    paths:
+      - 'crates/**'
+      - 'web/**'
+      - 'Cargo.*'
+      - '.github/workflows/test.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'crates/**'
+      - 'web/**'
+      - 'Cargo.*'
+  workflow_dispatch:  # Enable manual triggering for E2E testing
+
+env:
+  RUST_BACKTRACE: 1
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  test:
+    name: Test (${{ matrix.rust }} on ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2022]
+        rust: [stable, beta]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust ${{ matrix.rust }}
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.os }}-${{ matrix.rust }}
+
+      - name: Install protoc
+        run: |
+          choco install protoc -y
+          protoc --version
+
+      - name: Verify ConPTY availability
+        shell: pwsh
+        run: |
+          $version = [System.Environment]::OSVersion.Version
+          Write-Host "Windows version: $version"
+          if ($version.Build -lt 17763) {
+            Write-Error "ConPTY requires Windows 10 1809+ (build 17763+), got build $($version.Build)"
+            exit 1
+          }
+          Write-Host "✓ ConPTY available: Windows build $($version.Build)"
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Run clippy
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+      - name: Run unit tests
+        run: cargo test --workspace --lib --bins --all-features
+
+      - name: Run integration tests
+        run: cargo test --workspace --test '*' --all-features
+
+      - name: Run doctests
+        run: cargo test --workspace --doc --all-features
+
+  coverage:
+    name: Coverage Report
+    runs-on: windows-2022
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install protoc
+        run: |
+          choco install protoc -y
+          protoc --version
+
+      - name: Install tarpaulin
+        run: cargo install cargo-tarpaulin
+
+      - name: Generate coverage report
+        run: cargo tarpaulin --workspace --all-features --out Xml --timeout 300 --engine llvm
+
+      - name: Upload to codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./cobertura.xml
+          fail_ci_if_error: true
+          flags: phase1-windows
+          name: phase1-windows-coverage
+
+      - name: Archive coverage report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: |
+            coverage/
+            cobertura.xml
+
+  property-tests:
+    name: Property Tests (Fuzzing)
+    runs-on: windows-2022
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install protoc
+        run: |
+          choco install protoc -y
+          protoc --version
+
+      - name: Run proptest suite
+        run: cargo test --workspace --all-features --release -- --include-ignored proptest
+        env:
+          PROPTEST_CASES: 10000
+
+  web-client:
+    name: Web Client Tests
+    runs-on: windows-2022
+    defaults:
+      run:
+        working-directory: ./web
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run lint
+        run: npm run lint
+
+      - name: Run unit tests
+        run: npm run test:unit
+
+      - name: Build web client
+        run: npm run build
+
+  e2e-tests:
+    name: End-to-End Tests
+    runs-on: windows-2022
+    needs: [test, web-client]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install protoc
+        run: |
+          choco install protoc -y
+          protoc --version
+
+      - name: Install web dependencies
+        working-directory: ./web
+        run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: ./web
+        run: npx playwright install --with-deps chromium
+
+      - name: Build master daemon
+        run: cargo build --release -p monoterminal-master
+
+      - name: Build web client
+        working-directory: ./web
+        run: npm run build
+
+      - name: Run E2E tests
+        working-directory: ./web
+        run: npm run test:e2e
+        env:
+          MASTER_DAEMON_PATH: ../target/release/monoterminal-master.exe
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: playwright-report
+          path: web/playwright-report/
+          retention-days: 7
+
+  soak-test:
+    name: Soak Test (24-hour stability)
+    runs-on: windows-2022
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install protoc
+        run: |
+          choco install protoc -y
+          protoc --version
+
+      - name: Run 24-hour soak test
+        run: cargo test --release --test soak --all-features -- --ignored --nocapture
+        timeout-minutes: 1500  # 25 hours (24h test + buffer)
+        env:
+          RUST_LOG: info
+
+      - name: Upload soak test logs
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: soak-test-logs
+          path: soak-test-*.log
+          retention-days: 30
