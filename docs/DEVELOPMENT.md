@@ -161,6 +161,27 @@ cargo tarpaulin --out Html --all-features
 # Open tarpaulin-report.html in browser
 ```
 
+## Definition of Done (Rust Code)
+
+Before submitting a Pull Request for Rust code, verify:
+
+**Required Checks:**
+- [ ] `cargo check --all-features` - Compiles without errors
+- [ ] `cargo fmt --all -- --check` - Code formatting passes
+- [ ] `cargo clippy --all-features --all-targets -- -D warnings` - No linter warnings
+- [ ] `cargo test --all-features` - All tests pass
+- [ ] Added tests for new functionality or bug fixes
+- [ ] Updated relevant documentation
+
+**Coverage (Phase 1 Gate Criteria):**
+- [ ] New code maintains ≥70% test coverage (verify with `cargo tarpaulin`)
+
+**PR Checklist:**
+- [ ] PR description explains the "why" (not just "what")
+- [ ] Commit messages follow conventional commits format
+- [ ] No secrets, credentials, or .env files committed
+- [ ] All CI checks pass
+
 ## Repository Structure
 
 ```
