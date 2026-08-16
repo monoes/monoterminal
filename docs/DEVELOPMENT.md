@@ -30,6 +30,44 @@ cargo install cargo-flamegraph
 cargo install cargo-fuzz
 ```
 
+## Post-Installation Verification
+
+After installing all prerequisites, verify your environment in a **new terminal window**:
+
+**Required Checks:**
+```powershell
+# Rust toolchain
+rustc --version    # Should show: 1.97.1 or newer
+cargo --version    # Should show: 1.97.1 or newer
+
+# Node.js
+node --version     # Should show: v20.x or newer
+npm --version      # Should show: 10.x or newer
+
+# Protocol Buffers
+protoc --version   # Should show: libprotoc 3.25.x or newer
+```
+
+**Optional (Development Tools):**
+```powershell
+# Coverage measurement
+cargo install cargo-tarpaulin
+cargo tarpaulin --version  # Should show: 0.37.x or newer
+
+# Git (if not already installed)
+git --version      # Should show: 2.x or newer
+```
+
+**If any command fails:** Open a new terminal window or manually refresh PATH:
+```powershell
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+```
+
+**First Build Verification:**
+```powershell
+cargo build    # Should complete without errors (may take 5-10 min first time)
+```
+
 ## Quick Start
 
 ### 1. Clone and Setup
