@@ -168,6 +168,10 @@ pub struct PtyHandle {
     output_rx: mpsc::Receiver<Vec<u8>>,
     /// Input sender (Session Manager → ConPTY)
     input_tx: mpsc::Sender<Vec<u8>>,
+    /// Output reader task handle (aborted on drop to prevent leaks)
+    output_task: tokio::task::JoinHandle<()>,
+    /// Input writer task handle (aborted on drop to prevent leaks)
+    input_task: tokio::task::JoinHandle<()>,
 }
 
 impl PtyHandle {
@@ -234,7 +238,7 @@ impl PtyHandle {
         // SAFETY: output_read ownership transferred to AsyncHandle via into_raw()
         let output_read_async = unsafe { AsyncHandle::from_raw_handle(output_read.into_raw())? };
 
-        tokio::spawn(async move {
+        let output_task = tokio::spawn(async move {
             Self::output_reader_task(output_read_async, output_tx).await;
         });
 
@@ -242,7 +246,7 @@ impl PtyHandle {
         // SAFETY: input_write ownership transferred to AsyncHandle via into_raw()
         let input_write_async = unsafe { AsyncHandle::from_raw_handle(input_write.into_raw())? };
 
-        tokio::spawn(async move {
+        let input_task = tokio::spawn(async move {
             Self::input_writer_task(input_write_async, input_rx).await;
         });
 
@@ -254,6 +258,8 @@ impl PtyHandle {
             pid,
             output_rx,
             input_tx,
+            output_task,
+            input_task,
         })
     }
 
@@ -473,6 +479,18 @@ impl PtyHandle {
         }
 
         tracing::debug!("ConPTY input writer task exiting");
+    }
+}
+
+impl Drop for PtyHandle {
+    fn drop(&mut self) {
+        // Abort background I/O tasks immediately to prevent resource leaks
+        // This ensures Arc<Handle> and Arc<HpconHandle> are dropped promptly
+        // instead of waiting for natural EOF, preventing memory leaks in
+        // rapid session creation/termination scenarios (e.g., soak tests)
+        self.output_task.abort();
+        self.input_task.abort();
+        tracing::debug!("PtyHandle dropped: aborted I/O tasks for pid={}", self.pid);
     }
 }
 
