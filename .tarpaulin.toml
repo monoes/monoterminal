@@ -1,0 +1,51 @@
+# Tarpaulin Coverage Configuration for MONOTERMINAL
+# Phase 1: Windows + Web MVP
+
+[report]
+out = ["Html", "Xml", "Lcov"]
+
+[run]
+timeout = 300
+follow-exec = true
+post-test-delay = 1
+release = false
+count = true
+all-features = true
+
+[html]
+output-dir = "coverage/html"
+
+[xml]
+output-dir = "coverage"
+
+[coverage]
+# Exclude generated code and non-production code from coverage
+exclude = [
+    # Generated protobuf code
+    "crates/protocol/src/generated/*",
+
+    # Test code itself (shouldn't count toward coverage)
+    "*/tests/*",
+    "*/benches/*",
+
+    # Build scripts
+    "*/build.rs",
+
+    # PTY module: LLVM instrumentation incompatible with ConPTY process spawning
+    # See: docs/investigations/pty-tarpaulin-investigation.md
+    # PTY correctness validated via normal `cargo test` execution
+    "crates/master/src/pty/*",
+]
+
+# Minimum coverage percentage for CI to pass
+# Phase 1: 70%, Phase 2: 75%, Phase 3: 80%
+min-coverage = 70.0
+
+[windows]
+# Windows-specific configuration
+# Currently no exclusions needed
+exclude = []
+
+[instrumentation]
+# Use LLVM coverage for better accuracy
+engine = "llvm"

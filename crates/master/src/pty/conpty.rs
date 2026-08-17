@@ -90,6 +90,26 @@ impl AsyncPipeWriter {
     }
 }
 
+impl Drop for AsyncPipeReader {
+    fn drop(&mut self) {
+        // SAFETY: Close the pipe handle to prevent resource leaks
+        // CloseHandle is safe to call on valid HANDLEs and handles double-close gracefully
+        unsafe {
+            let _ = CloseHandle(self.handle);
+        }
+    }
+}
+
+impl Drop for AsyncPipeWriter {
+    fn drop(&mut self) {
+        // SAFETY: Close the pipe handle to prevent resource leaks
+        // CloseHandle is safe to call on valid HANDLEs and handles double-close gracefully
+        unsafe {
+            let _ = CloseHandle(self.handle);
+        }
+    }
+}
+
 impl tokio::io::AsyncRead for AsyncPipeReader {
     fn poll_read(
         self: std::pin::Pin<&mut Self>,
@@ -238,12 +258,10 @@ impl PtyBackend for ConPtyBackend {
         // Spawn child process attached to ConPTY
         let (process_handle, shell_pid) = spawn_process(&hpc, &config)?;
 
-        // Close ConPTY-owned pipe ends (ConPTY has taken ownership)
-        // SAFETY: These handles are valid and we're closing them after ConPTY took ownership
-        unsafe {
-            let _ = CloseHandle(input_read);
-            let _ = CloseHandle(output_write);
-        }
+        // NOTE: Do NOT manually close input_read/output_write!
+        // CreatePseudoConsole takes ownership of these handles.
+        // They will be automatically closed when ClosePseudoConsole is called in Drop.
+        // Manually closing them here causes double-close → heap corruption.
 
         // Wrap pipe handles in async readers/writers
         // SAFETY: We're wrapping valid pipe handles for async I/O
@@ -508,6 +526,7 @@ mod tests {
             tokio::time::sleep(Duration::from_millis(100)).await;
 
             match backend.read(&mut buf).await {
+                Ok(0) => break, // EOF
                 Ok(n) if n > 0 => {
                     let text = String::from_utf8_lossy(&buf[..n]);
                     tracing::debug!("Received: {}", text);
@@ -517,7 +536,7 @@ mod tests {
                         break;
                     }
                 }
-                Ok(0) => break, // EOF
+                Ok(_) => unreachable!("read returned non-zero but pattern didn't match"),
                 Err(e) => {
                     tracing::error!("Read error: {}", e);
                     break;
