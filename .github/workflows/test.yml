@@ -228,7 +228,7 @@ jobs:
   soak-test:
     name: Soak Test (24-hour stability)
     runs-on: windows-2022
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
 
     steps:
       - name: Checkout repository
@@ -246,15 +246,17 @@ jobs:
           protoc --version
 
       - name: Run 24-hour soak test
-        run: cargo test --release --test soak --all-features -- --ignored --nocapture
+        shell: pwsh
+        run: |
+          .\scripts\soak-monitor\run-full-soak-test.ps1 -DurationHours 24
         timeout-minutes: 1500  # 25 hours (24h test + buffer)
         env:
           RUST_LOG: info
 
-      - name: Upload soak test logs
+      - name: Upload soak test results
         if: always()
         uses: actions/upload-artifact@v3
         with:
-          name: soak-test-logs
-          path: soak-test-*.log
+          name: soak-test-results
+          path: scripts/soak-monitor/soak-results-*/**
           retention-days: 30
