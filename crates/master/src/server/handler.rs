@@ -29,6 +29,8 @@ pub async fn handle_websocket(
     ws_stream: WebSocketStream<TlsStream<TcpStream>>,
     peer_addr: SocketAddr,
     session_manager: Arc<SessionManager>,
+    auth_service: Arc<dyn AuthService>,
+    dev_mode: bool,
 ) -> Result<()> {
     let (mut ws_write, mut ws_read) = ws_stream.split();
     let mut sequence_number: u64 = 0;
@@ -72,6 +74,8 @@ pub async fn handle_websocket(
                                 match process_message(
                                     envelope,
                                     &session_manager,
+                                    auth_service.as_ref(),
+                                    dev_mode,
                                     client_id,
                                     &mut attached_session,
                                     &mut output_rx,
@@ -217,6 +221,8 @@ fn verify_auth_token(
 async fn process_message(
     envelope: Envelope,
     session_manager: &SessionManager,
+    auth_service: &dyn AuthService,
+    dev_mode: bool,
     client_id: ClientId,
     attached_session: &mut Option<SessionId>,
     output_rx: &mut Option<mpsc::Receiver<Vec<u8>>>,
@@ -226,9 +232,34 @@ async fn process_message(
         Some(envelope::Message::AttachRequest(req)) => {
             debug!("Processing AttachRequest from {}: session_id={}", peer_addr, req.session_id);
 
-            // Parse session_id from string
-            let session_id = Uuid::parse_str(&req.session_id)
-                .map_err(|e| ServerError::InvalidMessage(format!("Invalid session_id UUID: {}", e)))?;
+            // SRS §3.2.2: JWT authentication verification
+            if !dev_mode {
+                // Production mode: verify JWT token
+                if req.auth_token.is_empty() {
+                    warn!("AttachRequest from {} missing auth_token", peer_addr);
+                    return Err(ServerError::AuthFailed("Missing authentication token".to_string()));
+                }
+
+                let _claims = verify_auth_token(auth_service, &req.auth_token)?;
+                debug!("JWT verified for AttachRequest from {}", peer_addr);
+            } else {
+                // Dev mode: bypass auth (for E2E testing only)
+                warn!("⚠️  DEV MODE: Skipping JWT verification for AttachRequest from {}", peer_addr);
+            }
+
+            // Parse or create session_id (protocol: "UUID or empty for new session")
+            let session_id = if req.session_id.is_empty() {
+                // Create new session with requested dimensions
+                info!("Creating new session for {} ({}x{})", peer_addr, req.rows, req.cols);
+                session_manager
+                    .create_session(None, req.rows as u16, req.cols as u16)
+                    .await
+                    .map_err(|e| ServerError::InvalidMessage(format!("Failed to create session: {}", e)))?
+            } else {
+                // Attach to existing session
+                Uuid::parse_str(&req.session_id)
+                    .map_err(|e| ServerError::InvalidMessage(format!("Invalid session_id UUID: {}", e)))?
+            };
 
             // Create output channel for this client
             let (output_tx, rx) = mpsc::channel(256); // 256 messages ≈ 1MB buffer per SRS §3.1.4
@@ -291,6 +322,18 @@ async fn process_message(
         Some(envelope::Message::InputData(input)) => {
             debug!("Processing InputData from {}: {} bytes", peer_addr, input.data.len());
 
+            // SRS §3.2.2: JWT authentication verification
+            if !dev_mode {
+                // Production mode: verify JWT token
+                if input.auth_token.is_empty() {
+                    warn!("InputData from {} missing auth_token", peer_addr);
+                    return Err(ServerError::AuthFailed("Missing authentication token".to_string()));
+                }
+
+                let _claims = verify_auth_token(auth_service, &input.auth_token)?;
+                debug!("JWT verified for InputData from {}", peer_addr);
+            }
+
             // Ensure client is attached
             let session_id = attached_session
                 .ok_or_else(|| ServerError::InvalidMessage("Not attached to session".to_string()))?;
@@ -306,6 +349,18 @@ async fn process_message(
         }
         Some(envelope::Message::ResizeRequest(resize)) => {
             debug!("Processing ResizeRequest from {}: {}x{}", peer_addr, resize.rows, resize.cols);
+
+            // SRS §3.2.2: JWT authentication verification
+            if !dev_mode {
+                // Production mode: verify JWT token
+                if resize.auth_token.is_empty() {
+                    warn!("ResizeRequest from {} missing auth_token", peer_addr);
+                    return Err(ServerError::AuthFailed("Missing authentication token".to_string()));
+                }
+
+                let _claims = verify_auth_token(auth_service, &resize.auth_token)?;
+                debug!("JWT verified for ResizeRequest from {}", peer_addr);
+            }
 
             // Ensure client is attached
             let session_id = attached_session

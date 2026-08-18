@@ -10,14 +10,14 @@ use uuid::Uuid;
 use bytes::Bytes;
 use prost::Message;
 
-use super::{Session, SessionId, SessionState, SessionSnapshot, SessionError, Result};
+use super::{Session, SessionId, SessionState, SessionSnapshot, SessionError, Result, SessionContainer};
 use crate::pty::{PtyBackend, PtyConfig};
 
 /// Central session manager
 /// Phase 1: Single active session (simplified from SRS multi-session design)
 pub struct SessionManager {
-    /// Active sessions (Phase 1: expect only 1, Phase 2: N sessions)
-    sessions: Arc<RwLock<HashMap<SessionId, Arc<RwLock<Session>>>>>,
+    /// Active sessions (Option A: SessionContainer with separated locks)
+    sessions: Arc<RwLock<HashMap<SessionId, SessionContainer>>>,
 
     /// Default shell (pwsh.exe if available, else cmd.exe per architecture)
     default_shell: String,
@@ -81,27 +81,31 @@ impl SessionManager {
         let pty = crate::pty::ConPtyBackend::create(config).await
             .map_err(|e| SessionError::PtyCreateFailed(e.to_string()))?;
 
-        // Create session
-        let session = Session::new(
+        // Create SessionContainer WITHOUT AbortOnDrop (test mode)
+        let container = SessionContainer::new(
             id,
             Box::new(pty),
             self.default_shell.clone(),
-            working_dir,
+            working_dir.clone(),
             rows,
             cols,
         );
 
-        let session = Arc::new(RwLock::new(session));
+        // Store container in HashMap FIRST
+        self.sessions.write().await.insert(id, container.clone());
+        tracing::info!("LIFECYCLE: SessionContainer stored in HashMap for session {}", id);
 
-        // Store session
-        self.sessions.write().await.insert(id, session.clone());
+        // NOW spawn tasks WITHOUT AbortOnDrop tracking
+        tracing::info!("LIFECYCLE: About to spawn pty_output_loop for session {}", id);
+        tokio::spawn(Self::pty_output_loop(
+            container.session.clone(),
+            container.pty.clone(),
+        ));
+        tracing::info!("LIFECYCLE: pty_output_loop spawned (NO AbortOnDrop) for session {}", id);
 
-        // Spawn output fan-out task
-        tokio::spawn(Self::pty_output_loop(session.clone()));
-
-        // Spawn monomind detection task (SRS §2.4.1)
+        // Spawn monomind detection task
         tokio::spawn({
-            let session_arc = session.clone();
+            let session_arc = container.session.clone();
             async move {
                 use monoterminal_monomind_bridge::detect_monomind;
 
@@ -126,7 +130,7 @@ impl SessionManager {
             }
         });
 
-        tracing::info!("Session {} created successfully", id);
+        tracing::info!("Session {} created successfully (NO AbortOnDrop test)", id);
 
         Ok(id)
     }
@@ -140,11 +144,11 @@ impl SessionManager {
         output_tx: mpsc::Sender<Vec<u8>>,
     ) -> Result<SessionSnapshot> {
         let sessions = self.sessions.read().await;
-        let session = sessions
+        let container = sessions
             .get(&session_id)
             .ok_or(SessionError::NotFound(session_id))?;
 
-        let mut session = session.write().await;
+        let mut session = container.session.write().await;
 
         // Add client to session with output channel
         session.attach_client(client_id, output_tx);
@@ -162,11 +166,11 @@ impl SessionManager {
         client_id: super::session::ClientId,
     ) -> Result<()> {
         let sessions = self.sessions.read().await;
-        let session = sessions
+        let container = sessions
             .get(&session_id)
             .ok_or(SessionError::NotFound(session_id))?;
 
-        let mut session = session.write().await;
+        let mut session = container.session.write().await;
         session.detach_client(client_id);
 
         tracing::info!("Client {} detached from session {}", client_id, session_id);
@@ -180,15 +184,30 @@ impl SessionManager {
         session_id: SessionId,
         data: &[u8],
     ) -> Result<()> {
+        tracing::info!("📝 WRITE: send_input ENTRY - session {}, {} bytes", session_id, data.len());
+
         let sessions = self.sessions.read().await;
-        let session = sessions
+        let container = sessions
             .get(&session_id)
             .ok_or(SessionError::NotFound(session_id))?;
 
-        let mut session = session.write().await;
+        // Write to PTY (Option A: Lock PTY independently)
+        {
+            tracing::info!("📝 WRITE: Acquiring PTY lock");
+            let mut pty_guard = container.pty.lock().await;
+            tracing::info!("📝 WRITE: PTY lock acquired");
 
-        // Write to PTY
-        session.pty.write(data).await?;
+            if let Some(ref mut pty) = pty_guard.as_mut() {
+                tracing::info!("📝 WRITE: Calling pty.write({} bytes)", data.len());
+                pty.write(data).await?;
+                tracing::info!("📝 WRITE: pty.write() SUCCESS");
+            } else {
+                tracing::error!("📝 WRITE: PTY is None!");
+            }
+        }
+
+        // Update session activity
+        let mut session = container.session.write().await;
         session.touch();
 
         Ok(())
@@ -206,14 +225,20 @@ impl SessionManager {
         }
 
         let sessions = self.sessions.read().await;
-        let session = sessions
+        let container = sessions
             .get(&session_id)
             .ok_or(SessionError::NotFound(session_id))?;
 
-        let mut session = session.write().await;
+        // Resize PTY (Option A: Lock PTY independently)
+        {
+            let mut pty_guard = container.pty.lock().await;
+            if let Some(ref mut pty) = pty_guard.as_mut() {
+                pty.resize(rows, cols)?;
+            }
+        }
 
-        // Resize PTY
-        session.pty.resize(rows, cols)?;
+        // Update session dimensions
+        let mut session = container.session.write().await;
         session.dimensions.rows = rows;
         session.dimensions.cols = cols;
         session.touch();
@@ -226,18 +251,15 @@ impl SessionManager {
     /// Kill session and underlying PTY
     pub async fn kill_session(&self, session_id: SessionId) -> Result<()> {
         let mut sessions = self.sessions.write().await;
-        let session_arc = sessions
+        let container = sessions
             .remove(&session_id)
             .ok_or(SessionError::NotFound(session_id))?;
 
         tracing::info!("Session {} terminating", session_id);
 
-        // Terminate the PTY via the Session's terminate_pty method
-        {
-            let mut session = session_arc.write().await;
-            session.terminate_pty().await
-                .map_err(|e| SessionError::IoError(e))?;
-        }
+        // Terminate the PTY via SessionContainer's terminate_pty method
+        container.terminate_pty().await
+            .map_err(|e| SessionError::IoError(e))?;
 
         // Give the output loop time to detect termination and clean up
         tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
@@ -249,40 +271,98 @@ impl SessionManager {
 
     /// PTY output fan-out loop with flush triggers
     /// Per SRS §3.1.4: Read from PTY with 100ms timeout, newline detection, 4KB buffer trigger
-    async fn pty_output_loop(session: Arc<RwLock<Session>>) {
+    /// Option A: Takes session and PTY as separate Arc's to prevent attach_client deadlock
+    async fn pty_output_loop(
+        session: Arc<RwLock<Session>>,
+        pty: Arc<tokio::sync::Mutex<Option<Box<dyn crate::pty::PtyBackend>>>>,
+    ) {
+        // ========== DIAGNOSTIC: Check if this task is even running ==========
+        tracing::info!("🔴🔴🔴 PTY OUTPUT LOOP: ALIVE AND POLLING 🔴🔴🔴");
+        // EXTREME logging - literally between EVERY statement
+        tracing::info!("PTY loop: ENTRY");
+
+        tracing::info!("PTY loop: About to acquire session read lock");
+        let session_id = {
+            let s = session.read().await;
+            tracing::info!("PTY loop: Read lock acquired");
+            let id = s.id;
+            tracing::info!("PTY loop: Got session id: {}", id);
+            id
+        };
+        tracing::info!("PTY loop: Read lock released, session_id = {}", session_id);
+
+        tracing::info!("PTY output loop started for session {}", session_id);
+
+        tracing::info!("PTY loop: About to log trace message");
+        // DISABLED: tracing::trace!("PTY output loop: about to allocate buffer (session {})", session_id);
+        tracing::info!("PTY loop: Trace message logged");
+
+        tracing::info!("PTY loop: About to allocate buffer");
         let mut buffer = vec![0u8; 4096]; // 4KB buffer per SRS §5.1.1
+        tracing::info!("PTY loop: Buffer allocated");
+        // COMMENTED OUT - Testing if trace!() kills task:
+        // // DISABLED: tracing::trace!("PTY output loop: buffer allocated (session {})", session_id);
+
+        tracing::info!("PTY loop: About to initialize pending_data");
         let mut pending_data = Vec::new();
+        tracing::info!("PTY loop: pending_data initialized");
+
+        tracing::info!("PTY loop: About to get Instant::now()");
         let mut last_flush = tokio::time::Instant::now();
+        tracing::info!("PTY loop: last_flush initialized");
+
+        tracing::info!("PTY loop: About to initialize sequence_number");
         let mut sequence_number: u64 = 0;
+        tracing::info!("PTY loop: sequence_number initialized");
+
+        tracing::info!("PTY loop: About to enter main loop");
 
         loop {
+            tracing::info!("PTY loop: Loop iteration START");
+
             // Check if session is terminated
+            tracing::info!("PTY loop: About to acquire session read lock");
             {
                 let s = session.read().await;
+                tracing::info!("PTY loop: Session read lock acquired, state={:?}", s.state);
                 if s.state == SessionState::Terminated {
                     tracing::debug!("Session terminated, exiting output loop");
                     break;
                 }
             }
+            tracing::info!("PTY loop: Session state check passed");
 
-            // Read from PTY with timeout
+            tracing::info!("PTY loop: About to attempt PTY read");
+
+            // Read from PTY with timeout (Option A: Lock PTY independently)
+            tracing::info!("PTY loop: Creating timeout for PTY read");
             let read_result = tokio::time::timeout(
                 tokio::time::Duration::from_millis(100),
                 async {
-                    let mut s = session.write().await;
-                    s.pty.read(&mut buffer).await
+                    tracing::info!("PTY loop: Inside timeout async block, acquiring PTY lock");
+                    let mut pty_guard = pty.lock().await;
+                    tracing::info!("PTY loop: PTY lock acquired");
+                    if let Some(ref mut pty_backend) = pty_guard.as_mut() {
+                        tracing::info!("PTY loop: Calling pty.read()");
+                        pty_backend.read(&mut buffer).await
+                    } else {
+                        tracing::warn!("PTY output loop: PTY backend is None (session {})", session_id);
+                        Ok(0) // PTY terminated
+                    }
                 }
             ).await;
+            tracing::info!("PTY loop: Timeout completed, read_result obtained");
 
             match read_result {
                 Ok(Ok(0)) => {
                     // EOF - PTY terminated
-                    tracing::info!("PTY EOF detected, session terminating");
+                    tracing::info!("PTY EOF detected (session {}), session terminating", session_id);
 
                     // Flush any pending data
                     if !pending_data.is_empty() {
+                        tracing::debug!("PTY EOF: flushing {} bytes of pending data (session {})", pending_data.len(), session_id);
                         let mut s = session.write().await;
-                        s.scrollback.push_line(pending_data.clone());
+                        s.scrollback.push_line(super::session::Line::from_bytes(&pending_data));
                         Self::broadcast_output(&mut s, &pending_data, sequence_number).await;
                         pending_data.clear();
                     }
@@ -290,6 +370,8 @@ impl SessionManager {
                 }
                 Ok(Ok(n)) => {
                     // Data received (n >= 1)
+                    tracing::debug!("PTY read: received {} bytes (session {})", n, session_id);
+                    // DISABLED: tracing::trace!("PTY read: data = {:?} (session {})", &buffer[..n], session_id);
                     pending_data.extend_from_slice(&buffer[..n]);
 
                     // Flush triggers (SRS §3.1.4):
@@ -300,10 +382,13 @@ impl SessionManager {
                         || pending_data.contains(&b'\n')
                         || last_flush.elapsed() >= tokio::time::Duration::from_millis(100);
 
+                    // DISABLED: tracing::trace!("PTY read: should_flush={} (pending={} bytes, session {})", should_flush, pending_data.len(), session_id);
+
                     if should_flush {
+                        tracing::debug!("PTY read: flushing {} bytes to clients (session {})", pending_data.len(), session_id);
                         // Add to scrollback
                         let mut s = session.write().await;
-                        s.scrollback.push_line(pending_data.clone());
+                        s.scrollback.push_line(super::session::Line::from_bytes(&pending_data));
                         s.touch();
 
                         // Fan-out to clients via Arc<Bytes> (SRS §3.1.4 zero-copy pattern)
@@ -315,14 +400,16 @@ impl SessionManager {
                     }
                 }
                 Ok(Err(e)) => {
-                    tracing::error!("PTY read error: {}", e);
+                    tracing::error!("PTY read error (session {}): {}", session_id, e);
                     break;
                 }
                 Err(_) => {
                     // Timeout - flush pending data if any
+                    // DISABLED: tracing::trace!("PTY read timeout (session {}), pending {} bytes", session_id, pending_data.len());
                     if !pending_data.is_empty() {
+                        tracing::debug!("PTY timeout: flushing {} bytes (session {})", pending_data.len(), session_id);
                         let mut s = session.write().await;
-                        s.scrollback.push_line(pending_data.clone());
+                        s.scrollback.push_line(super::session::Line::from_bytes(&pending_data));
                         Self::broadcast_output(&mut s, &pending_data, sequence_number).await;
                         sequence_number += 1;
                         pending_data.clear();
@@ -343,6 +430,9 @@ impl SessionManager {
     async fn broadcast_output(session: &mut Session, data: &[u8], sequence_number: u64) {
         use monoterminal_protocol::{Envelope, envelope, OutputData};
 
+        tracing::debug!("broadcast_output: broadcasting {} bytes to {} clients (session {}, seq {})",
+            data.len(), session.clients.len(), session.id, sequence_number);
+
         // Encode as Protocol OutputData envelope
         let envelope = Envelope {
             sequence_number,
@@ -355,9 +445,11 @@ impl SessionManager {
 
         let mut encoded = Vec::with_capacity(envelope.encoded_len());
         if let Err(e) = envelope.encode(&mut encoded) {
-            tracing::error!("Failed to encode OutputData: {}", e);
+            tracing::error!("Failed to encode OutputData (session {}): {}", session.id, e);
             return;
         }
+
+        // DISABLED: tracing::trace!("broadcast_output: encoded {} bytes (session {})", encoded.len(), session.id);
 
         // Use Arc for zero-copy broadcast
         let encoded = Arc::new(encoded);
@@ -372,11 +464,11 @@ impl SessionManager {
             // Non-blocking send (SRS §3.1.4: detect lagging clients)
             match tx.try_send(data_clone) {
                 Ok(_) => {
-                    // Success
+                    // DISABLED: tracing::trace!("broadcast_output: sent to client {} (session {})", client_id, session.id);
                 }
                 Err(mpsc::error::TrySendError::Full(_)) => {
                     // Client buffer full - lagging
-                    tracing::warn!("Client {} buffer full (lagging), data dropped", client_id);
+                    tracing::warn!("Client {} buffer full (lagging), data dropped (session {})", client_id, session.id);
                     // TODO: Track lagging duration, disconnect if >30s (Phase 1.5)
                 }
                 Err(mpsc::error::TrySendError::Closed(_)) => {
