@@ -72,6 +72,10 @@ chrono = "0.4"
 # Font rendering (Phase 1: fontdue for Windows, Phase 3: HarfBuzz for Linux/macOS)
 fontdue = "0.9"
 
+# Internal workspace crates
+monoterminal-protocol = { path = "../protocol" }
+monoterminal-monomind-bridge = { path = "../monomind-bridge" }
+
 # Windows-specific (ConPTY)
 [target.'cfg(windows)'.dependencies]
 windows = { workspace = true }
@@ -79,10 +83,6 @@ windows = { workspace = true }
 # Unix-specific (Phase 3: Unix PTY support)
 [target.'cfg(unix)'.dependencies]
 portable-pty = "0.8"
-
-# Internal workspace crates
-monoterminal-protocol = { path = "../protocol" }
-monoterminal-monomind-bridge = { path = "../monomind-bridge" }
 
 [features]
 test-support = []
