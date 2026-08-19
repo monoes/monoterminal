@@ -168,7 +168,7 @@ impl DirectoryClient {
 
             // Exponential backoff
             tokio::time::sleep(backoff).await;
-            backoff = backoff * 2;
+            backoff *= 2;
         }
     }
 

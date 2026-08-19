@@ -123,7 +123,7 @@ async fn test_get_dashboard_data_nonexistent_directory() {
     assert!(result.is_ok());
     if let Ok(data) = result {
         // Data should be valid even if commands failed
-        assert!(!data.org_status.running || data.org_status.status_message.is_empty() == false);
+        assert!(!data.org_status.running || !data.org_status.status_message.is_empty());
     }
 }
 
@@ -290,7 +290,7 @@ async fn test_concurrent_dashboard_queries() {
     for _ in 0..5 {
         let project = Arc::clone(&project);
         let handle = tokio::spawn(async move {
-            let _result = get_dashboard_data(&*project).await;
+            let _result = get_dashboard_data(&project).await;
             // Result should be Ok, we just verify it doesn't panic
         });
         handles.push(handle);

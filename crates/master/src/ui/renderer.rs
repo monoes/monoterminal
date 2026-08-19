@@ -4,7 +4,6 @@
 //! Target: 8ms GPU render time (per SRS Â§2.1.1)
 
 use anyhow::{Context, Result};
-use bytes::Bytes;
 use std::sync::Arc;
 use wgpu;
 use winit::window::Window;
@@ -552,7 +551,7 @@ impl Renderer {
             .surface_config
             .as_ref()
             .context("Surface not configured")?;
-        let (rows, cols) = self.terminal_grid.dimensions();
+        let (_rows, _cols) = self.terminal_grid.dimensions();
 
         // Calculate NDC (Normalized Device Coordinates) scale
         // NDC: -1.0 (left/bottom) to +1.0 (right/top)

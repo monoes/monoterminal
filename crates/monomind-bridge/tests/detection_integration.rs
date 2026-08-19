@@ -327,7 +327,7 @@ fn test_concurrent_detection_calls() {
     for _ in 0..10 {
         let project = Arc::clone(&project);
         let handle = thread::spawn(move || {
-            let result = detect_monomind(&*project);
+            let result = detect_monomind(&project);
             assert!(result.found);
         });
         handles.push(handle);

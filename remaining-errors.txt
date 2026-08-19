@@ -1,0 +1,463 @@
+﻿cargo :     Checking monoterminal-master v0.1.0 (C:\Users\nokho\Desktop\projects\monoterminal\crates\master)
+At line:1 char:302
++ ... tch {} } }; cargo clippy --workspace --all-targets --all-features --  ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (    Checking mo...\crates\master):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+error: unexpected `cfg` condition value: `test_support`
+  --> crates\master\src\ui\mod.rs:26:17
+   |
+26 | #[cfg(any(test, feature = "test_support"))]
+   |                 ^^^^^^^^^^--------------
+   |                           |
+   |                           help: there is a expected value with a similar name: `"test-support"`
+   |
+   = note: expected values for `feature` are: `test-support`
+   = help: consider adding `test_support` as a feature in `Cargo.toml`
+   = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about 
+checking conditional configuration
+   = note: `-D unexpected-cfgs` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(unexpected_cfgs)]`
+
+error[E0433]: cannot find type `Duration` in this scope
+   --> crates\master\src\ui\performance.rs:153:23
+    |
+153 |         thread::sleep(Duration::from_millis(1));
+    |                       ^^^^^^^^ use of undeclared type `Duration`
+    |
+    = note: struct `crate::webrtc::ice::tests::Duration` exists but is inaccessible
+help: consider importing this struct
+    |
+122 +     use std::time::Duration;
+    |
+
+error[E0433]: cannot find type `Duration` in this scope
+   --> crates\master\src\ui\performance.rs:165:23
+    |
+165 |         thread::sleep(Duration::from_millis(10));
+    |                       ^^^^^^^^ use of undeclared type `Duration`
+    |
+    = note: struct `crate::webrtc::ice::tests::Duration` exists but is inaccessible
+help: consider importing this struct
+    |
+122 +     use std::time::Duration;
+    |
+
+error[E0433]: cannot find type `Duration` in this scope
+   --> crates\master\src\ui\performance.rs:181:27
+    |
+181 |             thread::sleep(Duration::from_millis(16));
+    |                           ^^^^^^^^ use of undeclared type `Duration`
+    |
+    = note: struct `crate::webrtc::ice::tests::Duration` exists but is inaccessible
+help: consider importing this struct
+    |
+122 +     use std::time::Duration;
+    |
+
+error[E0433]: cannot find type `Duration` in this scope
+   --> crates\master\src\ui\performance.rs:203:27
+    |
+203 |             thread::sleep(Duration::from_millis(16));
+    |                           ^^^^^^^^ use of undeclared type `Duration`
+    |
+    = note: struct `crate::webrtc::ice::tests::Duration` exists but is inaccessible
+help: consider importing this struct
+    |
+122 +     use std::time::Duration;
+    |
+
+error[E0433]: cannot find type `Duration` in this scope
+   --> crates\master\src\ui\performance.rs:225:27
+    |
+225 |             thread::sleep(Duration::from_millis(1));
+    |                           ^^^^^^^^ use of undeclared type `Duration`
+    |
+    = note: struct `crate::webrtc::ice::tests::Duration` exists but is inaccessible
+help: consider importing this struct
+    |
+122 +     use std::time::Duration;
+    |
+
+error[E0433]: cannot find type `Duration` in this scope
+   --> crates\master\src\ui\performance.rs:239:23
+    |
+239 |         thread::sleep(Duration::from_millis(2));
+    |                       ^^^^^^^^ use of undeclared type `Duration`
+    |
+    = note: struct `crate::webrtc::ice::tests::Duration` exists but is inaccessible
+help: consider importing this struct
+    |
+122 +     use std::time::Duration;
+    |
+
+error[E0433]: cannot find type `Duration` in this scope
+   --> crates\master\src\ui\performance.rs:267:23
+    |
+267 |         thread::sleep(Duration::from_millis(50));
+    |                       ^^^^^^^^ use of undeclared type `Duration`
+    |
+    = note: struct `crate::webrtc::ice::tests::Duration` exists but is inaccessible
+help: consider importing this struct
+    |
+122 +     use std::time::Duration;
+    |
+
+error[E0433]: cannot find type `Duration` in this scope
+   --> crates\master\src\ui\performance.rs:274:27
+    |
+274 |             thread::sleep(Duration::from_millis(10));
+    |                           ^^^^^^^^ use of undeclared type `Duration`
+    |
+    = note: struct `crate::webrtc::ice::tests::Duration` exists but is inaccessible
+help: consider importing this struct
+    |
+122 +     use std::time::Duration;
+    |
+
+error: unused import: `Ordering`
+   --> crates\master\src\session\tests.rs:335:45
+    |
+335 |         use std::sync::atomic::{AtomicBool, Ordering};
+    |                                             ^^^^^^^^
+    |
+    = note: `-D unused-imports` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(unused_imports)]`
+
+error: unused import: `mpsc`
+   --> crates\master\src\session\tests.rs:337:27
+    |
+337 |         use tokio::sync::{mpsc, Mutex, RwLock};
+    |                           ^^^^
+
+error: unused import: `CellStyle`
+  --> crates\master\src\ui\tests.rs:12:21
+   |
+12 |     use vt_parser::{CellStyle, GridChange, VtParser};
+   |                     ^^^^^^^^^
+
+error: unused import: `std::time::Duration`
+ --> crates\master\src\webrtc\tests.rs:8:9
+  |
+8 |     use std::time::Duration;
+  |         ^^^^^^^^^^^^^^^^^^^
+
+error: field `port` is never read
+  --> crates\master\src\discovery\mdns.rs:59:5
+   |
+56 | pub struct MdnsDiscovery {
+   |            ------------- field in this struct
+...
+59 |     port: u16,
+   |     ^^^^
+   |
+   = note: `-D dead-code` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[expect(dead_code)]` or `#[allow(dead_code)]`
+
+error: field `health_tx` is never read
+  --> crates\master\src\server\mod.rs:69:5
+   |
+63 | pub struct Server {
+   |            ------ field in this struct
+...
+69 |     health_tx: broadcast::Sender<HealthStatus>,
+   |     ^^^^^^^^^
+
+error: field `candidates_tx` is never read
+  --> crates\master\src\webrtc\ice.rs:60:5
+   |
+58 | pub struct IceCandidateGatherer {
+   |            -------------------- field in this struct
+59 |     config: Arc<WebRtcConfig>,
+60 |     candidates_tx: mpsc::Sender<IceCandidate>,
+   |     ^^^^^^^^^^^^^
+
+error: fields `config` and `ice_candidates_tx` are never read
+  --> crates\master\src\webrtc\peer_connection.rs:68:5
+   |
+60 | pub struct PeerConnection {
+   |            -------------- fields in this struct
+...
+68 |     config: Arc<WebRtcConfig>,
+   |     ^^^^^^
+...
+74 |     ice_candidates_tx: mpsc::Sender<IceCandidate>,
+   |     ^^^^^^^^^^^^^^^^^
+
+error: method `from_str` can be confused for the standard trait method `std::str::FromStr::from_str`
+  --> crates\master\src\auth\rbac.rs:20:5
+   |
+20 | /     pub fn from_str(s: &str) -> Result<Self> {
+21 | |         match s.to_lowercase().as_str() {
+22 | |             "owner" => Ok(Permission::Owner),
+23 | |             "editor" | "readwrite" | "rw" => Ok(Permission::ReadWrite),
+...  |
+27 | |     }
+   | |_____^
+   |
+   = help: consider implementing the trait `std::str::FromStr` or choosing a less ambiguous method name
+   = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#should_implement_trait
+   = note: `-D clippy::should-implement-trait` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::should_implement_trait)]`
+
+error: unused variable: `i`
+   --> crates\master\src\persistence\audit.rs:240:13
+    |
+240 |         for i in 0..3 {
+    |             ^ help: if this is intentional, prefix it with an underscore: `_i`
+    |
+    = note: `-D unused-variables` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(unused_variables)]`
+
+error: variable does not need to be mutable
+   --> crates\master\src\persistence\migrations.rs:128:13
+    |
+128 |         let mut conn = Connection::open_in_memory().unwrap();
+    |             ----^^^^
+    |             |
+    |             help: remove this `mut`
+    |
+    = note: `-D unused-mut` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(unused_mut)]`
+
+error: variable does not need to be mutable
+  --> crates\master\src\persistence\schema.rs:51:13
+   |
+51 |         let mut conn = Connection::open_in_memory().unwrap();
+   |             ----^^^^
+   |             |
+   |             help: remove this `mut`
+
+error: variable does not need to be mutable
+  --> crates\master\src\persistence\schema.rs:84:13
+   |
+84 |         let mut conn = Connection::open_in_memory().unwrap();
+   |             ----^^^^
+   |             |
+   |             help: remove this `mut`
+
+error: method `from_str` can be confused for the standard trait method `std::str::FromStr::from_str`
+  --> crates\master\src\persistence\session.rs:45:5
+   |
+45 | /     pub fn from_str(s: &str) -> Result<Self> {
+46 | |         match s {
+47 | |             "RUNNING" => Ok(SessionStatus::Running),
+48 | |             "DETACHED" => Ok(SessionStatus::Detached),
+...  |
+52 | |     }
+   | |_____^
+   |
+   = help: consider implementing the trait `std::str::FromStr` or choosing a less ambiguous method name
+   = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#should_implement_trait
+
+error: variable does not need to be mutable
+   --> crates\master\src\persistence\mod.rs:153:13
+    |
+153 |         let mut conn = db.get_conn().unwrap();
+    |             ----^^^^
+    |             |
+    |             help: remove this `mut`
+
+error: the `Err`-variant returned from this function is very large
+   --> crates\master\src\server\handler.rs:219:70
+    |
+219 | fn verify_auth_token(auth_service: &dyn AuthService, token: &str) -> Result<Claims> {
+    |                                                                      ^^^^^^^^^^^^^^
+    |
+   ::: crates\master\src\server\error.rs:19:5
+    |
+ 19 |     WebSocket(#[from] tokio_tungstenite::tungstenite::Error),
+    |     -------------------------------------------------------- the largest variant contains at least 136 bytes
+    |
+    = help: try reducing the size of `server::error::ServerError`, for example by boxing large elements or replacing 
+it with `Box<server::error::ServerError>`
+    = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#result_large_err
+    = note: `-D clippy::result-large-err` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::result_large_err)]`
+
+error: this function has too many arguments (8/7)
+   --> crates\master\src\server\handler.rs:226:1
+    |
+226 | / async fn process_message(
+227 | |     envelope: Envelope,
+228 | |     session_manager: &SessionManager,
+229 | |     auth_service: &dyn AuthService,
+...   |
+234 | |     peer_addr: SocketAddr,
+235 | | ) -> Result<Option<Envelope>> {
+    | |_____________________________^
+    |
+    = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#too_many_arguments
+    = note: `-D clippy::too-many-arguments` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::too_many_arguments)]`
+
+error: unused variable: `write_result`
+   --> crates\master\src\pty\tests.rs:186:13
+    |
+186 |         let write_result = pty.write(b"this should not crash\r\n").await;
+    |             ^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_write_result`
+
+error: unused variable: `shell_pid`
+   --> crates\master\src\pty\tests.rs:210:13
+    |
+210 |         let shell_pid = pty.shell_pid();
+    |             ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_shell_pid`
+
+error: unused variable: `cmd`
+   --> crates\master\src\pty\tests.rs:278:25
+    |
+278 |                     let cmd = format!("echo write_{}\r\n", i);
+    |                         ^^^ help: if this is intentional, prefix it with an underscore: `_cmd`
+
+error: the `Err`-variant returned from this function is very large
+  --> crates\master\src\server\tls.rs:43:37
+   |
+43 |     pub fn build_acceptor(&self) -> Result<TlsAcceptor> {
+   |                                     ^^^^^^^^^^^^^^^^^^^
+   |
+  ::: crates\master\src\server\error.rs:19:5
+   |
+19 |     WebSocket(#[from] tokio_tungstenite::tungstenite::Error),
+   |     -------------------------------------------------------- the largest variant contains at least 136 bytes
+   |
+   = help: try reducing the size of `server::error::ServerError`, for example by boxing large elements or replacing it 
+with `Box<server::error::ServerError>`
+   = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#result_large_err
+
+error: the `Err`-variant returned from this function is very large
+  --> crates\master\src\server\tls.rs:63:36
+   |
+63 |     pub fn build_dev_acceptor() -> Result<TlsAcceptor> {
+   |                                    ^^^^^^^^^^^^^^^^^^^
+   |
+  ::: crates\master\src\server\error.rs:19:5
+   |
+19 |     WebSocket(#[from] tokio_tungstenite::tungstenite::Error),
+   |     -------------------------------------------------------- the largest variant contains at least 136 bytes
+   |
+   = help: try reducing the size of `server::error::ServerError`, for example by boxing large elements or replacing it 
+with `Box<server::error::ServerError>`
+   = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#result_large_err
+
+error: the `Err`-variant returned from this function is very large
+   --> crates\master\src\server\tls.rs:100:31
+    |
+100 | fn load_certs(path: &Path) -> Result<Vec<Certificate>> {
+    |                               ^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+   ::: crates\master\src\server\error.rs:19:5
+    |
+ 19 |     WebSocket(#[from] tokio_tungstenite::tungstenite::Error),
+    |     -------------------------------------------------------- the largest variant contains at least 136 bytes
+    |
+    = help: try reducing the size of `server::error::ServerError`, for example by boxing large elements or replacing 
+it with `Box<server::error::ServerError>`
+    = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#result_large_err
+
+error: the `Err`-variant returned from this function is very large
+   --> crates\master\src\server\tls.rs:126:37
+    |
+126 | fn load_private_key(path: &Path) -> Result<PrivateKey> {
+    |                                     ^^^^^^^^^^^^^^^^^^
+    |
+   ::: crates\master\src\server\error.rs:19:5
+    |
+ 19 |     WebSocket(#[from] tokio_tungstenite::tungstenite::Error),
+    |     -------------------------------------------------------- the largest variant contains at least 136 bytes
+    |
+    = help: try reducing the size of `server::error::ServerError`, for example by boxing large elements or replacing 
+it with `Box<server::error::ServerError>`
+    = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#result_large_err
+
+error: the `Err`-variant returned from this function is very large
+  --> crates\master\src\server\mod.rs:83:10
+   |
+83 |     ) -> Result<Self> {
+   |          ^^^^^^^^^^^^
+   |
+  ::: crates\master\src\server\error.rs:19:5
+   |
+19 |     WebSocket(#[from] tokio_tungstenite::tungstenite::Error),
+   |     -------------------------------------------------------- the largest variant contains at least 136 bytes
+   |
+   = help: try reducing the size of `server::error::ServerError`, for example by boxing large elements or replacing it 
+with `Box<server::error::ServerError>`
+   = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#result_large_err
+
+error: the `Err`-variant returned from this function is very large
+   --> crates\master\src\server\mod.rs:116:10
+    |
+116 |     ) -> Result<Self> {
+    |          ^^^^^^^^^^^^
+    |
+   ::: crates\master\src\server\error.rs:19:5
+    |
+ 19 |     WebSocket(#[from] tokio_tungstenite::tungstenite::Error),
+    |     -------------------------------------------------------- the largest variant contains at least 136 bytes
+    |
+    = help: try reducing the size of `server::error::ServerError`, for example by boxing large elements or replacing 
+it with `Box<server::error::ServerError>`
+    = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#result_large_err
+
+error: module has the same name as its containing module
+ --> crates\master\src\session\mod.rs:7:1
+  |
+7 | pub mod session;
+  | ^^^^^^^^^^^^^^^^
+  |
+  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#module_inception
+  = note: `-D clippy::module-inception` implied by `-D warnings`
+  = help: to override `-D warnings` add `#[allow(clippy::module_inception)]`
+
+error: doc list item without indentation
+  --> crates\master\src\ui\mod.rs:12:5
+   |
+12 | //! Total: 16.5ms ✅
+   |     ^
+   |
+   = help: if this is supposed to be its own paragraph, add a blank line
+   = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#doc_lazy_continuation
+   = note: `-D clippy::doc-lazy-continuation` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::doc_lazy_continuation)]`
+help: indent this line
+   |
+12 | //!   Total: 16.5ms ✅
+   |     ++
+
+error: doc list item without indentation
+ --> crates\master\src\ui\performance.rs:9:5
+  |
+9 | //! Target: 16.67ms (60 FPS)
+  |     ^
+  |
+  = help: if this is supposed to be its own paragraph, add a blank line
+  = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#doc_lazy_continuation
+help: indent this line
+  |
+9 | //!   Target: 16.67ms (60 FPS)
+  |     ++
+
+error: unused variable: `task_aborted_clone`
+   --> crates\master\src\session\tests.rs:343:17
+    |
+343 |             let task_aborted_clone = task_aborted.clone();
+    |                 ^^^^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: 
+`_task_aborted_clone`
+
+error: could not compile `monoterminal-master` (lib) due to 18 previous errors
+warning: build failed, waiting for other jobs to finish...
+For more information about this error, try `rustc --explain E0433`.
+error: could not compile `monoterminal-master` (lib test) due to 22 previous errors

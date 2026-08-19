@@ -6,7 +6,6 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Instant;
 use tokio::sync::{mpsc, Mutex, RwLock};
-use tokio_util::task::AbortOnDrop;
 use uuid::Uuid;
 
 /// Session identifier (UUID v4)

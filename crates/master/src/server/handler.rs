@@ -6,7 +6,6 @@
 use futures_util::{SinkExt, StreamExt};
 use prost::Message;
 use std::net::SocketAddr;
-use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::net::TcpStream;
 use tokio::sync::mpsc;

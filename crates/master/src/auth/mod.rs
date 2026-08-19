@@ -9,7 +9,6 @@ pub mod rbac;
 
 use anyhow::Result;
 use async_trait::async_trait;
-use std::time::Instant;
 
 // Re-exports for convenience
 pub use challenge::{Challenge, Ed25519ChallengeHandler};

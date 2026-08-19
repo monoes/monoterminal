@@ -57,19 +57,19 @@ pub fn create_session(conn: &Connection, record: &SessionRecord) -> Result<()> {
     let env_vars_json = record
         .env_vars
         .as_ref()
-        .map(|e| serde_json::to_string(e))
+        .map(serde_json::to_string)
         .transpose()?;
 
     let acl_json = record
         .acl
         .as_ref()
-        .map(|a| serde_json::to_string(a))
+        .map(serde_json::to_string)
         .transpose()?;
 
     let metadata_json = record
         .metadata
         .as_ref()
-        .map(|m| serde_json::to_string(m))
+        .map(serde_json::to_string)
         .transpose()?;
 
     conn.execute(

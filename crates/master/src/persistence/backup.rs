@@ -90,11 +90,11 @@ pub fn cleanup_old_backups(backup_dir: &Path, keep_count: usize) -> Result<()> {
         .map(|entry| entry.path())
         .filter(|path| {
             path.is_file()
-                && path.extension().map_or(false, |ext| ext == "db")
+                && path.extension().is_some_and(|ext| ext == "db")
                 && path
                     .file_name()
                     .and_then(|n| n.to_str())
-                    .map_or(false, |n| n.starts_with("monoterminal-"))
+                    .is_some_and(|n| n.starts_with("monoterminal-"))
         })
         .collect();
 

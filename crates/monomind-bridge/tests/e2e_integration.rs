@@ -212,7 +212,7 @@ async fn test_e2e_error_handling_fail_loud() {
             // not pretend everything is fine
             if !dashboard_data.org_status.running {
                 assert!(
-                    dashboard_data.org_status.status_message.is_empty() == false,
+                    !dashboard_data.org_status.status_message.is_empty(),
                     "Fail-loud: Status message should explain why org is not running"
                 );
             }
@@ -247,13 +247,13 @@ async fn test_e2e_concurrent_operations() {
 
         let handle = tokio::spawn(async move {
             // Detection
-            let _detection = detect_monomind(&*project);
+            let _detection = detect_monomind(&project);
 
             // Health check
-            let _health = run_doctor_check(&*project).await;
+            let _health = run_doctor_check(&project).await;
 
             // Dashboard query
-            let _dashboard = get_dashboard_data(&*project).await;
+            let _dashboard = get_dashboard_data(&project).await;
 
             // All operations should complete without panicking
             i

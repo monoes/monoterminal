@@ -20,7 +20,6 @@ pub use peer_connection::{DataChannelMessage, PeerConnection, PeerConnectionStat
 pub use transport::{DualTransport, Transport, TransportType};
 
 use prometheus::{Counter, Gauge, Histogram, HistogramOpts, Registry};
-use std::sync::Arc;
 
 /// WebRTC metrics for Prometheus
 /// Per ADR-011 §8: Health check endpoints

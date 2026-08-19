@@ -2,7 +2,7 @@
 // ADR-011 §4.1: Local Discovery (mDNS/Bonjour)
 // Service type: _monoterminal._tcp.local
 
-use crate::discovery::error::{DiscoveryError, Result};
+use crate::discovery::error::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::net::IpAddr;

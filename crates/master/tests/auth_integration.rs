@@ -4,7 +4,6 @@
 // ADR-007: EdDSA Algorithm for Phase 1 Authentication
 
 use monoterminal_master::auth::{AuthService, Ed25519AuthService, Ed25519KeyPair, UserId};
-use std::sync::Arc;
 
 // Helper to create test auth service
 fn create_test_auth_service() -> Ed25519AuthService {

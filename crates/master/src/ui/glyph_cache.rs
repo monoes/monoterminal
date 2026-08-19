@@ -3,7 +3,7 @@
 //! Implements 4096×4096 atlas with Guillotine bin-packing and LRU eviction
 //! Target: <1ms glyph lookup per SRS §2.1.1
 
-use super::vt_parser::{CellStyle, Color};
+use super::vt_parser::CellStyle;
 use std::collections::{HashMap, VecDeque};
 
 /// Glyph cache key (character + style)

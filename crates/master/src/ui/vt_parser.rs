@@ -4,7 +4,6 @@
 //! Supports: SGR (colors, bold, italic), cursor movement, screen clear, true-color (24-bit RGB)
 //! Per SRS §2.1.1 - Target: <2ms parse time per frame
 
-use bytes::Bytes;
 
 /// VT100/ANSI sequence parser
 pub struct VtParser {
@@ -100,7 +99,7 @@ impl VtParser {
                     if let Some(param) = self.current_param {
                         self.params.push(param);
                     }
-                    let row = self.params.get(0).copied().unwrap_or(1).saturating_sub(1);
+                    let row = self.params.first().copied().unwrap_or(1).saturating_sub(1);
                     let col = self.params.get(1).copied().unwrap_or(1).saturating_sub(1);
                     self.changes.push(GridChange::CursorMove { row, col });
                     self.state = ParserState::Ground;
@@ -117,7 +116,7 @@ impl VtParser {
                     if let Some(param) = self.current_param {
                         self.params.push(param);
                     }
-                    let n = self.params.get(0).copied().unwrap_or(1);
+                    let _n = self.params.first().copied().unwrap_or(1);
                     // TODO: Emit cursor up change
                     self.state = ParserState::Ground;
                 }
@@ -127,7 +126,7 @@ impl VtParser {
                     if let Some(param) = self.current_param {
                         self.params.push(param);
                     }
-                    let n = self.params.get(0).copied().unwrap_or(1);
+                    let _n = self.params.first().copied().unwrap_or(1);
                     // TODO: Emit cursor down change
                     self.state = ParserState::Ground;
                 }

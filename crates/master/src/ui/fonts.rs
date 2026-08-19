@@ -7,7 +7,7 @@
 
 use anyhow::{Context, Result};
 use fontdue::{Font, FontSettings};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 /// Rasterized glyph bitmap
 pub struct RasterizedGlyph {
@@ -85,7 +85,7 @@ impl FontManager {
     /// Rasterize a glyph to bitmap
     /// Returns grayscale bitmap + metrics
     /// Target: <1ms per glyph
-    pub fn rasterize_glyph(&self, ch: char, bold: bool, italic: bool) -> Result<RasterizedGlyph> {
+    pub fn rasterize_glyph(&self, ch: char, _bold: bool, _italic: bool) -> Result<RasterizedGlyph> {
         // Get glyph index for character
         let glyph_index = self.font.lookup_glyph_index(ch);
 

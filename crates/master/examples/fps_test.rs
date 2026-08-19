@@ -18,7 +18,7 @@ use anyhow::Result;
 use bytes::Bytes;
 use monoterminal_master::ui::{performance::PerformanceMonitor, Renderer};
 use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 use tokio::sync::mpsc;
 use winit::{
     application::ApplicationHandler,

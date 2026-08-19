@@ -1,7 +1,6 @@
 // WebSocket connection management
 // Implements SRS §3.1.4 (Output Buffering & Flow Control)
 
-use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::mpsc;
 use tokio::time::Instant;

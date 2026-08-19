@@ -1,7 +1,6 @@
 // TLS 1.3 configuration
 // Implements SRS §3.2.1 (Transport Security)
 
-use rustls::server::AllowAnyAuthenticatedClient;
 use rustls::version::TLS13;
 use rustls::{Certificate, PrivateKey, ServerConfig};
 use std::fs::File;

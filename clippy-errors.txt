@@ -1,0 +1,959 @@
+﻿cargo :     Checking monoterminal-master v0.1.0 (C:\Users\nokho\Desktop\projects\monoterminal\crates\master)
+At line:1 char:302
++ ... tch {} } }; cargo clippy --workspace --all-targets --all-features --  ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (    Checking mo...\crates\master):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+    Checking monoterminal-monomind-bridge v0.1.0 (C:\Users\nokho\Desktop\projects\monoterminal\crates\monomind-bridge)
+error: deref which would be done by auto-deref
+   --> crates\monomind-bridge\tests\detection_integration.rs:330:42
+    |
+330 |             let result = detect_monomind(&*project);
+    |                                          ^^^^^^^^^ help: try: `&project`
+    |
+    = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#explicit_auto_deref
+    = note: `-D clippy::explicit-auto-deref` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::explicit_auto_deref)]`
+
+error: could not compile `monoterminal-monomind-bridge` (test "detection_integration") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: equality checks against false can be replaced by a negation
+   --> crates\monomind-bridge\tests\e2e_integration.rs:215:21
+    |
+215 |                     dashboard_data.org_status.status_message.is_empty() == false,
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try: 
+`!dashboard_data.org_status.status_message.is_empty()`
+    |
+    = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#bool_comparison
+    = note: `-D clippy::bool-comparison` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::bool_comparison)]`
+
+error: deref which would be done by auto-deref
+   --> crates\monomind-bridge\tests\e2e_integration.rs:250:46
+    |
+250 |             let _detection = detect_monomind(&*project);
+    |                                              ^^^^^^^^^ help: try: `&project`
+    |
+    = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#explicit_auto_deref
+    = note: `-D clippy::explicit-auto-deref` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::explicit_auto_deref)]`
+
+error: deref which would be done by auto-deref
+   --> crates\monomind-bridge\tests\e2e_integration.rs:253:44
+    |
+253 |             let _health = run_doctor_check(&*project).await;
+    |                                            ^^^^^^^^^ help: try: `&project`
+    |
+    = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#explicit_auto_deref
+
+error: deref which would be done by auto-deref
+   --> crates\monomind-bridge\tests\e2e_integration.rs:256:49
+    |
+256 |             let _dashboard = get_dashboard_data(&*project).await;
+    |                                                 ^^^^^^^^^ help: try: `&project`
+    |
+    = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#explicit_auto_deref
+
+error: equality checks against false can be replaced by a negation
+   --> crates\monomind-bridge\tests\dashboard_integration.rs:126:45
+    |
+126 |         assert!(!data.org_status.running || data.org_status.status_message.is_empty() == false);
+    |                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try: 
+`!data.org_status.status_message.is_empty()`
+    |
+    = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#bool_comparison
+    = note: `-D clippy::bool-comparison` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::bool_comparison)]`
+
+error: deref which would be done by auto-deref
+   --> crates\monomind-bridge\tests\dashboard_integration.rs:293:46
+    |
+293 |             let _result = get_dashboard_data(&*project).await;
+    |                                              ^^^^^^^^^ help: try: `&project`
+    |
+    = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#explicit_auto_deref
+    = note: `-D clippy::explicit-auto-deref` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::explicit_auto_deref)]`
+
+error: used `assert_eq!` with a literal bool
+   --> crates\monomind-bridge\tests\health_integration.rs:283:5
+    |
+283 |     assert_eq!(deserialized.success, true);
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#bool_assert_comparison
+    = note: `-D clippy::bool-assert-comparison` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::bool_assert_comparison)]`
+help: replace it with `assert!(..)`
+    |
+283 -     assert_eq!(deserialized.success, true);
+283 +     assert!(deserialized.success);
+    |
+
+error: could not compile `monoterminal-monomind-bridge` (test "e2e_integration") due to 4 previous errors
+error: deref which would be done by auto-deref
+   --> crates\monomind-bridge\tests\health_integration.rs:302:44
+    |
+302 |             let _result = run_doctor_check(&*project).await;
+    |                                            ^^^^^^^^^ help: try: `&project`
+    |
+    = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#explicit_auto_deref
+    = note: `-D clippy::explicit-auto-deref` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::explicit_auto_deref)]`
+
+error: could not compile `monoterminal-monomind-bridge` (test "dashboard_integration") due to 2 previous errors
+error: could not compile `monoterminal-monomind-bridge` (test "health_integration") due to 2 previous errors
+error: unused import: `anyhow`
+ --> crates\master\src\auth\rate_limit.rs:4:14
+  |
+4 | use anyhow::{anyhow, Result};
+  |              ^^^^^^
+  |
+  = note: `-D unused-imports` implied by `-D warnings`
+  = help: to override `-D warnings` add `#[allow(unused_imports)]`
+
+error: unused import: `std::time::Instant`
+  --> crates\master\src\auth\mod.rs:12:5
+   |
+12 | use std::time::Instant;
+   |     ^^^^^^^^^^^^^^^^^^
+
+error: unused import: `ServiceInfo`
+ --> crates\master\src\discovery\hybrid.rs:7:45
+  |
+7 | use crate::discovery::mdns::{MdnsDiscovery, ServiceInfo};
+  |                                             ^^^^^^^^^^^
+
+error: unused import: `DiscoveryError`
+ --> crates\master\src\discovery\mdns.rs:5:31
+  |
+5 | use crate::discovery::error::{DiscoveryError, Result};
+  |                               ^^^^^^^^^^^^^^
+
+error: unused import: `rusqlite::Connection`
+  --> crates\master\src\persistence\mod.rs:24:5
+   |
+24 | use rusqlite::Connection;
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+error: unused import: `BufWriter`
+  --> crates\master\src\pty\conpty.rs:22:57
+   |
+22 | use tokio::io::{AsyncReadExt, AsyncWriteExt, BufReader, BufWriter};
+   |                                                         ^^^^^^^^^
+
+error: unused import: `STARTF_USESTDHANDLES`
+  --> crates\master\src\pty\conpty.rs:32:63
+   |
+32 |     PROCESS_INFORMATION, PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE, STARTF_USESTDHANDLES, STARTUPINFOEXW,
+   |                                                               ^^^^^^^^^^^^^^^^^^^^
+
+error: unused import: `std::sync::Arc`
+ --> crates\master\src\server\connection.rs:4:5
+  |
+4 | use std::sync::Arc;
+  |     ^^^^^^^^^^^^^^
+
+error: unused import: `std::path::PathBuf`
+ --> crates\master\src\server\handler.rs:9:5
+  |
+9 | use std::path::PathBuf;
+  |     ^^^^^^^^^^^^^^^^^^
+
+error: unused import: `rustls::server::AllowAnyAuthenticatedClient`
+ --> crates\master\src\server\tls.rs:4:5
+  |
+4 | use rustls::server::AllowAnyAuthenticatedClient;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: unused import: `tokio_util::task::AbortOnDrop`
+ --> crates\master\src\session\session.rs:9:5
+  |
+9 | use tokio_util::task::AbortOnDrop;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: unexpected `cfg` condition value: `test_support`
+  --> crates\master\src\ui\mod.rs:26:17
+   |
+26 | #[cfg(any(test, feature = "test_support"))]
+   |                 ^^^^^^^^^^--------------
+   |                           |
+   |                           help: there is a expected value with a similar name: `"test-support"`
+   |
+   = note: expected values for `feature` are: `test-support`
+   = help: consider adding `test_support` as a feature in `Cargo.toml`
+   = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about 
+checking conditional configuration
+   = note: `-D unexpected-cfgs` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(unexpected_cfgs)]`
+
+error: unused import: `Path`
+  --> crates\master\src\ui\fonts.rs:10:17
+   |
+10 | use std::path::{Path, PathBuf};
+   |                 ^^^^
+
+error: unused import: `Color`
+ --> crates\master\src\ui\glyph_cache.rs:6:35
+  |
+6 | use super::vt_parser::{CellStyle, Color};
+  |                                   ^^^^^
+
+error: unused import: `Duration`
+  --> crates\master\src\ui\performance.rs:12:17
+   |
+12 | use std::time::{Duration, Instant};
+   |                 ^^^^^^^^
+
+error: unused import: `bytes::Bytes`
+ --> crates\master\src\ui\renderer.rs:7:5
+  |
+7 | use bytes::Bytes;
+  |     ^^^^^^^^^^^^
+
+error: unused import: `Color`
+ --> crates\master\src\ui\terminal_grid.rs:6:35
+  |
+6 | use super::vt_parser::{CellStyle, Color, GridChange};
+  |                                   ^^^^^
+
+error: unused import: `bytes::Bytes`
+ --> crates\master\src\ui\vt_parser.rs:7:5
+  |
+7 | use bytes::Bytes;
+  |     ^^^^^^^^^^^^
+
+error: unused import: `ControlFlow`
+  --> crates\master\src\ui\window.rs:11:35
+   |
+11 |     event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
+   |                                   ^^^^^^^^^^^
+
+error: unused import: `std::sync::Arc`
+  --> crates\master\src\ui\mod.rs:40:5
+   |
+40 | use std::sync::Arc;
+   |     ^^^^^^^^^^^^^^
+
+error: unused import: `std::net::SocketAddr`
+ --> crates\master\src\webrtc\ice.rs:7:5
+  |
+7 | use std::net::SocketAddr;
+  |     ^^^^^^^^^^^^^^^^^^^^
+
+error: unused imports: `error` and `warn`
+  --> crates\master\src\webrtc\peer_connection.rs:11:22
+   |
+11 | use tracing::{debug, error, info, warn};
+   |                      ^^^^^        ^^^^
+
+error: unused import: `webrtc::api::interceptor_registry::register_default_interceptors`
+  --> crates\master\src\webrtc\peer_connection.rs:12:5
+   |
+12 | use webrtc::api::interceptor_registry::register_default_interceptors;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: unused import: `webrtc::api::media_engine::MediaEngine`
+  --> crates\master\src\webrtc\peer_connection.rs:13:5
+   |
+13 | use webrtc::api::media_engine::MediaEngine;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: unused import: `webrtc::ice_transport::ice_connection_state::RTCIceConnectionState`
+  --> crates\master\src\webrtc\peer_connection.rs:17:5
+   |
+17 | use webrtc::ice_transport::ice_connection_state::RTCIceConnectionState;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: unused import: `webrtc::ice_transport::ice_server::RTCIceServer`
+  --> crates\master\src\webrtc\peer_connection.rs:18:5
+   |
+18 | use webrtc::ice_transport::ice_server::RTCIceServer;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: unused import: `DataChannelMessage`
+ --> crates\master\src\webrtc\transport.rs:5:38
+  |
+5 | use crate::webrtc::peer_connection::{DataChannelMessage, PeerConnection, PeerConnectionState};
+  |                                      ^^^^^^^^^^^^^^^^^^
+
+error: unused import: `std::sync::Arc`
+  --> crates\master\src\webrtc\mod.rs:23:5
+   |
+23 | use std::sync::Arc;
+   |     ^^^^^^^^^^^^^^
+
+error: unused import: `Ordering`
+   --> crates\master\src\session\tests.rs:335:45
+    |
+335 |         use std::sync::atomic::{AtomicBool, Ordering};
+    |                                             ^^^^^^^^
+
+error: unused import: `mpsc`
+   --> crates\master\src\session\tests.rs:337:27
+    |
+337 |         use tokio::sync::{mpsc, Mutex, RwLock};
+    |                           ^^^^
+
+error: unused import: `CellStyle`
+  --> crates\master\src\ui\tests.rs:12:21
+   |
+12 |     use vt_parser::{CellStyle, GridChange, VtParser};
+   |                     ^^^^^^^^^
+
+error: unused import: `std::time::Duration`
+ --> crates\master\src\webrtc\tests.rs:8:9
+  |
+8 |     use std::time::Duration;
+  |         ^^^^^^^^^^^^^^^^^^^
+
+error: unused variable: `now`
+   --> crates\master\src\auth\rate_limit.rs:207:13
+    |
+207 |         let now = Instant::now();
+    |             ^^^ help: if this is intentional, prefix it with an underscore: `_now`
+    |
+    = note: `-D unused-variables` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(unused_variables)]`
+
+error: unused variable: `session_id`
+   --> crates\master\src\session\manager.rs:861:35
+    |
+861 |     pub fn get_session_cwd(&self, session_id: SessionId) -> Option<PathBuf> {
+    |                                   ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: 
+`_session_id`
+
+error: unused variable: `bold`
+  --> crates\master\src\ui\fonts.rs:88:45
+   |
+88 |     pub fn rasterize_glyph(&self, ch: char, bold: bool, italic: bool) -> Result<RasterizedGlyph> {
+   |                                             ^^^^ help: if this is intentional, prefix it with an underscore: 
+`_bold`
+
+error: unused variable: `italic`
+  --> crates\master\src\ui\fonts.rs:88:57
+   |
+88 |     pub fn rasterize_glyph(&self, ch: char, bold: bool, italic: bool) -> Result<RasterizedGlyph> {
+   |                                                         ^^^^^^ help: if this is intentional, prefix it with an 
+underscore: `_italic`
+
+error: unused variable: `rows`
+   --> crates\master\src\ui\renderer.rs:555:14
+    |
+555 |         let (rows, cols) = self.terminal_grid.dimensions();
+    |              ^^^^ help: if this is intentional, prefix it with an underscore: `_rows`
+
+error: unused variable: `cols`
+   --> crates\master\src\ui\renderer.rs:555:20
+    |
+555 |         let (rows, cols) = self.terminal_grid.dimensions();
+    |                    ^^^^ help: if this is intentional, prefix it with an underscore: `_cols`
+
+error: unused variable: `n`
+   --> crates\master\src\ui\vt_parser.rs:120:25
+    |
+120 |                     let n = self.params.get(0).copied().unwrap_or(1);
+    |                         ^ help: if this is intentional, prefix it with an underscore: `_n`
+
+error: unused variable: `n`
+   --> crates\master\src\ui\vt_parser.rs:130:25
+    |
+130 |                     let n = self.params.get(0).copied().unwrap_or(1);
+    |                         ^ help: if this is intentional, prefix it with an underscore: `_n`
+
+error: unused variable: `i`
+   --> crates\master\src\persistence\audit.rs:240:13
+    |
+240 |         for i in 0..3 {
+    |             ^ help: if this is intentional, prefix it with an underscore: `_i`
+
+error: unused variable: `e`
+   --> crates\master\src\webrtc\peer_connection.rs:354:27
+    |
+354 |                 .map_err(|e| WebRtcError::DataChannelClosed)?;
+    |                           ^ help: if this is intentional, prefix it with an underscore: `_e`
+
+error: variable does not need to be mutable
+   --> crates\master\src\persistence\migrations.rs:128:13
+    |
+128 |         let mut conn = Connection::open_in_memory().unwrap();
+    |             ----^^^^
+    |             |
+    |             help: remove this `mut`
+    |
+    = note: `-D unused-mut` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(unused_mut)]`
+
+error: variable does not need to be mutable
+  --> crates\master\src\persistence\schema.rs:51:13
+   |
+51 |         let mut conn = Connection::open_in_memory().unwrap();
+   |             ----^^^^
+   |             |
+   |             help: remove this `mut`
+
+error: variable does not need to be mutable
+  --> crates\master\src\persistence\schema.rs:84:13
+   |
+84 |         let mut conn = Connection::open_in_memory().unwrap();
+   |             ----^^^^
+   |             |
+   |             help: remove this `mut`
+
+error: field `port` is never read
+  --> crates\master\src\discovery\mdns.rs:59:5
+   |
+56 | pub struct MdnsDiscovery {
+   |            ------------- field in this struct
+...
+59 |     port: u16,
+   |     ^^^^
+   |
+   = note: `-D dead-code` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[expect(dead_code)]` or `#[allow(dead_code)]`
+
+error: field `health_tx` is never read
+  --> crates\master\src\server\mod.rs:69:5
+   |
+63 | pub struct Server {
+   |            ------ field in this struct
+...
+69 |     health_tx: broadcast::Sender<HealthStatus>,
+   |     ^^^^^^^^^
+
+error: field `candidates_tx` is never read
+  --> crates\master\src\webrtc\ice.rs:61:5
+   |
+59 | pub struct IceCandidateGatherer {
+   |            -------------------- field in this struct
+60 |     config: Arc<WebRtcConfig>,
+61 |     candidates_tx: mpsc::Sender<IceCandidate>,
+   |     ^^^^^^^^^^^^^
+
+error: fields `config` and `ice_candidates_tx` are never read
+  --> crates\master\src\webrtc\peer_connection.rs:72:5
+   |
+64 | pub struct PeerConnection {
+   |            -------------- fields in this struct
+...
+72 |     config: Arc<WebRtcConfig>,
+   |     ^^^^^^
+...
+78 |     ice_candidates_tx: mpsc::Sender<IceCandidate>,
+   |     ^^^^^^^^^^^^^^^^^
+
+error: method `from_str` can be confused for the standard trait method `std::str::FromStr::from_str`
+  --> crates\master\src\auth\rbac.rs:20:5
+   |
+20 | /     pub fn from_str(s: &str) -> Result<Self> {
+21 | |         match s.to_lowercase().as_str() {
+22 | |             "owner" => Ok(Permission::Owner),
+23 | |             "editor" | "readwrite" | "rw" => Ok(Permission::ReadWrite),
+...  |
+27 | |     }
+   | |_____^
+   |
+   = help: consider implementing the trait `std::str::FromStr` or choosing a less ambiguous method name
+   = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#should_implement_trait
+   = note: `-D clippy::should-implement-trait` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::should_implement_trait)]`
+
+error: variable does not need to be mutable
+   --> crates\master\src\persistence\mod.rs:154:13
+    |
+154 |         let mut conn = db.get_conn().unwrap();
+    |             ----^^^^
+    |             |
+    |             help: remove this `mut`
+
+error: manual implementation of an assign operation
+   --> crates\master\src\discovery\directory.rs:171:13
+    |
+171 |             backoff = backoff * 2;
+    |             ^^^^^^^^^^^^^^^^^^^^^ help: replace it with: `backoff *= 2`
+    |
+    = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#assign_op_pattern
+    = note: `-D clippy::assign-op-pattern` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::assign_op_pattern)]`
+
+error: this `map_or` can be simplified
+  --> crates\master\src\persistence\backup.rs:93:20
+   |
+93 |                 && path.extension().map_or(false, |ext| ext == "db")
+   |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#unnecessary_map_or
+   = note: `-D clippy::unnecessary-map-or` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::unnecessary_map_or)]`
+help: use `is_some_and` instead
+   |
+93 -                 && path.extension().map_or(false, |ext| ext == "db")
+93 +                 && path.extension().is_some_and(|ext| ext == "db")
+   |
+
+error: this `map_or` can be simplified
+  --> crates\master\src\persistence\backup.rs:94:20
+   |
+94 |                   && path
+   |  ____________________^
+95 | |                     .file_name()
+96 | |                     .and_then(|n| n.to_str())
+97 | |                     .map_or(false, |n| n.starts_with("monoterminal-"))
+   | |______________________________________________________________________^
+   |
+   = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#unnecessary_map_or
+help: use `is_some_and` instead
+   |
+97 -                     .map_or(false, |n| n.starts_with("monoterminal-"))
+97 +                     .is_some_and(|n| n.starts_with("monoterminal-"))
+   |
+
+error: method `from_str` can be confused for the standard trait method `std::str::FromStr::from_str`
+  --> crates\master\src\persistence\session.rs:45:5
+   |
+45 | /     pub fn from_str(s: &str) -> Result<Self> {
+46 | |         match s {
+47 | |             "RUNNING" => Ok(SessionStatus::Running),
+48 | |             "DETACHED" => Ok(SessionStatus::Detached),
+...  |
+52 | |     }
+   | |_____^
+   |
+   = help: consider implementing the trait `std::str::FromStr` or choosing a less ambiguous method name
+   = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#should_implement_trait
+
+error: redundant closure
+  --> crates\master\src\persistence\session.rs:60:14
+   |
+60 |         .map(|e| serde_json::to_string(e))
+   |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: replace the closure with the function itself: 
+`serde_json::to_string`
+   |
+   = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#redundant_closure
+   = note: `-D clippy::redundant-closure` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::redundant_closure)]`
+
+error: redundant closure
+  --> crates\master\src\persistence\session.rs:66:14
+   |
+66 |         .map(|a| serde_json::to_string(a))
+   |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: replace the closure with the function itself: 
+`serde_json::to_string`
+   |
+   = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#redundant_closure
+
+error: redundant closure
+  --> crates\master\src\persistence\session.rs:72:14
+   |
+72 |         .map(|m| serde_json::to_string(m))
+   |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: replace the closure with the function itself: 
+`serde_json::to_string`
+   |
+   = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#redundant_closure
+
+error: unused variable: `write_result`
+   --> crates\master\src\pty\tests.rs:186:13
+    |
+186 |         let write_result = pty.write(b"this should not crash\r\n").await;
+    |             ^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_write_result`
+
+error: unused variable: `shell_pid`
+   --> crates\master\src\pty\tests.rs:210:13
+    |
+210 |         let shell_pid = pty.shell_pid();
+    |             ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_shell_pid`
+
+error: unused variable: `cmd`
+   --> crates\master\src\pty\tests.rs:278:25
+    |
+278 |                     let cmd = format!("echo write_{}\r\n", i);
+    |                         ^^^ help: if this is intentional, prefix it with an underscore: `_cmd`
+
+error: the `Err`-variant returned from this function is very large
+   --> crates\master\src\server\handler.rs:220:70
+    |
+220 | fn verify_auth_token(auth_service: &dyn AuthService, token: &str) -> Result<Claims> {
+    |                                                                      ^^^^^^^^^^^^^^
+    |
+   ::: crates\master\src\server\error.rs:19:5
+    |
+ 19 |     WebSocket(#[from] tokio_tungstenite::tungstenite::Error),
+    |     -------------------------------------------------------- the largest variant contains at least 136 bytes
+    |
+    = help: try reducing the size of `server::error::ServerError`, for example by boxing large elements or replacing 
+it with `Box<server::error::ServerError>`
+    = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#result_large_err
+    = note: `-D clippy::result-large-err` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::result_large_err)]`
+
+error: this function has too many arguments (8/7)
+   --> crates\master\src\server\handler.rs:227:1
+    |
+227 | / async fn process_message(
+228 | |     envelope: Envelope,
+229 | |     session_manager: &SessionManager,
+230 | |     auth_service: &dyn AuthService,
+...   |
+235 | |     peer_addr: SocketAddr,
+236 | | ) -> Result<Option<Envelope>> {
+    | |_____________________________^
+    |
+    = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#too_many_arguments
+    = note: `-D clippy::too-many-arguments` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::too_many_arguments)]`
+
+error: the `Err`-variant returned from this function is very large
+  --> crates\master\src\server\tls.rs:44:37
+   |
+44 |     pub fn build_acceptor(&self) -> Result<TlsAcceptor> {
+   |                                     ^^^^^^^^^^^^^^^^^^^
+   |
+  ::: crates\master\src\server\error.rs:19:5
+   |
+19 |     WebSocket(#[from] tokio_tungstenite::tungstenite::Error),
+   |     -------------------------------------------------------- the largest variant contains at least 136 bytes
+   |
+   = help: try reducing the size of `server::error::ServerError`, for example by boxing large elements or replacing it 
+with `Box<server::error::ServerError>`
+   = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#result_large_err
+
+error: the `Err`-variant returned from this function is very large
+  --> crates\master\src\server\tls.rs:64:36
+   |
+64 |     pub fn build_dev_acceptor() -> Result<TlsAcceptor> {
+   |                                    ^^^^^^^^^^^^^^^^^^^
+   |
+  ::: crates\master\src\server\error.rs:19:5
+   |
+19 |     WebSocket(#[from] tokio_tungstenite::tungstenite::Error),
+   |     -------------------------------------------------------- the largest variant contains at least 136 bytes
+   |
+   = help: try reducing the size of `server::error::ServerError`, for example by boxing large elements or replacing it 
+with `Box<server::error::ServerError>`
+   = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#result_large_err
+
+error: the `Err`-variant returned from this function is very large
+   --> crates\master\src\server\tls.rs:101:31
+    |
+101 | fn load_certs(path: &Path) -> Result<Vec<Certificate>> {
+    |                               ^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+   ::: crates\master\src\server\error.rs:19:5
+    |
+ 19 |     WebSocket(#[from] tokio_tungstenite::tungstenite::Error),
+    |     -------------------------------------------------------- the largest variant contains at least 136 bytes
+    |
+    = help: try reducing the size of `server::error::ServerError`, for example by boxing large elements or replacing 
+it with `Box<server::error::ServerError>`
+    = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#result_large_err
+
+error: the `Err`-variant returned from this function is very large
+   --> crates\master\src\server\tls.rs:127:37
+    |
+127 | fn load_private_key(path: &Path) -> Result<PrivateKey> {
+    |                                     ^^^^^^^^^^^^^^^^^^
+    |
+   ::: crates\master\src\server\error.rs:19:5
+    |
+ 19 |     WebSocket(#[from] tokio_tungstenite::tungstenite::Error),
+    |     -------------------------------------------------------- the largest variant contains at least 136 bytes
+    |
+    = help: try reducing the size of `server::error::ServerError`, for example by boxing large elements or replacing 
+it with `Box<server::error::ServerError>`
+    = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#result_large_err
+
+error: the `Err`-variant returned from this function is very large
+  --> crates\master\src\server\mod.rs:83:10
+   |
+83 |     ) -> Result<Self> {
+   |          ^^^^^^^^^^^^
+   |
+  ::: crates\master\src\server\error.rs:19:5
+   |
+19 |     WebSocket(#[from] tokio_tungstenite::tungstenite::Error),
+   |     -------------------------------------------------------- the largest variant contains at least 136 bytes
+   |
+   = help: try reducing the size of `server::error::ServerError`, for example by boxing large elements or replacing it 
+with `Box<server::error::ServerError>`
+   = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#result_large_err
+
+error: the `Err`-variant returned from this function is very large
+   --> crates\master\src\server\mod.rs:116:10
+    |
+116 |     ) -> Result<Self> {
+    |          ^^^^^^^^^^^^
+    |
+   ::: crates\master\src\server\error.rs:19:5
+    |
+ 19 |     WebSocket(#[from] tokio_tungstenite::tungstenite::Error),
+    |     -------------------------------------------------------- the largest variant contains at least 136 bytes
+    |
+    = help: try reducing the size of `server::error::ServerError`, for example by boxing large elements or replacing 
+it with `Box<server::error::ServerError>`
+    = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#result_large_err
+
+error: redundant closure
+   --> crates\master\src\session\manager.rs:515:22
+    |
+515 |             .map_err(|e| SessionError::IoError(e))?;
+    |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: replace the closure with the tuple variant itself: 
+`SessionError::IoError`
+    |
+    = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#redundant_closure
+
+error: unused variable: `task_aborted_clone`
+   --> crates\master\src\session\tests.rs:343:17
+    |
+343 |             let task_aborted_clone = task_aborted.clone();
+    |                 ^^^^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: 
+`_task_aborted_clone`
+
+error: module has the same name as its containing module
+ --> crates\master\src\session\mod.rs:7:1
+  |
+7 | pub mod session;
+  | ^^^^^^^^^^^^^^^^
+  |
+  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#module_inception
+  = note: `-D clippy::module-inception` implied by `-D warnings`
+  = help: to override `-D warnings` add `#[allow(clippy::module_inception)]`
+
+error: doc list item without indentation
+  --> crates\master\src\ui\mod.rs:12:5
+   |
+12 | //! Total: 16.5ms ✅
+   |     ^
+   |
+   = help: if this is supposed to be its own paragraph, add a blank line
+   = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#doc_lazy_continuation
+   = note: `-D clippy::doc-lazy-continuation` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::doc_lazy_continuation)]`
+help: indent this line
+   |
+12 | //!   Total: 16.5ms ✅
+   |     ++
+
+error: doc list item without indentation
+ --> crates\master\src\ui\performance.rs:9:5
+  |
+9 | //! Target: 16.67ms (60 FPS)
+  |     ^
+  |
+  = help: if this is supposed to be its own paragraph, add a blank line
+  = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#doc_lazy_continuation
+help: indent this line
+  |
+9 | //!   Target: 16.67ms (60 FPS)
+  |     ++
+
+error: accessing first element with `self.params.get(0)`
+   --> crates\master\src\ui\vt_parser.rs:103:31
+    |
+103 |                     let row = self.params.get(0).copied().unwrap_or(1).saturating_sub(1);
+    |                               ^^^^^^^^^^^^^^^^^^ help: try: `self.params.first()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#get_first
+    = note: `-D clippy::get-first` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::get_first)]`
+
+error: accessing first element with `self.params.get(0)`
+   --> crates\master\src\ui\vt_parser.rs:120:29
+    |
+120 |                     let n = self.params.get(0).copied().unwrap_or(1);
+    |                             ^^^^^^^^^^^^^^^^^^ help: try: `self.params.first()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#get_first
+
+error: accessing first element with `self.params.get(0)`
+   --> crates\master\src\ui\vt_parser.rs:130:29
+    |
+130 |                     let n = self.params.get(0).copied().unwrap_or(1);
+    |                             ^^^^^^^^^^^^^^^^^^ help: try: `self.params.first()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#get_first
+
+error: function `working_dir` is never used
+  --> crates\master\src\pty\tests.rs:17:8
+   |
+17 |     fn working_dir() -> impl Strategy<Value = PathBuf> {
+   |        ^^^^^^^^^^^
+
+error: could not compile `monoterminal-master` (lib) due to 64 previous errors
+error: the borrowed expression implements the required traits
+   --> crates\master\src\auth\keys.rs:321:30
+    |
+321 |         fs::write(&key_path, &[0u8; 16]).unwrap();
+    |                              ^^^^^^^^^^ help: change this to: `[0u8; 16]`
+    |
+    = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#needless_borrows_for_generic_args
+    = note: `-D clippy::needless-borrows-for-generic-args` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::needless_borrows_for_generic_args)]`
+
+error: function call inside of `expect`
+   --> crates\master\src\pty\tests.rs:246:18
+    |
+246 |                 .expect(&format!("Failed to create PTY iteration {}", i));
+    |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `unwrap_or_else(|_| 
+panic!("Failed to create PTY iteration {}", i))`
+    |
+    = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#expect_fun_call
+    = note: `-D clippy::expect-fun-call` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::expect_fun_call)]`
+
+error: field assignment outside of initializer for an instance created with Default::default()
+  --> crates\master\src\server\tests.rs:44:9
+   |
+44 |         config.bind_addr = "127.0.0.1:8080".parse().unwrap();
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+note: consider initializing the variable with `server::ServerConfig { bind_addr: "127.0.0.1:8080".parse().unwrap(), 
+..Default::default() }` and removing relevant reassignments
+  --> crates\master\src\server\tests.rs:43:9
+   |
+43 |         let mut config = ServerConfig::default();
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#field_reassign_with_default
+   = note: `-D clippy::field-reassign-with-default` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::field_reassign_with_default)]`
+
+error: field assignment outside of initializer for an instance created with Default::default()
+  --> crates\master\src\server\tests.rs:52:9
+   |
+52 |         config.max_connections = 500;
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+note: consider initializing the variable with `server::ServerConfig { max_connections: 500, rate_limit_per_minute: 50, 
+..Default::default() }` and removing relevant reassignments
+  --> crates\master\src\server\tests.rs:51:9
+   |
+51 |         let mut config = ServerConfig::default();
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#field_reassign_with_default
+
+error: field assignment outside of initializer for an instance created with Default::default()
+  --> crates\master\src\server\tests.rs:62:9
+   |
+62 |         config.dev_mode = true;
+   |         ^^^^^^^^^^^^^^^^^^^^^^^
+   |
+note: consider initializing the variable with `server::ServerConfig { dev_mode: true, ..Default::default() }` and 
+removing relevant reassignments
+  --> crates\master\src\server\tests.rs:61:9
+   |
+61 |         let mut config = ServerConfig::default();
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#field_reassign_with_default
+
+error: field assignment outside of initializer for an instance created with Default::default()
+  --> crates\master\src\server\tests.rs:90:9
+   |
+90 |         tls_config.cert_path = PathBuf::from("custom/cert.pem");
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+note: consider initializing the variable with `server::tls::TlsConfig { cert_path: PathBuf::from("custom/cert.pem"), 
+key_path: PathBuf::from("custom/key.pem") }` and removing relevant reassignments
+  --> crates\master\src\server\tests.rs:89:9
+   |
+89 |         let mut tls_config = TlsConfig::default();
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#field_reassign_with_default
+
+error: deref which would be done by auto-deref
+   --> crates\master\src\session\tests.rs:139:57
+    |
+139 |             let result = manager.send_input(session_id, *input).await;
+    |                                                         ^^^^^^ help: try: `input`
+    |
+    = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#explicit_auto_deref
+    = note: `-D clippy::explicit-auto-deref` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::explicit_auto_deref)]`
+
+error: this comparison involving the minimum or maximum element for this type contains a case that is always true or 
+always false
+   --> crates\master\src\session\tests.rs:183:17
+    |
+183 |         assert!(snapshot.scrollback.len() >= 0);
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: because `0` is the minimum value for this type, this comparison is always true
+    = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#absurd_extreme_comparisons
+    = note: `#[deny(clippy::absurd_extreme_comparisons)]` on by default
+
+error: returning the result of a `let` binding from a block
+   --> crates\master\src\ui\test_support.rs:206:9
+    |
+205 |         let padded = (bytes_per_row + align - 1) / align * align;
+    |         --------------------------------------------------------- unnecessary `let` binding
+206 |         padded
+    |         ^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#let_and_return
+    = note: `-D clippy::let-and-return` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::let_and_return)]`
+help: return the expression directly
+    |
+205 ~         
+206 ~         (bytes_per_row + align - 1) / align * align
+    |
+
+error: module has the same name as its containing module
+   --> crates\master\src\ui\tests.rs:6:1
+    |
+  6 | / mod tests {
+  7 | |     use super::super::*;
+  8 | |     use bytes::Bytes;
+  9 | |     use glyph_cache::{GlyphCache, GlyphKey};
+...   |
+133 | | }
+    | |_^
+    |
+    = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#module_inception
+
+error: comparison is useless due to type limits
+   --> crates\master\src\session\tests.rs:183:17
+    |
+183 |         assert!(snapshot.scrollback.len() >= 0);
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `-D unused-comparisons` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(unused_comparisons)]`
+
+error: could not compile `monoterminal-master` (lib test) due to 88 previous errors

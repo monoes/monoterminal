@@ -4,7 +4,7 @@
 
 use crate::discovery::directory::{DirectoryClient, PeerEndpoint, RegistrationInfo};
 use crate::discovery::error::{DiscoveryError, Result};
-use crate::discovery::mdns::{MdnsDiscovery, ServiceInfo};
+use crate::discovery::mdns::MdnsDiscovery;
 use crate::discovery::DiscoveryConfig;
 use std::time::Duration;
 use tracing::{debug, info, warn};

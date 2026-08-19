@@ -1,7 +1,7 @@
 // Rate limiting implementation using token bucket algorithm
 // SRS §3.2.4: Connection, auth, and session rate limits
 
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
@@ -204,7 +204,7 @@ impl RateLimiter {
 
     /// Cleanup expired entries (call periodically)
     pub fn cleanup(&self) {
-        let now = Instant::now();
+        let _now = Instant::now();
 
         // Cleanup auth trackers with expired bans
         let mut trackers = self.auth_trackers.lock().unwrap();

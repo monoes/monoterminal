@@ -9,7 +9,7 @@
 //! Target: 16.67ms (60 FPS)
 
 use std::collections::VecDeque;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 const FPS_HISTORY_SIZE: usize = 60;
 

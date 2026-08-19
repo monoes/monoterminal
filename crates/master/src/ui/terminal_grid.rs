@@ -3,7 +3,7 @@
 //! Manages terminal cells with attributes, cursor position, and dirty tracking
 //! Target: <0.5ms dirty tracking per SRS §2.1.1
 
-use super::vt_parser::{CellStyle, Color, GridChange};
+use super::vt_parser::{CellStyle, GridChange};
 
 /// Terminal grid managing cells and cursor
 pub struct TerminalGrid {

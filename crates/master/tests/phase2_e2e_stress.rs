@@ -71,7 +71,7 @@ fn create_test_record(
 /// Tests: 3+ clients attaching to same session with different permissions
 #[tokio::test]
 async fn e2e_multi_client_rbac() -> Result<()> {
-    let (_temp_dir, db, manager) = setup_test_env().await?;
+    let (_temp_dir, db, _manager) = setup_test_env().await?;
 
     // Create session with owner
     let session_id = Uuid::new_v4();
@@ -249,7 +249,7 @@ async fn e2e_acl_permission_enforcement() -> Result<()> {
             monoterminal_master::persistence::session::load_session(&conn, &session_id)?
         };
 
-        let loaded_acl = loaded.acl.expect(&format!("ACL missing for {}", name));
+        let loaded_acl = loaded.acl.unwrap_or_else(|| panic!("ACL missing for {}", name));
         assert_eq!(
             loaded_acl.get(*user),
             Some(&permission.to_string()),

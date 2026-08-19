@@ -512,7 +512,7 @@ impl SessionManager {
         container
             .terminate_pty()
             .await
-            .map_err(|e| SessionError::IoError(e))?;
+            .map_err(SessionError::IoError)?;
 
         // Give the output loop time to detect termination and clean up
         tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
@@ -858,7 +858,7 @@ impl SessionManager {
     /// in the session's working directory tree.
     ///
     /// Returns None if session not found.
-    pub fn get_session_cwd(&self, session_id: SessionId) -> Option<PathBuf> {
+    pub fn get_session_cwd(&self, _session_id: SessionId) -> Option<PathBuf> {
         // Note: This is a synchronous method that returns immediately
         // We can't use async here because we're called from process_message
         // which needs to get the cwd synchronously.

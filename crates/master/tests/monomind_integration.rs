@@ -71,7 +71,7 @@ async fn test_health_check_request_response() {
 
                     // ✅ Response includes `installed` flag
                     assert!(
-                        health_resp.installed == true || health_resp.installed == false,
+                        health_resp.installed || !health_resp.installed,
                         "HealthCheckResponse must include installed field"
                     );
 

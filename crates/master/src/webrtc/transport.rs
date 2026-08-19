@@ -2,7 +2,7 @@
 // ADR-011 §1: Transport Strategy - Both active concurrently
 
 use crate::webrtc::error::{Result, WebRtcError};
-use crate::webrtc::peer_connection::{DataChannelMessage, PeerConnection, PeerConnectionState};
+use crate::webrtc::peer_connection::{PeerConnection, PeerConnectionState};
 use std::sync::Arc;
 use tokio::sync::{mpsc, Mutex};
 use tracing::{debug, warn};

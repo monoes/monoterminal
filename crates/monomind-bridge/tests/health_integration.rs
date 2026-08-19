@@ -280,7 +280,7 @@ fn test_upgrade_result_serialization() {
     let deserialized: UpgradeResult = serde_json::from_str(&json).unwrap();
 
     assert_eq!(result, deserialized);
-    assert_eq!(deserialized.success, true);
+    assert!(deserialized.success);
     assert_eq!(deserialized.old_version, Some("1.0.0".to_string()));
     assert_eq!(deserialized.new_version, Some("1.2.3".to_string()));
     assert_eq!(deserialized.output, "Upgrade successful");
@@ -299,7 +299,7 @@ async fn test_concurrent_health_checks() {
     for _ in 0..5 {
         let project = Arc::clone(&project);
         let handle = tokio::spawn(async move {
-            let _result = run_doctor_check(&*project).await;
+            let _result = run_doctor_check(&project).await;
             // Result can be Ok or Err, we just verify it doesn't panic
         });
         handles.push(handle);

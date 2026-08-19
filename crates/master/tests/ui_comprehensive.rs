@@ -14,13 +14,12 @@
 
 mod common;
 
-use monoterminal_master::ui::*;
 
 // ===== Window Module Tests =====
 
 #[cfg(test)]
 mod window_tests {
-    use super::*;
+    
 
     #[test]
     fn test_window_dimensions() {
@@ -92,7 +91,7 @@ mod window_tests {
 
 #[cfg(test)]
 mod layout_tests {
-    use super::*;
+    
 
     #[test]
     fn test_layout_grid_size_standard() {
@@ -148,7 +147,7 @@ mod layout_tests {
 
 #[cfg(test)]
 mod performance_tests {
-    use super::*;
+    
     use std::time::Duration;
 
     #[test]
@@ -219,7 +218,7 @@ mod performance_tests {
 
 #[cfg(test)]
 mod font_tests {
-    use super::*;
+    
 
     #[test]
     fn test_font_sizes() {
@@ -263,7 +262,7 @@ mod font_tests {
 
 #[cfg(test)]
 mod vt_parser_advanced_tests {
-    use super::*;
+    
 
     #[test]
     fn test_vt_parser_escape_sequences() {
@@ -343,7 +342,7 @@ mod vt_parser_advanced_tests {
 
 #[cfg(test)]
 mod terminal_grid_advanced_tests {
-    use super::*;
+    
 
     #[test]
     fn test_grid_boundary_checks() {
@@ -422,7 +421,7 @@ mod terminal_grid_advanced_tests {
 
 #[cfg(test)]
 mod renderer_tests {
-    use super::*;
+    
 
     #[test]
     fn test_renderer_wgpu_backend() {
@@ -494,7 +493,7 @@ mod renderer_tests {
 
 #[cfg(test)]
 mod ui_integration_tests {
-    use super::*;
+    
     use std::time::Duration;
 
     #[test]

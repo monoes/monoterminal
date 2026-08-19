@@ -21,7 +21,6 @@ pub mod session;
 use anyhow::{Context, Result};
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
-use rusqlite::Connection;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 

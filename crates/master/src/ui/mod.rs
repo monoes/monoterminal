@@ -37,7 +37,6 @@ mod tests;
 mod test_support_integration;
 
 use anyhow::Result;
-use std::sync::Arc;
 
 /// Main UI entry point
 /// Initializes window, wgpu, and egui
