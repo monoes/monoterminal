@@ -1,0 +1,42 @@
+Source: monoterminal
+Section: utils
+Priority: optional
+Maintainer: MONOTERMINAL Team <team@monoterminal.dev>
+Build-Depends:
+ debhelper-compat (= 13),
+ cargo,
+ rustc (>= 1.70),
+ librust-dev,
+ protobuf-compiler,
+ pkg-config,
+ libssl-dev
+Standards-Version: 4.6.2
+Homepage: https://github.com/monoterminal/monoterminal
+Vcs-Git: https://github.com/monoterminal/monoterminal.git
+Vcs-Browser: https://github.com/monoterminal/monoterminal
+Rules-Requires-Root: no
+
+Package: monoterminal
+Architecture: amd64
+Depends:
+ ${shlibs:Depends},
+ ${misc:Depends},
+ systemd,
+ adduser
+Description: Modern terminal session management daemon
+ MONOTERMINAL is a modern terminal session management daemon that enables
+ persistent terminal sessions, multi-client collaboration, and P2P networking.
+ .
+ Features:
+  - Persistent terminal sessions (survive disconnects)
+  - Multi-client collaboration (multiple users per session)
+  - Cross-platform PTY support (Windows ConPTY, Linux pty.rs, macOS util.h)
+  - WebSocket protocol with TLS 1.3 encryption
+  - Ed25519/JWT authentication with RBAC
+  - P2P WebRTC networking for direct connections
+  - SQLite persistence for session state
+  - React PWA web client with xterm.js
+  - Monomind integration for health monitoring
+ .
+ This package includes the master daemon and systemd service integration
+ for automated service management on Linux systems.

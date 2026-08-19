@@ -1,0 +1,41 @@
+#!/bin/bash
+set -e
+
+# MONOTERMINAL Post-Removal Script
+# Phase 3 Week 9-10: Distribution Package Planning
+
+case "$1" in
+    purge)
+        # Remove service user and group (only on purge)
+        if getent passwd monoterminal > /dev/null 2>&1; then
+            deluser --quiet --system monoterminal || true
+        fi
+
+        if getent group monoterminal > /dev/null 2>&1; then
+            delgroup --quiet --system monoterminal || true
+        fi
+
+        # Remove data directories (only on purge, preserve on upgrade)
+        rm -rf /var/lib/monoterminal || true
+        rm -rf /var/log/monoterminal || true
+        rm -rf /etc/monoterminal || true
+
+        # Reload systemd
+        systemctl daemon-reload || true
+        ;;
+
+    remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+        # On upgrade/remove: preserve data, user, and logs
+        # Only reload systemd
+        systemctl daemon-reload || true
+        ;;
+
+    *)
+        echo "postrm called with unknown argument \`$1'" >&2
+        exit 1
+        ;;
+esac
+
+#DEBHELPER#
+
+exit 0

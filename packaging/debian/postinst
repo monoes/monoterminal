@@ -1,0 +1,56 @@
+#!/bin/bash
+set -e
+
+# MONOTERMINAL Post-Installation Script
+# Phase 3 Week 9-10: Distribution Package Planning
+
+# Create monoterminal system user and group
+if ! getent group monoterminal > /dev/null 2>&1; then
+    addgroup --system monoterminal
+fi
+
+if ! getent passwd monoterminal > /dev/null 2>&1; then
+    adduser --system --home /var/lib/monoterminal \
+            --no-create-home --ingroup monoterminal \
+            --disabled-password --shell /usr/sbin/nologin \
+            --gecos "MONOTERMINAL service user" monoterminal
+fi
+
+# Create directories (systemd StateDirectory/LogsDirectory handles most)
+# ConfigurationDirectory: /etc/monoterminal
+# StateDirectory: /var/lib/monoterminal
+# LogsDirectory: /var/log/monoterminal
+
+# Ensure directories exist with correct permissions
+mkdir -p /var/lib/monoterminal
+mkdir -p /var/log/monoterminal
+mkdir -p /etc/monoterminal
+
+# Set ownership
+chown monoterminal:monoterminal /var/lib/monoterminal || true
+chown monoterminal:monoterminal /var/log/monoterminal || true
+chmod 750 /var/lib/monoterminal || true
+chmod 750 /var/log/monoterminal || true
+
+# Reload systemd daemon and enable service
+systemctl daemon-reload || true
+
+# Enable (but don't start automatically - user choice)
+systemctl enable monoterminal.service || true
+
+echo ""
+echo "MONOTERMINAL has been installed successfully."
+echo ""
+echo "To start the service:"
+echo "  sudo systemctl start monoterminal"
+echo ""
+echo "To check status:"
+echo "  sudo systemctl status monoterminal"
+echo ""
+echo "Configuration: /etc/monoterminal/config.toml"
+echo "Logs: /var/log/monoterminal/ and journalctl -u monoterminal"
+echo ""
+
+#DEBHELPER#
+
+exit 0

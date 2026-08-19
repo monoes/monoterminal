@@ -1,0 +1,14 @@
+#!/bin/bash
+set -e
+
+# MONOTERMINAL Pre-Removal Script
+# Phase 3 Week 9-10: Distribution Package Planning
+
+# Stop service if running
+if systemctl is-active --quiet monoterminal.service; then
+    systemctl stop monoterminal.service || true
+fi
+
+#DEBHELPER#
+
+exit 0

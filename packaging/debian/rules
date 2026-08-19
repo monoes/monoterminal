@@ -1,0 +1,45 @@
+#!/usr/bin/make -f
+# MONOTERMINAL Debian Package Build Rules
+# Phase 3 Week 9-10: Distribution Package Planning
+
+# Enable full hardening flags
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+# Cargo build configuration
+export CARGO_HOME = $(CURDIR)/debian/.cargo
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	# Build release binary with Cargo
+	cargo build --release --workspace
+
+override_dh_auto_test:
+	# Skip tests during package build (run in CI instead)
+	@echo "Tests skipped during package build (validated in CI)"
+
+override_dh_auto_install:
+	# Install binary
+	install -D -m 0755 target/release/monoterminal-master \
+		debian/monoterminal/usr/local/bin/monoterminal-master
+
+	# Install systemd unit file
+	install -D -m 0644 templates/systemd/monoterminal.service \
+		debian/monoterminal/lib/systemd/system/monoterminal.service
+
+	# Install documentation
+	install -D -m 0644 README.md \
+		debian/monoterminal/usr/share/doc/monoterminal/README.md
+	install -D -m 0644 LICENSE \
+		debian/monoterminal/usr/share/doc/monoterminal/copyright
+
+override_dh_auto_clean:
+	# Clean cargo build artifacts
+	cargo clean || true
+	rm -rf $(CARGO_HOME)
+
+override_dh_strip:
+	# Skip stripping - Rust release binaries are already optimized
+	# Stripping can cause issues with Rust binaries
+	@echo "Skipping strip (Rust release binary already optimized)"

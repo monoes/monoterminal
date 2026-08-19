@@ -1,0 +1,12 @@
+monoterminal (0.1.0-1) unstable; urgency=medium
+
+  * Initial Debian package release
+  * Phase 3 Linux support with Unix PTY backend
+  * systemd service integration (Type=notify)
+  * WebSocket protocol with TLS 1.3 encryption
+  * Ed25519/JWT authentication with RBAC
+  * Cross-platform builds (Windows, Linux, macOS)
+  * React PWA web client with xterm.js
+  * Monomind integration for health monitoring
+
+ -- MONOTERMINAL Team <team@monoterminal.dev>  Wed, 19 Aug 2026 18:00:00 +0200
