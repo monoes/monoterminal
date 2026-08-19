@@ -123,6 +123,7 @@ impl Default for PerformanceMonitor {
 mod tests {
     use super::*;
     use std::thread;
+    use std::time::Duration;
 
     #[test]
     fn test_performance_monitor_new() {
