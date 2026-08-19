@@ -4,11 +4,13 @@
 //! Per SRS §2.1.1, §4.2.1
 //!
 //! Frame Budget Breakdown:
+//!
 //! - PTY read: 2ms (handled by backend)
 //! - Dirty tracking: 0.5ms
 //! - Glyph lookup: 1ms
 //! - GPU render: 8ms
 //! - VSync: 5ms
+//!
 //! Total: 16.5ms ✅
 
 pub mod backend_selection;
@@ -23,7 +25,7 @@ pub mod vt_parser;
 pub mod window;
 
 // Test support (for tests and integration tests)
-#[cfg(any(test, feature = "test_support"))]
+#[cfg(test)]
 pub mod test_support;
 
 pub use renderer::Renderer;
