@@ -9,7 +9,7 @@ use std::path::PathBuf;
 use uuid::Uuid;
 
 /// Persisted session record
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SessionRecord {
     pub session_id: Uuid,
     pub created_at: String,
@@ -54,15 +54,21 @@ impl SessionStatus {
 
 /// Create a new session record in the database
 pub fn create_session(conn: &Connection, record: &SessionRecord) -> Result<()> {
-    let env_vars_json = record.env_vars.as_ref()
+    let env_vars_json = record
+        .env_vars
+        .as_ref()
         .map(|e| serde_json::to_string(e))
         .transpose()?;
 
-    let acl_json = record.acl.as_ref()
+    let acl_json = record
+        .acl
+        .as_ref()
         .map(|a| serde_json::to_string(a))
         .transpose()?;
 
-    let metadata_json = record.metadata.as_ref()
+    let metadata_json = record
+        .metadata
+        .as_ref()
         .map(|m| serde_json::to_string(m))
         .transpose()?;
 
@@ -85,7 +91,8 @@ pub fn create_session(conn: &Connection, record: &SessionRecord) -> Result<()> {
             acl_json,
             metadata_json,
         ],
-    ).context("Failed to insert session record")?;
+    )
+    .context("Failed to insert session record")?;
 
     tracing::info!("Created session record: {}", record.session_id);
     Ok(())
@@ -96,29 +103,31 @@ pub fn load_session(conn: &Connection, session_id: &Uuid) -> Result<SessionRecor
     let mut stmt = conn.prepare(
         "SELECT session_id, created_at, last_accessed_at, status, shell_path, working_dir,
                 env_vars, rows, cols, owner_user_id, acl, metadata
-         FROM sessions WHERE session_id = ?1"
+         FROM sessions WHERE session_id = ?1",
     )?;
 
-    let record = stmt.query_row(params![session_id.to_string()], |row| {
-        let env_vars: Option<String> = row.get(6)?;
-        let acl: Option<String> = row.get(10)?;
-        let metadata: Option<String> = row.get(11)?;
+    let record = stmt
+        .query_row(params![session_id.to_string()], |row| {
+            let env_vars: Option<String> = row.get(6)?;
+            let acl: Option<String> = row.get(10)?;
+            let metadata: Option<String> = row.get(11)?;
 
-        Ok(SessionRecord {
-            session_id: Uuid::parse_str(&row.get::<_, String>(0)?).unwrap(),
-            created_at: row.get(1)?,
-            last_accessed_at: row.get(2)?,
-            status: SessionStatus::from_str(&row.get::<_, String>(3)?).unwrap(),
-            shell_path: row.get(4)?,
-            working_dir: PathBuf::from(row.get::<_, String>(5)?),
-            env_vars: env_vars.and_then(|s| serde_json::from_str(&s).ok()),
-            rows: row.get(7)?,
-            cols: row.get(8)?,
-            owner_user_id: row.get(9)?,
-            acl: acl.and_then(|s| serde_json::from_str(&s).ok()),
-            metadata: metadata.and_then(|s| serde_json::from_str(&s).ok()),
+            Ok(SessionRecord {
+                session_id: Uuid::parse_str(&row.get::<_, String>(0)?).unwrap(),
+                created_at: row.get(1)?,
+                last_accessed_at: row.get(2)?,
+                status: SessionStatus::from_str(&row.get::<_, String>(3)?).unwrap(),
+                shell_path: row.get(4)?,
+                working_dir: PathBuf::from(row.get::<_, String>(5)?),
+                env_vars: env_vars.and_then(|s| serde_json::from_str(&s).ok()),
+                rows: row.get(7)?,
+                cols: row.get(8)?,
+                owner_user_id: row.get(9)?,
+                acl: acl.and_then(|s| serde_json::from_str(&s).ok()),
+                metadata: metadata.and_then(|s| serde_json::from_str(&s).ok()),
+            })
         })
-    }).context("Failed to load session record")?;
+        .context("Failed to load session record")?;
 
     Ok(record)
 }
@@ -173,29 +182,31 @@ pub fn list_active_sessions(conn: &Connection) -> Result<Vec<SessionRecord>> {
         "SELECT session_id, created_at, last_accessed_at, status, shell_path, working_dir,
                 env_vars, rows, cols, owner_user_id, acl, metadata
          FROM sessions WHERE status != 'TERMINATED'
-         ORDER BY last_accessed_at DESC"
+         ORDER BY last_accessed_at DESC",
     )?;
 
-    let sessions = stmt.query_map([], |row| {
-        let env_vars: Option<String> = row.get(6)?;
-        let acl: Option<String> = row.get(10)?;
-        let metadata: Option<String> = row.get(11)?;
+    let sessions = stmt
+        .query_map([], |row| {
+            let env_vars: Option<String> = row.get(6)?;
+            let acl: Option<String> = row.get(10)?;
+            let metadata: Option<String> = row.get(11)?;
 
-        Ok(SessionRecord {
-            session_id: Uuid::parse_str(&row.get::<_, String>(0)?).unwrap(),
-            created_at: row.get(1)?,
-            last_accessed_at: row.get(2)?,
-            status: SessionStatus::from_str(&row.get::<_, String>(3)?).unwrap(),
-            shell_path: row.get(4)?,
-            working_dir: PathBuf::from(row.get::<_, String>(5)?),
-            env_vars: env_vars.and_then(|s| serde_json::from_str(&s).ok()),
-            rows: row.get(7)?,
-            cols: row.get(8)?,
-            owner_user_id: row.get(9)?,
-            acl: acl.and_then(|s| serde_json::from_str(&s).ok()),
-            metadata: metadata.and_then(|s| serde_json::from_str(&s).ok()),
-        })
-    })?.collect::<Result<Vec<_>, _>>()?;
+            Ok(SessionRecord {
+                session_id: Uuid::parse_str(&row.get::<_, String>(0)?).unwrap(),
+                created_at: row.get(1)?,
+                last_accessed_at: row.get(2)?,
+                status: SessionStatus::from_str(&row.get::<_, String>(3)?).unwrap(),
+                shell_path: row.get(4)?,
+                working_dir: PathBuf::from(row.get::<_, String>(5)?),
+                env_vars: env_vars.and_then(|s| serde_json::from_str(&s).ok()),
+                rows: row.get(7)?,
+                cols: row.get(8)?,
+                owner_user_id: row.get(9)?,
+                acl: acl.and_then(|s| serde_json::from_str(&s).ok()),
+                metadata: metadata.and_then(|s| serde_json::from_str(&s).ok()),
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(sessions)
 }
@@ -204,7 +215,11 @@ pub fn list_active_sessions(conn: &Connection) -> Result<Vec<SessionRecord>> {
 pub fn count_sessions_by_status(conn: &Connection) -> Result<HashMap<SessionStatus, u64>> {
     let mut counts = HashMap::new();
 
-    for status in &[SessionStatus::Running, SessionStatus::Detached, SessionStatus::Terminated] {
+    for status in &[
+        SessionStatus::Running,
+        SessionStatus::Detached,
+        SessionStatus::Terminated,
+    ] {
         let count: i64 = conn.query_row(
             "SELECT COUNT(*) FROM sessions WHERE status = ?1",
             params![status.as_str()],
@@ -243,7 +258,10 @@ mod tests {
             rows: 24,
             cols: 80,
             owner_user_id: Some("alice@example.com".to_string()),
-            acl: Some(HashMap::from([("bob@example.com".to_string(), "viewer".to_string())])),
+            acl: Some(HashMap::from([(
+                "bob@example.com".to_string(),
+                "viewer".to_string(),
+            )])),
             metadata: Some(serde_json::json!({"name": "test-session"})),
         };
 

@@ -67,7 +67,7 @@ impl Default for WebRtcConfig {
     fn default() -> Self {
         Self {
             stun_servers: StunServerConfig::default(),
-            turn_servers: None, // Week 3-4
+            turn_servers: None,                             // Week 3-4
             ice_gathering_timeout: Duration::from_secs(10), // STUN only
             negotiation_timeout: Duration::from_secs(15),   // Total timeout
             data_channel_buffer_size: 256 * 1024,           // 256 KB
@@ -84,9 +84,9 @@ impl WebRtcConfig {
                 urls: vec!["stun:stun.l.google.com:19302".to_string()],
             },
             turn_servers: None,
-            ice_gathering_timeout: Duration::from_secs(5),  // Shorter for tests
-            negotiation_timeout: Duration::from_secs(10),    // Shorter for tests
-            data_channel_buffer_size: 64 * 1024,            // 64 KB
+            ice_gathering_timeout: Duration::from_secs(5), // Shorter for tests
+            negotiation_timeout: Duration::from_secs(10),  // Shorter for tests
+            data_channel_buffer_size: 64 * 1024,           // 64 KB
             trickle_ice: true,
         }
     }

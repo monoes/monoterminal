@@ -103,32 +103,34 @@ pub fn fetch_range(
          FROM scrollback
          WHERE session_id = ?1 AND line_number >= ?2
          ORDER BY line_number ASC
-         LIMIT ?3"
+         LIMIT ?3",
     )?;
 
-    let lines = stmt.query_map(params![session_id.to_string(), start_line, limit], |row| {
-        let line_number: u64 = row.get(0)?;
-        let blob: Vec<u8> = row.get(1)?;
-        let data_compressed: bool = row.get(2)?;
-        let timestamp_ms: u64 = row.get(3)?;
-        let sequence_number: u64 = row.get(4)?;
+    let lines = stmt
+        .query_map(params![session_id.to_string(), start_line, limit], |row| {
+            let line_number: u64 = row.get(0)?;
+            let blob: Vec<u8> = row.get(1)?;
+            let data_compressed: bool = row.get(2)?;
+            let timestamp_ms: u64 = row.get(3)?;
+            let sequence_number: u64 = row.get(4)?;
 
-        // Decompress if needed
-        let data = if data_compressed {
-            zstd::decode_all(&blob[..])
-                .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?
-        } else {
-            blob
-        };
+            // Decompress if needed
+            let data = if data_compressed {
+                zstd::decode_all(&blob[..])
+                    .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?
+            } else {
+                blob
+            };
 
-        Ok(ScrollbackLine {
-            session_id: *session_id,
-            line_number,
-            data,
-            timestamp_ms,
-            sequence_number,
-        })
-    })?.collect::<Result<Vec<_>, _>>()?;
+            Ok(ScrollbackLine {
+                session_id: *session_id,
+                line_number,
+                data,
+                timestamp_ms,
+                sequence_number,
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(lines)
 }
@@ -145,9 +147,8 @@ pub fn count_lines(conn: &Connection, session_id: &Uuid) -> Result<u64> {
 
 /// Get compression statistics for a session
 pub fn compression_stats(conn: &Connection, session_id: &Uuid) -> Result<CompressionStats> {
-    let mut stmt = conn.prepare(
-        "SELECT data, data_compressed FROM scrollback WHERE session_id = ?1"
-    )?;
+    let mut stmt =
+        conn.prepare("SELECT data, data_compressed FROM scrollback WHERE session_id = ?1")?;
 
     let mut total_raw_size = 0u64;
     let mut total_stored_size = 0u64;
@@ -168,8 +169,8 @@ pub fn compression_stats(conn: &Connection, session_id: &Uuid) -> Result<Compres
         if is_compressed {
             compressed_count += 1;
             // Decompress to get original size
-            let decompressed = zstd::decode_all(&blob[..])
-                .context("Failed to decompress for stats")?;
+            let decompressed =
+                zstd::decode_all(&blob[..]).context("Failed to decompress for stats")?;
             total_raw_size += decompressed.len() as u64;
         } else {
             total_raw_size += blob.len() as u64;
@@ -203,11 +204,7 @@ pub struct CompressionStats {
 
 /// Delete old scrollback lines (retention policy)
 /// Keeps only the last `keep_lines` lines per session
-pub fn prune_old_lines(
-    conn: &Connection,
-    session_id: &Uuid,
-    keep_lines: u64,
-) -> Result<u64> {
+pub fn prune_old_lines(conn: &Connection, session_id: &Uuid, keep_lines: u64) -> Result<u64> {
     let deleted = conn.execute(
         "DELETE FROM scrollback
          WHERE session_id = ?1
@@ -219,7 +216,11 @@ pub fn prune_old_lines(
         params![session_id.to_string(), keep_lines],
     )?;
 
-    tracing::info!("Pruned {} old scrollback lines for session {}", deleted, session_id);
+    tracing::info!(
+        "Pruned {} old scrollback lines for session {}",
+        deleted,
+        session_id
+    );
     Ok(deleted as u64)
 }
 
@@ -280,11 +281,13 @@ mod tests {
         store_line(&conn, &line).unwrap();
 
         // Verify it was compressed
-        let compressed: bool = conn.query_row(
-            "SELECT data_compressed FROM scrollback WHERE session_id = ?1",
-            params![session_id.to_string()],
-            |row| row.get(0),
-        ).unwrap();
+        let compressed: bool = conn
+            .query_row(
+                "SELECT data_compressed FROM scrollback WHERE session_id = ?1",
+                params![session_id.to_string()],
+                |row| row.get(0),
+            )
+            .unwrap();
         assert!(compressed);
 
         // Verify we can decompress and get original data

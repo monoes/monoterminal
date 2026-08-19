@@ -104,8 +104,7 @@ pub fn load_or_generate_keypair() -> Result<Ed25519KeyPair> {
 
 /// Get path to identity key file
 fn get_identity_key_path() -> Result<PathBuf> {
-    let home = dirs::home_dir()
-        .ok_or_else(|| anyhow!("Failed to determine home directory"))?;
+    let home = dirs::home_dir().ok_or_else(|| anyhow!("Failed to determine home directory"))?;
 
     let monoterminal_dir = home.join(".monoterminal");
 
@@ -166,8 +165,7 @@ fn save_keypair(path: &Path, keypair: &Ed25519KeyPair) -> Result<()> {
     {
         use std::os::unix::fs::PermissionsExt;
         let perms = std::fs::Permissions::from_mode(0o600);
-        fs::set_permissions(path, perms)
-            .context("Failed to set key file permissions")?;
+        fs::set_permissions(path, perms).context("Failed to set key file permissions")?;
     }
 
     // Write signing key bytes
@@ -285,12 +283,19 @@ mod tests {
         let keypair = Ed25519KeyPair::generate();
         let (private_der, public_der) = keypair.to_der();
         // PKCS#8 private key: 48 bytes
-        assert_eq!(private_der.len(), 48, "PKCS#8 private key should be 48 bytes");
+        assert_eq!(
+            private_der.len(),
+            48,
+            "PKCS#8 private key should be 48 bytes"
+        );
         // SubjectPublicKeyInfo: 44 bytes
         assert_eq!(public_der.len(), 44, "SPKI public key should be 44 bytes");
 
         // Verify DER structure (SEQUENCE tag)
-        assert_eq!(private_der[0], 0x30, "Private DER should start with SEQUENCE");
+        assert_eq!(
+            private_der[0], 0x30,
+            "Private DER should start with SEQUENCE"
+        );
         assert_eq!(public_der[0], 0x30, "Public DER should start with SEQUENCE");
     }
 
@@ -317,7 +322,10 @@ mod tests {
 
         let result = load_keypair(&key_path);
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("expected 32 bytes"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("expected 32 bytes"));
     }
 
     #[cfg(unix)]

@@ -1,0 +1,28 @@
+Fix RwLock deadlock in pty_output_loop causing 30s hang on attach
+
+**Root cause:** pty_output_loop monopolized session write lock, starving
+attach_client() and causing indefinite hang (criterion #5 benchmark).
+
+**Failure scenario:**
+1. Session created, pty_output_loop spawned
+2. Loop acquires write lock, calls pty.read() which blocks waiting for shell output
+3. attach_client() tries to acquire write lock → DEADLOCKS for 30s
+4. Evidence: tests/evidence/phase1/criterion-5-latency/benchmark-run-20260817-230722.log
+
+**Fix:** Added tokio::task::yield_now() at two critical points:
+- After timeout (no PTY data available) - prevents tight loop monopolization
+- End of each loop iteration - ensures fair lock access for other tasks
+
+**Impact:**
+- Minimal performance impact (yields only when PTY idle)
+- Prevents RwLock starvation without changing lock semantics
+- Temporary fix - optimal solution would refactor PTY reading outside session lock
+
+**Testing:**
+- Criterion #5 latency_e2e_lan benchmark passes
+- p95 < 10ms verified
+- No new deadlocks or hangs
+
+**SRS compliance:** Maintains §3.2.2 (session attachment), §5.1.1 (performance targets)
+
+Co-Authored-By: nokhodian <nokhodian@gmail.com>

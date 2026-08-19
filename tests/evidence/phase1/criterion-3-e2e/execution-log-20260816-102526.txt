@@ -1,0 +1,38 @@
+﻿python : Traceback (most recent call last):
+At line:1 char:353
++ ... op\projects\monoterminal"; python tests/run_e2e_suite.py 2>&1 | Tee-O ...
++                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Traceback (most recent call last)::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "C:\Users\nokho\Desktop\projects\monoterminal\tests\run_e2e_suite.py", line 308, in main
+    check_prerequisites()
+  File "C:\Users\nokho\Desktop\projects\monoterminal\tests\run_e2e_suite.py", line 99, in check_prerequisites
+    result = subprocess.run(cmd, capture_output=True, text=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nokho\AppData\Local\Programs\Python\Python311\Lib\subprocess.py", line 548, in run
+    with Popen(*popenargs, **kwargs) as process:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\nokho\AppData\Local\Programs\Python\Python311\Lib\subprocess.py", line 1026, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+  File "C:\Users\nokho\AppData\Local\Programs\Python\Python311\Lib\subprocess.py", line 1538, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [WinError 2] The system cannot find the file specified
+
+[95m[1m======================================================================[0m
+[95m[1mMONOTERMINAL E2E Test Suite - Phase 1 Criterion #3[0m
+[95m[1m======================================================================[0m
+
+Project root: C:\Users\nokho\Desktop\projects\monoterminal
+Timestamp: 2026-08-16 10:25:26
+
+
+[95m[1m======================================================================[0m
+[95m[1mChecking Prerequisites[0m
+[95m[1m======================================================================[0m
+
+[96m▶ Checking Python...[0m
+[92m✓ Python: Python 3.11.9[0m
+[96m▶ Checking Rust...[0m
+[91m✗ Unexpected error: [WinError 2] The system cannot find the file specified[0m

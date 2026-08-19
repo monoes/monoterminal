@@ -15,21 +15,19 @@ use tracing::{error, info};
 pub fn backup_database(src_path: &Path, dest_path: &Path) -> Result<()> {
     // Create destination directory if needed
     if let Some(parent) = dest_path.parent() {
-        std::fs::create_dir_all(parent)
-            .context("Failed to create backup directory")?;
+        std::fs::create_dir_all(parent).context("Failed to create backup directory")?;
     }
 
-    let src_conn = Connection::open(src_path)
-        .context("Failed to open source database")?;
+    let src_conn = Connection::open(src_path).context("Failed to open source database")?;
 
-    let mut dest_conn = Connection::open(dest_path)
-        .context("Failed to open destination database")?;
+    let mut dest_conn =
+        Connection::open(dest_path).context("Failed to open destination database")?;
 
     // SQLite online backup (5 pages at a time, 250ms sleep between batches)
-    let backup = Backup::new(&src_conn, &mut dest_conn)
-        .context("Failed to initialize backup")?;
+    let backup = Backup::new(&src_conn, &mut dest_conn).context("Failed to initialize backup")?;
 
-    backup.run_to_completion(5, Duration::from_millis(250), None)
+    backup
+        .run_to_completion(5, Duration::from_millis(250), None)
         .context("Failed to complete backup")?;
 
     info!("Database backup completed: {:?}", dest_path);
@@ -45,13 +43,11 @@ pub fn restore_database(backup_path: &Path, dest_path: &Path) -> Result<()> {
 
     // Create destination directory if needed
     if let Some(parent) = dest_path.parent() {
-        std::fs::create_dir_all(parent)
-            .context("Failed to create destination directory")?;
+        std::fs::create_dir_all(parent).context("Failed to create destination directory")?;
     }
 
     // Simple file copy for restore
-    std::fs::copy(backup_path, dest_path)
-        .context("Failed to copy backup file")?;
+    std::fs::copy(backup_path, dest_path).context("Failed to copy backup file")?;
 
     info!("Database restored from: {:?}", backup_path);
     Ok(())
@@ -95,7 +91,8 @@ pub fn cleanup_old_backups(backup_dir: &Path, keep_count: usize) -> Result<()> {
         .filter(|path| {
             path.is_file()
                 && path.extension().map_or(false, |ext| ext == "db")
-                && path.file_name()
+                && path
+                    .file_name()
                     .and_then(|n| n.to_str())
                     .map_or(false, |n| n.starts_with("monoterminal-"))
         })
@@ -201,7 +198,9 @@ mod tests {
 
         // Create 10 dummy backup files
         for i in 0..10 {
-            let path = temp_dir.path().join(format!("monoterminal-2026081{}.db", i));
+            let path = temp_dir
+                .path()
+                .join(format!("monoterminal-2026081{}.db", i));
             std::fs::write(&path, b"dummy").unwrap();
         }
 
@@ -223,7 +222,9 @@ mod tests {
 
         // Create some backup files
         for i in 0..3 {
-            let path = temp_dir.path().join(format!("monoterminal-2026081{}.db", i));
+            let path = temp_dir
+                .path()
+                .join(format!("monoterminal-2026081{}.db", i));
             std::fs::write(&path, b"dummy").unwrap();
         }
 

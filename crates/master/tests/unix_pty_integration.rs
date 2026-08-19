@@ -72,13 +72,10 @@ async fn test_session_manager_full_lifecycle() {
         .expect("Failed to send input");
 
     // Read output (with timeout)
-    let output = tokio::time::timeout(
-        tokio::time::Duration::from_secs(2),
-        output_rx.recv(),
-    )
-    .await
-    .expect("Timeout waiting for output")
-    .expect("No output received");
+    let output = tokio::time::timeout(tokio::time::Duration::from_secs(2), output_rx.recv())
+        .await
+        .expect("Timeout waiting for output")
+        .expect("No output received");
 
     // Verify output contains "hello" or "echo"
     let output_str = String::from_utf8_lossy(&output);

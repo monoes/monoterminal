@@ -1,0 +1,52 @@
+# Cargo Build Configuration for MONOTERMINAL
+# Optimized for Windows Phase 1 Development
+
+[build]
+# Use all available cores for parallel compilation
+jobs = 8
+
+[target.x86_64-pc-windows-msvc]
+# Link-time optimization flags for release builds
+rustflags = [
+    "-C", "target-cpu=native",
+    "-C", "link-arg=/INCREMENTAL:NO",  # Faster linking in CI
+]
+
+[profile.dev]
+# Fast compilation for development
+opt-level = 0
+debug = true
+split-debuginfo = "packed"  # Faster debug builds on Windows
+incremental = true
+
+[profile.release]
+# Production builds optimized for performance
+opt-level = 3
+lto = "thin"           # Link-time optimization
+codegen-units = 1      # Better optimization, slower compile
+strip = false          # Keep symbols for debugging
+debug = true           # Include debug info for profiling
+panic = "abort"        # Smaller binary, faster panic handling
+
+[profile.release-signed]
+# Release builds prepared for code signing
+inherits = "release"
+strip = true           # Strip symbols before signing
+debug = false          # No debug info in signed releases
+
+[profile.bench]
+# Benchmarking profile
+inherits = "release"
+debug = false
+strip = true
+
+[profile.test]
+# Test profile with some optimization for faster test runs
+opt-level = 1
+debug = true
+incremental = true
+
+# Environment variables for Windows ConPTY development
+[env]
+# Ensure ConPTY APIs are available
+WINAPI_NO_BUNDLED_LIBRARIES = "1"

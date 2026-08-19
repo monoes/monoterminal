@@ -62,16 +62,14 @@ impl FontManager {
             let consolas_path = PathBuf::from(r"C:\Windows\Fonts\consola.ttf");
             if consolas_path.exists() {
                 tracing::info!("Loading Consolas font");
-                return std::fs::read(&consolas_path)
-                    .context("Failed to read Consolas font");
+                return std::fs::read(&consolas_path).context("Failed to read Consolas font");
             }
 
             // Fallback: Courier New
             let courier_path = PathBuf::from(r"C:\Windows\Fonts\cour.ttf");
             if courier_path.exists() {
                 tracing::warn!("Consolas not found, falling back to Courier New");
-                return std::fs::read(&courier_path)
-                    .context("Failed to read Courier New font");
+                return std::fs::read(&courier_path).context("Failed to read Courier New font");
             }
 
             anyhow::bail!("No suitable monospace font found in C:\\Windows\\Fonts");
@@ -89,14 +87,10 @@ impl FontManager {
     /// Target: <1ms per glyph
     pub fn rasterize_glyph(&self, ch: char, bold: bool, italic: bool) -> Result<RasterizedGlyph> {
         // Get glyph index for character
-        let glyph_index = self.font
-            .lookup_glyph_index(ch);
+        let glyph_index = self.font.lookup_glyph_index(ch);
 
         // Rasterize at configured font size
-        let (metrics, bitmap) = self.font.rasterize_indexed(
-            glyph_index,
-            self.font_size,
-        );
+        let (metrics, bitmap) = self.font.rasterize_indexed(glyph_index, self.font_size);
 
         // Convert fontdue metrics to our format
         let glyph_metrics = GlyphMetrics {
@@ -120,7 +114,9 @@ impl FontManager {
         let width = metrics.advance_width.ceil() as u32;
 
         // Use font line height for cell height
-        let height = self.font.horizontal_line_metrics(self.font_size)
+        let height = self
+            .font
+            .horizontal_line_metrics(self.font_size)
             .map(|m| (m.ascent - m.descent + m.line_gap).ceil() as u32)
             .unwrap_or(self.font_size.ceil() as u32);
 
@@ -205,8 +201,13 @@ mod tests {
             assert!(glyph.height > 0 || ch == ' ');
             assert!(!glyph.bitmap.is_empty() || ch == ' ');
 
-            println!("Glyph '{}': {}x{}, {} bytes",
-                     ch, glyph.width, glyph.height, glyph.bitmap.len());
+            println!(
+                "Glyph '{}': {}x{}, {} bytes",
+                ch,
+                glyph.width,
+                glyph.height,
+                glyph.bitmap.len()
+            );
         }
     }
 
@@ -236,10 +237,10 @@ mod tests {
         // Check metrics are reasonable
         assert!(glyph.metrics.advance_width > 0.0);
 
-        println!("Metrics for 'M': advance={}, bearing_x={}, bearing_y={}",
-                 glyph.metrics.advance_width,
-                 glyph.metrics.bearing_x,
-                 glyph.metrics.bearing_y);
+        println!(
+            "Metrics for 'M': advance={}, bearing_x={}, bearing_y={}",
+            glyph.metrics.advance_width, glyph.metrics.bearing_x, glyph.metrics.bearing_y
+        );
     }
 
     #[test]
@@ -270,7 +271,9 @@ mod tests {
             assert!(
                 (width - first_width).abs() < 0.1,
                 "Char '{}' has different width: {} vs {}",
-                chars[i], width, first_width
+                chars[i],
+                width,
+                first_width
             );
         }
     }
@@ -299,7 +302,10 @@ mod tests {
         let non_zero = glyph.bitmap.iter().filter(|&&b| b > 0).count();
         assert!(non_zero > 0, "Glyph bitmap should have rendered pixels");
 
-        println!("'#' has {} non-zero pixels out of {}",
-                 non_zero, glyph.bitmap.len());
+        println!(
+            "'#' has {} non-zero pixels out of {}",
+            non_zero,
+            glyph.bitmap.len()
+        );
     }
 }

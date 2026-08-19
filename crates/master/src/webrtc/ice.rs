@@ -254,11 +254,8 @@ mod tests {
     async fn test_probe_stun_server_google() {
         // Test actual Google STUN server (may be slow/flaky in CI)
         // Skip if network unavailable
-        let result = probe_stun_server(
-            "stun:stun.l.google.com:19302",
-            Duration::from_secs(5),
-        )
-        .await;
+        let result =
+            probe_stun_server("stun:stun.l.google.com:19302", Duration::from_secs(5)).await;
 
         // We don't assert success because it depends on network
         // Just verify it doesn't panic

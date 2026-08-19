@@ -1,0 +1,1512 @@
+﻿cargo.exe :    Compiling idna v1.1.0
+At line:12 char:1
++ & $cargoPath bench --bench latency_e2e_lan 2>&1 | Tee-Object -FilePat ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (   Compiling idna v1.1.0:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+   Compiling monoterminal-protocol v0.1.0 (C:\Users\nokho\Desktop\projects\monoterminal\crates\protocol)
+   Compiling windows-sys v0.48.0
+   Compiling winit v0.30.13
+   Compiling getrandom v0.3.4
+   Compiling crossbeam-utils v0.8.22
+   Compiling owned_ttf_parser v0.25.1
+   Compiling d3d12 v0.20.0
+   Compiling rustls-webpki v0.102.8
+   Compiling tracing v0.1.44
+   Compiling libloading v0.7.4
+   Compiling num-integer v0.1.47
+   Compiling glutin_wgl_sys v0.5.0
+   Compiling zmij v1.0.23
+   Compiling com v0.6.0
+   Compiling rand_core v0.6.4
+   Compiling gpu-alloc-types v0.3.1
+   Compiling windows-result v0.2.0
+   Compiling spirv v0.3.0+sdk-1.3.268.0
+   Compiling gpu-descriptor-types v0.2.0
+   Compiling wgpu-types v0.20.0
+   Compiling bytemuck_derive v1.12.0
+   Compiling anstyle-query v1.1.5
+   Compiling schannel v0.1.29
+   Compiling hexf-parse v0.2.1
+   Compiling arrayvec v0.7.8
+   Compiling colorchoice v1.0.5
+   Compiling renderdoc-sys v1.1.0
+   Compiling is_terminal_polyfill v1.70.2
+   Compiling rustc-hash v1.1.0
+   Compiling memchr v2.8.3
+   Compiling deranged v0.5.8
+   Compiling emath v0.28.1
+   Compiling time-core v0.1.9
+   Compiling raw-window-handle v0.6.2
+   Compiling profiling v1.0.18
+   Compiling ab_glyph_rasterizer v0.1.10
+   Compiling range-alloc v0.1.5
+   Compiling crossbeam-deque v0.8.7
+   Compiling percent-encoding v2.3.2
+   Compiling unicode-xid v0.2.6
+   Compiling widestring v1.2.1
+   Compiling presser v0.3.1
+   Compiling glow v0.13.1
+   Compiling num-conv v0.2.2
+   Compiling powerfmt v0.2.0
+   Compiling gpu-allocator v0.25.0
+   Compiling form_urlencoded v1.2.2
+   Compiling naga v0.20.0
+   Compiling anstream v1.0.0
+   Compiling ab_glyph v0.2.32
+   Compiling serde_json v1.0.151
+   Compiling time v0.3.55
+   Compiling ecolor v0.28.1
+   Compiling hassle-rs v0.11.0
+   Compiling wgpu-hal v0.21.1
+   Compiling native-tls v0.2.18
+   Compiling gpu-descriptor v0.3.2
+   Compiling windows-strings v0.1.0
+   Compiling gpu-alloc v0.6.2
+   Compiling rand_chacha v0.3.1
+   Compiling num-bigint v0.4.8
+   Compiling rustls v0.22.4
+   Compiling crossbeam-epoch v0.9.20
+   Compiling ash v0.37.3+1.3.251
+   Compiling url v2.5.8
+   Compiling rand_core v0.9.5
+   Compiling rand v0.8.7
+   Compiling khronos-egl v6.0.0
+   Compiling serde v1.0.229
+   Compiling hashbrown v0.14.5
+   Compiling sha1 v0.10.7
+   Compiling http v1.5.0
+   Compiling thiserror v2.0.20
+   Compiling webpki-roots v1.0.9
+   Compiling httparse v1.10.1
+   Compiling zstd-sys v2.0.16+zstd.1.5.7
+   Compiling sct v0.7.1
+   Compiling rustls-webpki v0.101.7
+   Compiling windows-sys v0.59.0
+   Compiling errno v0.3.14
+   Compiling slab v0.4.12
+   Compiling data-encoding v2.11.1
+   Compiling fastrand v2.5.0
+   Compiling option-ext v0.2.0
+   Compiling signature v2.2.0
+   Compiling futures-sink v0.3.34
+   Compiling clap_lex v1.1.0
+   Compiling strsim v0.11.1
+   Compiling regex-syntax v0.8.11
+   Compiling rayon-core v1.13.0
+   Compiling byteorder v1.5.0
+   Compiling nohash-hasher v0.2.0
+   Compiling base64 v0.22.1
+   Compiling lazy_static v1.5.0
+   Compiling futures-core v0.3.34
+   Compiling futures-task v0.3.34
+   Compiling utf-8 v0.7.6
+   Compiling clap_builder v4.6.6
+   Compiling tungstenite v0.21.0
+   Compiling futures-util v0.3.34
+   Compiling pem v3.0.6
+   Compiling sharded-slab v0.1.7
+   Compiling epaint v0.28.1
+   Compiling ed25519 v2.2.3
+   Compiling tempfile v3.27.0
+   Compiling dirs-sys v0.4.1
+   Compiling rustix v0.38.44
+   Compiling rustls v0.21.12
+   Compiling zstd-safe v7.2.4
+   Compiling hashlink v0.9.1
+   Compiling webpki-roots v0.26.11
+   Compiling simple_asn1 v0.6.4
+   Compiling wgpu-core v0.21.1
+   Compiling windows-core v0.58.0
+   Compiling tokio-rustls v0.25.0
+   Compiling tokio-native-tls v0.3.1
+   Compiling curve25519-dalek v4.1.3
+   Compiling anyhow v1.0.104
+   Compiling libsqlite3-sys v0.28.0
+   Compiling sha2 v0.10.9
+   Compiling tracing-log v0.2.0
+   Compiling getrandom v0.4.3
+   Compiling prost v0.13.5
+   Compiling windows-sys v0.52.0
+   Compiling half v2.7.1
+   Compiling async-trait v0.1.92
+   Compiling nu-ansi-term v0.50.3
+   Compiling home v0.5.12
+   Compiling thread_local v1.1.10
+   Compiling ciborium-io v0.2.2
+   Compiling static_assertions v1.1.0
+   Compiling fallible-streaming-iterator v0.1.9
+   Compiling cursor-icon v1.2.0
+   Compiling dpi v0.1.2
+   Compiling either v1.17.0
+   Compiling unicode-segmentation v1.13.3
+   Compiling smol_str v0.2.2
+   Compiling fallible-iterator v0.3.0
+   Compiling base64 v0.21.7
+   Compiling tower-service v0.3.3
+   Compiling tower-layer v0.3.3
+   Compiling predicates-core v1.0.10
+   Compiling plotters-backend v0.3.7
+   Compiling plotters-svg v0.3.7
+   Compiling tower v0.4.13
+   Compiling rustls-pemfile v1.0.4
+   Compiling rusqlite v0.31.0
+   Compiling which v5.0.0
+   Compiling wgpu v0.20.1
+   Compiling ciborium-ll v0.2.2
+   Compiling tracing-subscriber v0.3.23
+   Compiling uuid v1.24.1
+   Compiling ed25519-dalek v2.2.0
+   Compiling monoterminal-monomind-bridge v0.1.0 (C:\Users\nokho\Desktop\projects\monoterminal\crates\monomind-bridge)
+   Compiling tokio-tungstenite v0.21.0
+warning: unused imports: `OrgStatus` and `RunInfo`
+ --> crates\monomind-bridge\src\responses.rs:7:65
+  |
+7 | use crate::{HealthStatus, HealthIssue, Severity, DashboardData, OrgStatus, AgentInfo as BridgeAgentInfo, RunInfo, 
+MemoryStats};
+  |                                                                 ^^^^^^^^^                                ^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+   Compiling windows v0.58.0
+warning: `monoterminal-monomind-bridge` (lib) generated 1 warning (run `cargo fix --lib -p 
+monoterminal-monomind-bridge` to apply 1 suggestion)
+   Compiling jsonwebtoken v9.3.1
+   Compiling zstd v0.13.3
+   Compiling tokio-rustls v0.24.1
+   Compiling clap v4.6.6
+   Compiling dirs v5.0.1
+   Compiling egui v0.28.1
+   Compiling regex-automata v0.4.18
+   Compiling bytemuck v1.25.2
+   Compiling itertools v0.10.5
+   Compiling fontdue v0.9.4
+   Compiling same-file v1.0.6
+   Compiling termtree v0.5.1
+   Compiling wait-timeout v0.2.1
+   Compiling quick-error v1.2.3
+   Compiling hex v0.4.3
+   Compiling encode_unicode v1.0.0
+   Compiling cast v0.3.0
+   Compiling pollster v0.3.0
+   Compiling bit-vec v0.8.0
+   Compiling fnv v1.0.7
+   Compiling monoterminal-master v0.1.0 (C:\Users\nokho\Desktop\projects\monoterminal\crates\master)
+   Compiling rusty-fork v0.3.1
+   Compiling bit-set v0.8.0
+   Compiling criterion-plot v0.5.0
+warning: unused import: `std::sync::Arc`
+ --> crates\master\src\server\connection.rs:4:5
+  |
+4 | use std::sync::Arc;
+  |     ^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `rustls::server::AllowAnyAuthenticatedClient`
+ --> crates\master\src\server\tls.rs:5:5
+  |
+5 | use rustls::server::AllowAnyAuthenticatedClient;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::path::PathBuf`
+ --> crates\master\src\server\handler.rs:8:5
+  |
+8 | use std::path::PathBuf;
+  |     ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `anyhow`
+ --> crates\master\src\auth\rate_limit.rs:4:14
+  |
+4 | use anyhow::{anyhow, Result};
+  |              ^^^^^^
+
+warning: unused import: `std::time::Instant`
+  --> crates\master\src\auth\mod.rs:11:5
+   |
+11 | use std::time::Instant;
+   |     ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Path`
+  --> crates\master\src\ui\fonts.rs:10:17
+   |
+10 | use std::path::{Path, PathBuf};
+   |                 ^^^^
+
+warning: unused import: `Color`
+ --> crates\master\src\ui\glyph_cache.rs:7:35
+  |
+7 | use super::vt_parser::{CellStyle, Color};
+  |                                   ^^^^^
+
+warning: unused import: `Duration`
+  --> crates\master\src\ui\performance.rs:12:17
+   |
+12 | use std::time::{Duration, Instant};
+   |                 ^^^^^^^^
+
+warning: unused import: `Color`
+ --> crates\master\src\ui\terminal_grid.rs:6:35
+  |
+6 | use super::vt_parser::{CellStyle, Color, GridChange};
+  |                                   ^^^^^
+
+warning: unused import: `bytes::Bytes`
+ --> crates\master\src\ui\vt_parser.rs:7:5
+  |
+7 | use bytes::Bytes;
+  |     ^^^^^^^^^^^^
+
+warning: unused import: `ControlFlow`
+  --> crates\master\src\ui\window.rs:10:35
+   |
+10 |     event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
+   |                                   ^^^^^^^^^^^
+
+warning: unused import: `std::sync::Arc`
+  --> crates\master\src\ui\mod.rs:32:5
+   |
+32 | use std::sync::Arc;
+   |     ^^^^^^^^^^^^^^
+
+   Compiling console v0.16.4
+   Compiling predicates-tree v1.0.13
+warning: unused variable: `session_id`
+   --> crates\master\src\session\manager.rs:412:35
+    |
+412 |     pub fn get_session_cwd(&self, session_id: SessionId) -> Option<PathBuf> {
+    |                                   ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: 
+`_session_id`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `buf_ptr`
+   --> crates\master\src\pty\conpty.rs:108:14
+    |
+108 |         let (buf_ptr, buf_len, buf_slice) = unsafe {
+    |              ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_buf_ptr`
+
+warning: unused variable: `buf_len`
+   --> crates\master\src\pty\conpty.rs:108:23
+    |
+108 |         let (buf_ptr, buf_len, buf_slice) = unsafe {
+    |                       ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_buf_len`
+
+warning: unused variable: `now`
+   --> crates\master\src\auth\rate_limit.rs:205:13
+    |
+205 |         let now = Instant::now();
+    |             ^^^ help: if this is intentional, prefix it with an underscore: `_now`
+
+warning: unused variable: `bold`
+  --> crates\master\src\ui\fonts.rs:90:45
+   |
+90 |     pub fn rasterize_glyph(&self, ch: char, bold: bool, italic: bool) -> Result<RasterizedGlyph> {
+   |                                             ^^^^ help: if this is intentional, prefix it with an underscore: 
+`_bold`
+
+warning: unused variable: `italic`
+  --> crates\master\src\ui\fonts.rs:90:57
+   |
+90 |     pub fn rasterize_glyph(&self, ch: char, bold: bool, italic: bool) -> Result<RasterizedGlyph> {
+   |                                                         ^^^^^^ help: if this is intentional, prefix it with an 
+underscore: `_italic`
+
+warning: unused variable: `rows`
+   --> crates\master\src\ui\renderer.rs:510:14
+    |
+510 |         let (rows, cols) = self.terminal_grid.dimensions();
+    |              ^^^^ help: if this is intentional, prefix it with an underscore: `_rows`
+
+warning: unused variable: `cols`
+   --> crates\master\src\ui\renderer.rs:510:20
+    |
+510 |         let (rows, cols) = self.terminal_grid.dimensions();
+    |                    ^^^^ help: if this is intentional, prefix it with an underscore: `_cols`
+
+warning: unused variable: `n`
+   --> crates\master\src\ui\vt_parser.rs:120:25
+    |
+120 |                     let n = self.params.get(0).copied().unwrap_or(1);
+    |                         ^ help: if this is intentional, prefix it with an underscore: `_n`
+
+warning: unused variable: `n`
+   --> crates\master\src\ui\vt_parser.rs:130:25
+    |
+130 |                     let n = self.params.get(0).copied().unwrap_or(1);
+    |                         ^ help: if this is intentional, prefix it with an underscore: `_n`
+
+warning: field `health_tx` is never read
+  --> crates\master\src\server\mod.rs:68:5
+   |
+62 | pub struct Server {
+   |            ------ field in this struct
+...
+68 |     health_tx: broadcast::Sender<HealthStatus>,
+   |     ^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+   Compiling walkdir v2.5.0
+   Compiling regex v1.13.1
+warning: `monoterminal-monomind-bridge` (lib) generated 1 warning (1 duplicate)
+   Compiling rayon v1.12.0
+   Compiling ciborium v0.2.2
+   Compiling plotters v0.3.7
+   Compiling predicates v3.1.4
+   Compiling rand_chacha v0.9.0
+warning: `monoterminal-master` (lib) generated 23 warnings (run `cargo fix --lib -p monoterminal-master` to apply 22 
+suggestions)
+   Compiling rand_xorshift v0.4.0
+   Compiling rand v0.9.5
+   Compiling tinytemplate v1.2.1
+   Compiling tokio-stream v0.1.19
+   Compiling fragile v2.1.0
+   Compiling mockall_derive v0.12.1
+   Compiling is-terminal v0.4.17
+   Compiling similar v2.7.0
+   Compiling downcast v0.11.0
+   Compiling anes v0.1.6
+   Compiling unarray v0.1.4
+   Compiling oorandom v11.1.5
+   Compiling criterion v0.5.1
+   Compiling mockall v0.12.1
+   Compiling insta v1.48.0
+   Compiling proptest v1.11.0
+   Compiling tokio-test v0.4.5
+warning: `monoterminal-master` (lib) generated 23 warnings (23 duplicates)
+warning: unused import: `anyhow`
+ --> crates\master\src\auth\rate_limit.rs:4:14
+  |
+4 | use anyhow::{anyhow, Result};
+  |              ^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `std::sync::Arc`
+ --> crates\master\src\server\connection.rs:4:5
+  |
+4 | use std::sync::Arc;
+  |     ^^^^^^^^^^^^^^
+
+warning: unused imports: `GlyphCache`, `GlyphInfo`, and `GlyphKey`
+   --> crates\master\src\ui\fonts.rs:139:30
+    |
+139 | pub use super::glyph_cache::{GlyphCache, GlyphInfo, GlyphKey};
+    |                              ^^^^^^^^^^  ^^^^^^^^^  ^^^^^^^^
+
+warning: unused import: `renderer_bridge::RendererBridge`
+  --> crates\master\src\ui\mod.rs:25:9
+   |
+25 | pub use renderer_bridge::RendererBridge;
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused variable: `now`
+   --> crates\master\src\auth\rate_limit.rs:205:13
+    |
+205 |         let now = Instant::now();
+    |             ^^^ help: if this is intentional, prefix it with an underscore: `_now`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `session_id`
+   --> crates\master\src\session\manager.rs:412:35
+    |
+412 |     pub fn get_session_cwd(&self, session_id: SessionId) -> Option<PathBuf> {
+    |                                   ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: 
+`_session_id`
+
+warning: function `load_or_generate_jwt_key` is never used
+   --> crates\master\src\main.rs:130:4
+    |
+130 | fn load_or_generate_jwt_key() -> Result<[u8; 32]> {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `generate_random_key` is never used
+   --> crates\master\src\main.rs:193:4
+    |
+193 | fn generate_random_key() -> [u8; 32] {
+    |    ^^^^^^^^^^^^^^^^^^^
+
+warning: struct `UserId` is never constructed
+  --> crates\master\src\auth\mod.rs:23:12
+   |
+23 | pub struct UserId(pub String);
+   |            ^^^^^^
+
+warning: type alias `PublicKey` is never used
+  --> crates\master\src\auth\mod.rs:44:10
+   |
+44 | pub type PublicKey = [u8; 32];
+   |          ^^^^^^^^^
+
+warning: type alias `Signature` is never used
+  --> crates\master\src\auth\mod.rs:47:10
+   |
+47 | pub type Signature = [u8; 64];
+   |          ^^^^^^^^^
+
+warning: methods `create_challenge`, `verify_challenge_response`, `issue_tokens`, and `refresh_access` are never used
+  --> crates\master\src\auth\mod.rs:55:8
+   |
+53 | pub trait AuthService: Send + Sync {
+   |           ----------- methods in this trait
+54 |     /// Generate challenge for client
+55 |     fn create_challenge(&self) -> Challenge;
+   |        ^^^^^^^^^^^^^^^^
+...
+58 |     fn verify_challenge_response(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+66 |     fn issue_tokens(&self, user_id: &UserId) -> Result<TokenPair>;
+   |        ^^^^^^^^^^^^
+...
+72 |     fn refresh_access(&self, refresh: &str) -> Result<TokenPair>;
+   |        ^^^^^^^^^^^^^^
+
+warning: field `challenge_handler` is never read
+  --> crates\master\src\auth\mod.rs:79:5
+   |
+78 | pub struct Ed25519AuthService {
+   |            ------------------ field in this struct
+79 |     challenge_handler: Ed25519ChallengeHandler,
+   |     ^^^^^^^^^^^^^^^^^
+
+warning: associated function `new_with_auto_keypair` is never used
+  --> crates\master\src\auth\mod.rs:95:12
+   |
+83 | impl Ed25519AuthService {
+   | ----------------------- associated function in this implementation
+...
+95 |     pub fn new_with_auto_keypair() -> Result<Self> {
+   |            ^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `Challenge` is never constructed
+  --> crates\master\src\auth\challenge.rs:12:12
+   |
+12 | pub struct Challenge {
+   |            ^^^^^^^^^
+
+warning: methods `is_expired` and `time_remaining` are never used
+  --> crates\master\src\auth\challenge.rs:19:12
+   |
+17 | impl Challenge {
+   | -------------- methods in this implementation
+18 |     /// Check if challenge has expired
+19 |     pub fn is_expired(&self) -> bool {
+   |            ^^^^^^^^^^
+...
+24 |     pub fn time_remaining(&self) -> Option<Duration> {
+   |            ^^^^^^^^^^^^^^
+
+warning: field `challenge_ttl` is never read
+  --> crates\master\src\auth\challenge.rs:31:5
+   |
+30 | pub struct Ed25519ChallengeHandler {
+   |            ----------------------- field in this struct
+31 |     challenge_ttl: Duration,
+   |     ^^^^^^^^^^^^^
+
+warning: associated items `with_ttl`, `create_challenge`, and `verify_challenge_response` are never used
+  --> crates\master\src\auth\challenge.rs:43:12
+   |
+34 | impl Ed25519ChallengeHandler {
+   | ---------------------------- associated items in this implementation
+...
+43 |     pub fn with_ttl(ttl: Duration) -> Self {
+   |            ^^^^^^^^
+...
+48 |     pub fn create_challenge(&self) -> Challenge {
+   |            ^^^^^^^^^^^^^^^^
+...
+68 |     pub fn verify_challenge_response(
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `derive_user_id_from_pubkey` is never used
+   --> crates\master\src\auth\challenge.rs:109:4
+    |
+109 | fn derive_user_id_from_pubkey(public_key: &PublicKey) -> UserId {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `TokenPair` is never constructed
+  --> crates\master\src\auth\jwt.rs:14:12
+   |
+14 | pub struct TokenPair {
+   |            ^^^^^^^^^
+
+warning: fields `enc` and `used` are never read
+  --> crates\master\src\auth\jwt.rs:31:5
+   |
+30 | pub struct JwtService {
+   |            ---------- fields in this struct
+31 |     enc: EncodingKey,
+   |     ^^^
+...
+34 |     used: Arc<Mutex<HashSet<String>>>,
+   |     ^^^^
+
+warning: methods `issue_tokens`, `refresh_access_token`, and `build` are never used
+   --> crates\master\src\auth\jwt.rs:54:12
+    |
+ 37 | impl JwtService {
+    | --------------- methods in this implementation
+...
+ 54 |     pub fn issue_tokens(&self, user_id: &UserId) -> Result<TokenPair> {
+    |            ^^^^^^^^^^^^
+...
+ 87 |     pub fn refresh_access_token(&self, tok: &str) -> Result<TokenPair> {
+    |            ^^^^^^^^^^^^^^^^^^^^
+...
+103 |     fn build(&self, c: &Claims) -> Result<String> {
+    |        ^^^^^
+
+warning: function `timestamp` is never used
+   --> crates\master\src\auth\jwt.rs:124:4
+    |
+124 | fn timestamp() -> i64 {
+    |    ^^^^^^^^^
+
+warning: function `gen_jti` is never used
+   --> crates\master\src\auth\jwt.rs:131:4
+    |
+131 | fn gen_jti() -> String {
+    |    ^^^^^^^
+
+warning: variant `Banned` is never constructed
+  --> crates\master\src\auth\rate_limit.rs:17:5
+   |
+12 | pub enum RateLimitError {
+   |          -------------- variant in this enum
+...
+17 |     Banned(Instant),
+   |     ^^^^^^
+   |
+   = note: `RateLimitError` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead 
+code analysis
+
+warning: fields `failures` and `ban_until` are never read
+  --> crates\master\src\auth\rate_limit.rs:71:5
+   |
+70 | struct AuthFailureTracker {
+   |        ------------------ fields in this struct
+71 |     failures: Vec<Instant>,
+   |     ^^^^^^^^
+72 |     ban_until: Option<Instant>,
+   |     ^^^^^^^^^
+   |
+   = note: `AuthFailureTracker` has a derived impl for the trait `Debug`, but this is intentionally ignored during 
+dead code analysis
+
+warning: associated items `new`, `record_failure`, `is_banned`, and `ban_expires_at` are never used
+   --> crates\master\src\auth\rate_limit.rs:76:8
+    |
+ 75 | impl AuthFailureTracker {
+    | ----------------------- associated items in this implementation
+ 76 |     fn new() -> Self {
+    |        ^^^
+...
+ 84 |     fn record_failure(&mut self) {
+    |        ^^^^^^^^^^^^^^
+...
+100 |     fn is_banned(&self) -> bool {
+    |        ^^^^^^^^^
+...
+109 |     fn ban_expires_at(&self) -> Option<Instant> {
+    |        ^^^^^^^^^^^^^^
+
+warning: fields `auth_trackers`, `session_buckets`, and `max_sessions_per_minute` are never read
+   --> crates\master\src\auth\rate_limit.rs:121:5
+    |
+119 | pub struct RateLimiter {
+    |            ----------- fields in this struct
+120 |     connection_buckets: Arc<Mutex<HashMap<SocketAddr, TokenBucket>>>,
+121 |     auth_trackers: Arc<Mutex<HashMap<SocketAddr, AuthFailureTracker>>>,
+    |     ^^^^^^^^^^^^^
+122 |     session_buckets: Arc<Mutex<HashMap<String, TokenBucket>>>,
+    |     ^^^^^^^^^^^^^^^
+...
+126 |     max_sessions_per_minute: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: methods `check_auth_attempt`, `record_auth_failure`, `check_session_create`, and `cleanup` are never used
+   --> crates\master\src\auth\rate_limit.rs:163:12
+    |
+129 | impl RateLimiter {
+    | ---------------- methods in this implementation
+...
+163 |     pub fn check_auth_attempt(&self, peer_addr: &SocketAddr) -> Result<(), RateLimitError> {
+    |            ^^^^^^^^^^^^^^^^^^
+...
+176 |     pub fn record_auth_failure(&self, peer_addr: &SocketAddr) {
+    |            ^^^^^^^^^^^^^^^^^^^
+...
+183 |     pub fn check_session_create(&self, user_id: &str) -> Result<(), RateLimitError> {
+    |            ^^^^^^^^^^^^^^^^^^^^
+...
+204 |     pub fn cleanup(&self) {
+    |            ^^^^^^^
+
+warning: field `environment` is never read
+  --> crates\master\src\pty\mod.rs:42:9
+   |
+32 | pub struct PtyConfig {
+   |            --------- field in this struct
+...
+42 |     pub environment: HashMap<String, String>,
+   |         ^^^^^^^^^^^
+   |
+   = note: `PtyConfig` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored 
+during dead code analysis
+
+warning: method `terminate` is never used
+   --> crates\master\src\pty\mod.rs:100:14
+    |
+ 76 | pub trait PtyBackend: Send + Sync {
+    |           ---------- method in this trait
+...
+100 |     async fn terminate(self) -> PtyResult<()>;
+    |              ^^^^^^^^^
+
+warning: variants `ProcessExited`, `AlreadyClosed`, `Timeout`, and `Disconnected` are never constructed
+  --> crates\master\src\pty\error.rs:28:5
+   |
+ 9 | pub enum PtyError {
+   |          -------- variants in this enum
+...
+28 |     ProcessExited,
+   |     ^^^^^^^^^^^^^
+...
+32 |     AlreadyClosed,
+   |     ^^^^^^^^^^^^^
+...
+45 |     Timeout(String),
+   |     ^^^^^^^
+...
+49 |     Disconnected,
+   |     ^^^^^^^^^^^^
+   |
+   = note: `PtyError` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code 
+analysis
+
+warning: variant `AuthFailed` is never constructed
+  --> crates\master\src\session\mod.rs:27:5
+   |
+19 | pub enum SessionError {
+   |          ------------ variant in this enum
+...
+27 |     AuthFailed(String),
+   |     ^^^^^^^^^^
+   |
+   = note: `SessionError` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code 
+analysis
+
+warning: associated function `from_bytes` is never used
+  --> crates\master\src\session\session.rs:46:12
+   |
+45 | impl Line {
+   | --------- associated function in this implementation
+46 |     pub fn from_bytes(data: &[u8]) -> Self {
+   |            ^^^^^^^^^^
+
+warning: field `id` is never read
+  --> crates\master\src\session\session.rs:57:9
+   |
+56 | pub struct SessionSnapshot {
+   |            --------------- field in this struct
+57 |     pub id: SessionId,
+   |         ^^
+   |
+   = note: `SessionSnapshot` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored 
+during dead code analysis
+
+warning: fields `shell_pid` and `created_at` are never read
+  --> crates\master\src\session\session.rs:79:9
+   |
+67 | pub struct Session {
+   |            ------- fields in this struct
+...
+79 |     pub shell_pid: u32,
+   |         ^^^^^^^^^
+...
+99 |     pub created_at: Instant,
+   |         ^^^^^^^^^^
+
+warning: methods `client_ids` and `terminate_pty` are never used
+   --> crates\master\src\session\session.rs:160:12
+    |
+106 | impl Session {
+    | ------------ methods in this implementation
+...
+160 |     pub fn client_ids(&self) -> Vec<ClientId> {
+    |            ^^^^^^^^^^
+...
+171 |     pub async fn terminate_pty(&mut self) -> Result<(), std::io::Error> {
+    |                  ^^^^^^^^^^^^^
+
+warning: methods `push`, `len`, `is_empty`, `is_full`, and `clear` are never used
+  --> crates\master\src\session\scrollback.rs:32:12
+   |
+16 | impl<T: Clone> RingBuffer<T> {
+   | ---------------------------- methods in this implementation
+...
+32 |     pub fn push(&mut self, mut item: T) where T: AsMut<Line> {
+   |            ^^^^
+...
+50 |     pub fn len(&self) -> usize {
+   |            ^^^
+...
+55 |     pub fn is_empty(&self) -> bool {
+   |            ^^^^^^^^
+...
+60 |     pub fn is_full(&self) -> bool {
+   |            ^^^^^^^
+...
+77 |     pub fn clear(&mut self) {
+   |            ^^^^^
+
+warning: methods `kill_session`, `list_sessions`, and `session_count` are never used
+   --> crates\master\src\session\manager.rs:227:18
+    |
+ 26 | impl SessionManager {
+    | ------------------- methods in this implementation
+...
+227 |     pub async fn kill_session(&self, session_id: SessionId) -> Result<()> {
+    |                  ^^^^^^^^^^^^
+...
+397 |     pub async fn list_sessions(&self) -> Vec<SessionId> {
+    |                  ^^^^^^^^^^^^^
+...
+402 |     pub async fn session_count(&self) -> usize {
+    |                  ^^^^^^^^^^^^^
+
+warning: field `rate_limit_per_minute` is never read
+  --> crates\master\src\server\mod.rs:40:9
+   |
+29 | pub struct ServerConfig {
+   |            ------------ field in this struct
+...
+40 |     pub rate_limit_per_minute: u32,
+   |         ^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `ServerConfig` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored 
+during dead code analysis
+
+warning: field `health_tx` is never read
+  --> crates\master\src\server\mod.rs:68:5
+   |
+62 | pub struct Server {
+   |            ------ field in this struct
+...
+68 |     health_tx: broadcast::Sender<HealthStatus>,
+   |     ^^^^^^^^^
+
+warning: associated function `with_startup_notification` is never used
+   --> crates\master\src\server\mod.rs:103:12
+    |
+ 74 | impl Server {
+    | ----------- associated function in this implementation
+...
+103 |     pub fn with_startup_notification(
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `Connection` is never constructed
+  --> crates\master\src\server\connection.rs:11:12
+   |
+11 | pub struct Connection {
+   |            ^^^^^^^^^^
+
+warning: associated items `new`, `send`, `is_lagging`, `should_disconnect`, and `buffer_fill_percentage` are never used
+  --> crates\master\src\server\connection.rs:31:12
+   |
+29 | impl Connection {
+   | --------------- associated items in this implementation
+30 |     /// Create a new connection
+31 |     pub fn new(client_id: String, supports_compression: bool) -> (Self, mpsc::Receiver<Vec<u8>>) {
+   |            ^^^
+...
+49 |     pub async fn send(&mut self, data: Vec<u8>) -> Result<(), ()> {
+   |                  ^^^^
+...
+76 |     pub fn is_lagging(&self) -> bool {
+   |            ^^^^^^^^^^
+...
+81 |     pub fn should_disconnect(&self) -> bool {
+   |            ^^^^^^^^^^^^^^^^^
+...
+91 |     pub fn buffer_fill_percentage(&self) -> u8 {
+   |            ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: variant `PermissionDenied` is never constructed
+  --> crates\master\src\server\error.rs:37:5
+   |
+ 8 | pub enum ServerError {
+   |          ----------- variant in this enum
+...
+37 |     PermissionDenied,
+   |     ^^^^^^^^^^^^^^^^
+   |
+   = note: `ServerError` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code 
+analysis
+
+warning: associated function `new` is never used
+  --> crates\master\src\server\tls.rs:36:12
+   |
+34 | impl TlsConfig {
+   | -------------- associated function in this implementation
+35 |     /// Create TLS configuration with custom paths
+36 |     pub fn new(cert_path: impl Into<PathBuf>, key_path: impl Into<PathBuf>) -> Self {
+   |            ^^^
+
+warning: struct `TerminalUI` is never constructed
+  --> crates\master\src\ui\mod.rs:36:12
+   |
+36 | pub struct TerminalUI {
+   |            ^^^^^^^^^^
+
+warning: associated items `new` and `run` are never used
+  --> crates\master\src\ui\mod.rs:44:18
+   |
+41 | impl TerminalUI {
+   | --------------- associated items in this implementation
+...
+44 |     pub async fn new() -> Result<Self> {
+   |                  ^^^
+...
+55 |     pub fn run(self) -> Result<()> {
+   |            ^^^
+
+warning: struct `RasterizedGlyph` is never constructed
+  --> crates\master\src\ui\fonts.rs:13:12
+   |
+13 | pub struct RasterizedGlyph {
+   |            ^^^^^^^^^^^^^^^
+
+warning: struct `GlyphMetrics` is never constructed
+  --> crates\master\src\ui\fonts.rs:26:12
+   |
+26 | pub struct GlyphMetrics {
+   |            ^^^^^^^^^^^^
+
+warning: struct `FontManager` is never constructed
+  --> crates\master\src\ui\fonts.rs:36:12
+   |
+36 | pub struct FontManager {
+   |            ^^^^^^^^^^^
+
+warning: associated items `new`, `load_system_font`, `rasterize_glyph`, and `cell_dimensions` are never used
+   --> crates\master\src\ui\fonts.rs:46:12
+    |
+ 43 | impl FontManager {
+    | ---------------- associated items in this implementation
+...
+ 46 |     pub fn new(font_size: f32) -> Result<Self> {
+    |            ^^^
+...
+ 58 |     fn load_system_font() -> Result<Vec<u8>> {
+    |        ^^^^^^^^^^^^^^^^
+...
+ 90 |     pub fn rasterize_glyph(&self, ch: char, bold: bool, italic: bool) -> Result<RasterizedGlyph> {
+    |            ^^^^^^^^^^^^^^^
+...
+117 |     pub fn cell_dimensions(&self) -> (u32, u32) {
+    |            ^^^^^^^^^^^^^^^
+
+warning: struct `GlyphKey` is never constructed
+  --> crates\master\src\ui\glyph_cache.rs:11:12
+   |
+11 | pub struct GlyphKey {
+   |            ^^^^^^^^
+
+warning: associated function `new` is never used
+  --> crates\master\src\ui\glyph_cache.rs:18:12
+   |
+17 | impl GlyphKey {
+   | ------------- associated function in this implementation
+18 |     pub fn new(ch: char, style: &CellStyle) -> Self {
+   |            ^^^
+
+warning: struct `GlyphInfo` is never constructed
+  --> crates\master\src\ui\glyph_cache.rs:29:12
+   |
+29 | pub struct GlyphInfo {
+   |            ^^^^^^^^^
+
+warning: struct `GlyphCache` is never constructed
+  --> crates\master\src\ui\glyph_cache.rs:43:12
+   |
+43 | pub struct GlyphCache {
+   |            ^^^^^^^^^^
+
+warning: associated items `new`, `lookup`, `insert`, `clear`, `atlas_size`, and `stats` are never used
+   --> crates\master\src\ui\glyph_cache.rs:63:12
+    |
+ 61 | impl GlyphCache {
+    | --------------- associated items in this implementation
+ 62 |     /// Create new glyph cache with 4096×4096 atlas
+ 63 |     pub fn new() -> Self {
+    |            ^^^
+...
+ 76 |     pub fn lookup(&mut self, key: GlyphKey) -> Option<GlyphInfo> {
+    |            ^^^^^^
+...
+ 87 |     pub fn insert(&mut self, key: GlyphKey, width: u32, height: u32) -> Option<GlyphInfo> {
+    |            ^^^^^^
+...
+119 |     pub fn clear(&mut self) {
+    |            ^^^^^
+...
+126 |     pub fn atlas_size(&self) -> (u32, u32) {
+    |            ^^^^^^^^^^
+...
+131 |     pub fn stats(&self) -> CacheStats {
+    |            ^^^^^
+
+warning: struct `CacheStats` is never constructed
+   --> crates\master\src\ui\glyph_cache.rs:146:12
+    |
+146 | pub struct CacheStats {
+    |            ^^^^^^^^^^
+
+warning: struct `GuillotineAllocator` is never constructed
+   --> crates\master\src\ui\glyph_cache.rs:153:8
+    |
+153 | struct GuillotineAllocator {
+    |        ^^^^^^^^^^^^^^^^^^^
+
+warning: associated items `new`, `allocate`, and `utilization` are never used
+   --> crates\master\src\ui\glyph_cache.rs:161:8
+    |
+160 | impl GuillotineAllocator {
+    | ------------------------ associated items in this implementation
+161 |     fn new(width: u32, height: u32) -> Self {
+    |        ^^^
+...
+170 |     fn allocate(&mut self, width: u32, height: u32) -> Option<Rect> {
+    |        ^^^^^^^^
+...
+223 |     fn utilization(&self) -> f32 {
+    |        ^^^^^^^^^^^
+
+warning: struct `Rect` is never constructed
+   --> crates\master\src\ui\glyph_cache.rs:231:8
+    |
+231 | struct Rect {
+    |        ^^^^
+
+warning: struct `Layout` is never constructed
+  --> crates\master\src\ui\layout.rs:17:12
+   |
+17 | pub struct Layout {
+   |            ^^^^^^
+
+warning: associated items `new`, `terminal_area`, `sidebar_area`, `menu_area`, and `status_area` are never used
+  --> crates\master\src\ui\layout.rs:29:12
+   |
+28 | impl Layout {
+   | ----------- associated items in this implementation
+29 |     pub fn new() -> Self {
+   |            ^^^
+...
+38 |     pub fn terminal_area(&self, window_width: f32, window_height: f32) -> Rect {
+   |            ^^^^^^^^^^^^^
+...
+48 |     pub fn sidebar_area(&self, window_height: f32) -> Rect {
+   |            ^^^^^^^^^^^^
+...
+58 |     pub fn menu_area(&self, window_width: f32) -> Rect {
+   |            ^^^^^^^^^
+...
+68 |     pub fn status_area(&self, window_width: f32, window_height: f32) -> Rect {
+   |            ^^^^^^^^^^^
+
+warning: struct `Rect` is never constructed
+  --> crates\master\src\ui\layout.rs:86:12
+   |
+86 | pub struct Rect {
+   |            ^^^^
+
+warning: struct `SessionList` is never constructed
+  --> crates\master\src\ui\layout.rs:94:12
+   |
+94 | pub struct SessionList {
+   |            ^^^^^^^^^^^
+
+warning: associated items `new`, `add_session`, `sessions`, `selected`, and `set_selected` are never used
+   --> crates\master\src\ui\layout.rs:100:12
+    |
+ 99 | impl SessionList {
+    | ---------------- associated items in this implementation
+100 |     pub fn new() -> Self {
+    |            ^^^
+...
+108 |     pub fn add_session(&mut self, name: String) {
+    |            ^^^^^^^^^^^
+...
+113 |     pub fn sessions(&self) -> &[SessionItem] {
+    |            ^^^^^^^^
+...
+118 |     pub fn selected(&self) -> Option<usize> {
+    |            ^^^^^^^^
+...
+123 |     pub fn set_selected(&mut self, index: Option<usize>) {
+    |            ^^^^^^^^^^^^
+
+warning: struct `SessionItem` is never constructed
+   --> crates\master\src\ui\layout.rs:136:12
+    |
+136 | pub struct SessionItem {
+    |            ^^^^^^^^^^^
+
+warning: struct `StatusBar` is never constructed
+   --> crates\master\src\ui\layout.rs:141:12
+    |
+141 | pub struct StatusBar {
+    |            ^^^^^^^^^
+
+warning: associated items `new`, `update_from_perf`, `fps_string`, and `latency_string` are never used
+   --> crates\master\src\ui\layout.rs:147:12
+    |
+146 | impl StatusBar {
+    | -------------- associated items in this implementation
+147 |     pub fn new() -> Self {
+    |            ^^^
+...
+155 |     pub fn update_from_perf(&mut self, perf: &PerformanceMonitor) {
+    |            ^^^^^^^^^^^^^^^^
+...
+161 |     pub fn fps_string(&self) -> String {
+    |            ^^^^^^^^^^
+...
+166 |     pub fn latency_string(&self) -> String {
+    |            ^^^^^^^^^^^^^^
+
+warning: constant `FPS_HISTORY_SIZE` is never used
+  --> crates\master\src\ui\performance.rs:14:7
+   |
+14 | const FPS_HISTORY_SIZE: usize = 60;
+   |       ^^^^^^^^^^^^^^^^
+
+warning: struct `PerformanceMonitor` is never constructed
+  --> crates\master\src\ui\performance.rs:17:12
+   |
+17 | pub struct PerformanceMonitor {
+   |            ^^^^^^^^^^^^^^^^^^
+
+warning: multiple associated items are never used
+   --> crates\master\src\ui\performance.rs:25:12
+    |
+ 24 | impl PerformanceMonitor {
+    | ----------------------- associated items in this implementation
+ 25 |     pub fn new() -> Self {
+    |            ^^^
+...
+ 35 |     pub fn start_frame(&mut self) {
+    |            ^^^^^^^^^^^
+...
+ 42 |     pub fn mark(&mut self, label: &str) {
+    |            ^^^^
+...
+ 71 |     pub fn end_frame(&mut self) -> f32 {
+    |            ^^^^^^^^^
+...
+ 94 |     pub fn fps(&self) -> f32 {
+    |            ^^^
+...
+ 99 |     pub fn avg_frame_time(&self) -> f32 {
+    |            ^^^^^^^^^^^^^^
+...
+108 |     pub fn meeting_target(&self) -> bool {
+    |            ^^^^^^^^^^^^^^
+
+warning: associated items `ATTRIBS` and `desc` are never used
+  --> crates\master\src\ui\renderer.rs:34:11
+   |
+33 | impl GlyphVertex {
+   | ---------------- associated items in this implementation
+34 |     const ATTRIBS: [wgpu::VertexAttribute; 4] = wgpu::vertex_attr_array![
+   |           ^^^^^^^
+...
+41 |     fn desc() -> wgpu::VertexBufferLayout<'static> {
+   |        ^^^^
+
+warning: struct `Renderer` is never constructed
+  --> crates\master\src\ui\renderer.rs:51:12
+   |
+51 | pub struct Renderer {
+   |            ^^^^^^^^
+
+warning: multiple associated items are never used
+   --> crates\master\src\ui\renderer.rs:87:18
+    |
+ 84 | impl Renderer {
+    | ------------- associated items in this implementation
+...
+ 87 |     pub async fn new(_event_loop: &winit::event_loop::EventLoop<()>) -> Result<Self> {
+    |                  ^^^
+...
+136 |     pub fn set_mock_pty_channel(&mut self, rx: mpsc::Receiver<Bytes>) {
+    |            ^^^^^^^^^^^^^^^^^^^^
+...
+142 |     pub async fn init_surface(&mut self, window: Arc<Window>) -> Result<()> {
+    |                  ^^^^^^^^^^^^
+...
+217 |     pub fn resize(&mut self, width: u32, height: u32) -> Result<()> {
+    |            ^^^^^^
+...
+240 |     pub fn init_text_pipeline(&mut self) -> Result<()> {
+    |            ^^^^^^^^^^^^^^^^^^
+...
+401 |     pub fn render(&mut self, _window: &Window, perf: &mut PerformanceMonitor) -> Result<()> {
+    |            ^^^^^^
+...
+485 |     fn process_pty_output(&mut self, perf: &mut PerformanceMonitor) -> Result<()> {
+    |        ^^^^^^^^^^^^^^^^^^
+...
+506 |     fn build_vertices(&mut self, perf: &mut PerformanceMonitor) -> Result<Vec<GlyphVertex>> {
+    |        ^^^^^^^^^^^^^^
+...
+615 |     fn ensure_glyph_cached(&mut self, key: GlyphKey) -> Result<super::glyph_cache::GlyphInfo> {
+    |        ^^^^^^^^^^^^^^^^^^^
+
+warning: function `color_to_rgba` is never used
+   --> crates\master\src\ui\renderer.rs:668:4
+    |
+668 | fn color_to_rgba(color: &super::vt_parser::Color) -> [f32; 4] {
+    |    ^^^^^^^^^^^^^
+
+warning: type alias `ClientId` is never used
+  --> crates\master\src\ui\renderer_bridge.rs:18:10
+   |
+18 | pub type ClientId = Uuid;
+   |          ^^^^^^^^
+
+warning: struct `RendererBridge` is never constructed
+  --> crates\master\src\ui\renderer_bridge.rs:32:12
+   |
+32 | pub struct RendererBridge {
+   |            ^^^^^^^^^^^^^^
+
+warning: associated items `attach`, `recv`, `try_recv`, `is_connected`, and `queue_depth` are never used
+   --> crates\master\src\ui\renderer_bridge.rs:62:18
+    |
+ 43 | impl RendererBridge {
+    | ------------------- associated items in this implementation
+...
+ 62 |     pub async fn attach(
+    |                  ^^^^^^
+...
+ 94 |     pub async fn recv(&mut self) -> Option<Bytes> {
+    |                  ^^^^
+...
+115 |     pub fn try_recv(&mut self) -> Option<Bytes> {
+    |            ^^^^^^^^
+...
+140 |     pub fn is_connected(&self) -> bool {
+    |            ^^^^^^^^^^^^
+...
+148 |     pub fn queue_depth(&self) -> usize {
+    |            ^^^^^^^^^^^
+
+warning: struct `TerminalGrid` is never constructed
+ --> crates\master\src\ui\terminal_grid.rs:9:12
+  |
+9 | pub struct TerminalGrid {
+  |            ^^^^^^^^^^^^
+
+warning: multiple associated items are never used
+   --> crates\master\src\ui\terminal_grid.rs:27:12
+    |
+ 25 | impl TerminalGrid {
+    | ----------------- associated items in this implementation
+ 26 |     /// Create new terminal grid
+ 27 |     pub fn new(rows: u16, cols: u16) -> Self {
+    |            ^^^
+...
+ 44 |     pub fn apply_changes(&mut self, changes: Vec<GridChange>) {
+    |            ^^^^^^^^^^^^^
+...
+ 90 |     fn print_char(&mut self, ch: char) {
+    |        ^^^^^^^^^^
+...
+111 |     fn newline(&mut self) {
+    |        ^^^^^^^
+...
+125 |     fn scroll_up(&mut self) {
+    |        ^^^^^^^^^
+...
+139 |     fn scroll_down(&mut self) {
+    |        ^^^^^^^^^^^
+...
+153 |     pub fn clear(&mut self) {
+    |            ^^^^^
+...
+163 |     pub fn get_cell(&self, row: u16, col: u16) -> Option<&Cell> {
+    |            ^^^^^^^^
+...
+172 |     pub fn dirty_region(&self) -> &DirtyRegion {
+    |            ^^^^^^^^^^^^
+...
+177 |     pub fn clear_dirty(&mut self) {
+    |            ^^^^^^^^^^^
+...
+182 |     pub fn dimensions(&self) -> (u16, u16) {
+    |            ^^^^^^^^^^
+...
+187 |     pub fn cursor_position(&self) -> (u16, u16) {
+    |            ^^^^^^^^^^^^^^^
+...
+192 |     pub fn resize(&mut self, rows: u16, cols: u16) {
+    |            ^^^^^^
+
+warning: struct `Cell` is never constructed
+   --> crates\master\src\ui\terminal_grid.rs:218:12
+    |
+218 | pub struct Cell {
+    |            ^^^^
+
+warning: struct `DirtyRegion` is never constructed
+   --> crates\master\src\ui\terminal_grid.rs:234:12
+    |
+234 | pub struct DirtyRegion {
+    |            ^^^^^^^^^^^
+
+warning: multiple associated items are never used
+   --> crates\master\src\ui\terminal_grid.rs:244:12
+    |
+243 | impl DirtyRegion {
+    | ---------------- associated items in this implementation
+244 |     pub fn new(rows: u16, cols: u16) -> Self {
+    |            ^^^
+...
+255 |     pub fn mark_cell(&mut self, row: u16, col: u16) {
+    |            ^^^^^^^^^
+...
+264 |     pub fn mark_row(&mut self, row: u16) {
+    |            ^^^^^^^^
+...
+276 |     pub fn mark_all(&mut self) {
+    |            ^^^^^^^^
+...
+281 |     pub fn is_dirty(&self, row: u16, col: u16) -> bool {
+    |            ^^^^^^^^
+...
+293 |     pub fn clear(&mut self) {
+    |            ^^^^^
+...
+301 |     pub fn iter_dirty(&self) -> impl Iterator<Item = (u16, u16)> + '_ {
+    |            ^^^^^^^^^^
+
+warning: struct `VtParser` is never constructed
+  --> crates\master\src\ui\vt_parser.rs:10:12
+   |
+10 | pub struct VtParser {
+   |            ^^^^^^^^
+
+warning: enum `ParserState` is never used
+  --> crates\master\src\ui\vt_parser.rs:22:6
+   |
+22 | enum ParserState {
+   |      ^^^^^^^^^^^
+
+warning: associated items `new`, `feed`, `parse_sgr`, `drain_changes`, and `reset` are never used
+   --> crates\master\src\ui\vt_parser.rs:30:12
+    |
+ 29 | impl VtParser {
+    | ------------- associated items in this implementation
+ 30 |     pub fn new() -> Self {
+    |            ^^^
+...
+ 41 |     pub fn feed(&mut self, data: &[u8]) {
+    |            ^^^^
+...
+179 |     fn parse_sgr(&mut self) {
+    |        ^^^^^^^^^
+...
+298 |     pub fn drain_changes(&mut self) -> Vec<GridChange> {
+    |            ^^^^^^^^^^^^^
+...
+303 |     pub fn reset(&mut self) {
+    |            ^^^^^
+
+warning: enum `GridChange` is never used
+   --> crates\master\src\ui\vt_parser.rs:319:10
+    |
+319 | pub enum GridChange {
+    |          ^^^^^^^^^^
+
+warning: struct `CellStyle` is never constructed
+   --> crates\master\src\ui\vt_parser.rs:334:12
+    |
+334 | pub struct CellStyle {
+    |            ^^^^^^^^^
+
+warning: struct `Color` is never constructed
+   --> crates\master\src\ui\vt_parser.rs:361:12
+    |
+361 | pub struct Color {
+    |            ^^^^^
+
+warning: associated function `rgb` is never used
+   --> crates\master\src\ui\vt_parser.rs:368:18
+    |
+367 | impl Color {
+    | ---------- associated function in this implementation
+368 |     pub const fn rgb(r: u8, g: u8, b: u8) -> Self {
+    |                  ^^^
+
+warning: struct `Window` is never constructed
+  --> crates\master\src\ui\window.rs:19:12
+   |
+19 | pub struct Window {
+   |            ^^^^^^
+
+warning: associated items `new`, `inner`, and `run` are never used
+  --> crates\master\src\ui\window.rs:26:12
+   |
+24 | impl Window {
+   | ----------- associated items in this implementation
+25 |     /// Create new window with default size
+26 |     pub fn new() -> Result<Self> {
+   |            ^^^
+...
+42 |     pub fn inner(&self) -> &EventLoop<()> {
+   |            ^^^^^
+...
+47 |     pub fn run(self, renderer: Renderer) -> Result<()> {
+   |            ^^^
+
+warning: struct `App` is never constructed
+  --> crates\master\src\ui\window.rs:57:8
+   |
+57 | struct App {
+   |        ^^^
+
+warning: associated function `new` is never used
+  --> crates\master\src\ui\window.rs:65:8
+   |
+64 | impl App {
+   | -------- associated function in this implementation
+65 |     fn new(window_attributes: WindowAttributes, renderer: Renderer) -> Self {
+   |        ^^^
+
+warning: unused imports: `UserId` and `server::TlsConfig`
+  --> crates\master\benches\latency_e2e_lan.rs:35:27
+   |
+35 | use monoterminal_master::{server::TlsConfig,
+   |                           ^^^^^^^^^^^^^^^^^
+36 |     auth::{AuthService, Ed25519AuthService, RateLimiter, UserId},
+   |                                                          ^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `super::*`
+   --> crates\master\benches\..\tests\common\ws_client.rs:211:9
+    |
+211 |     use super::*;
+    |         ^^^^^^^^
+
+warning: unused import: `futures_util::SinkExt`
+  --> crates\master\benches\..\tests\common\ws_client.rs:91:17
+   |
+91 |             use futures_util::SinkExt;
+   |                 ^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `prost::Message`
+  --> crates\master\benches\latency_e2e_lan.rs:45:5
+   |
+45 | use prost::Message as ProstMessage;
+   |     ^^^^^^^^^^^^^^
+
+warning: function `mock_websocket_echo_server` is never used
+   --> crates\master\benches\latency_e2e_lan.rs:503:10
+    |
+503 | async fn mock_websocket_echo_server(addr: SocketAddr) {
+    |          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: struct `MockWebSocketClient` is never constructed
+   --> crates\master\benches\latency_e2e_lan.rs:525:8
+    |
+525 | struct MockWebSocketClient {
+    |        ^^^^^^^^^^^^^^^^^^^
+
+warning: associated items `connect` and `measure_rtt_with_echo` are never used
+   --> crates\master\benches\latency_e2e_lan.rs:530:14
+    |
+529 | impl MockWebSocketClient {
+    | ------------------------ associated items in this implementation
+530 |     async fn connect(_url: &str) -> Result<Self, Box<dyn std::error::Error>> {
+    |              ^^^^^^^
+...
+535 |     async fn measure_rtt_with_echo(&self, _data: Vec<u8>) -> Result<Duration, Box<dyn std::error::Error>> {
+    |              ^^^^^^^^^^^^^^^^^^^^^
+
+warning: associated items `new`, `is_connected`, and `resize` are never used
+   --> crates\master\benches\..\tests\common\ws_client.rs:22:12
+    |
+ 20 | impl TestWsClient {
+    | ----------------- associated items in this implementation
+ 21 |     /// Create a new test client (not yet connected)
+ 22 |     pub fn new(url: impl Into<String>) -> Self {
+    |            ^^^
+...
+ 98 |     pub fn is_connected(&self) -> bool {
+    |            ^^^^^^^^^^^^
+...
+167 |     pub async fn resize(&mut self, rows: u32, cols: u32, jwt_bearer: &str) -> Result<()> {
+    |                  ^^^^^^
+
+warning: `monoterminal-master` (bin "monoterminal") generated 113 warnings (18 duplicates) (run `cargo fix --bin 
+"monoterminal" -p monoterminal-master` to apply 6 suggestions)
+warning: `monoterminal-master` (bench "latency_e2e_lan") generated 8 warnings (run `cargo fix --bench 
+"latency_e2e_lan" -p monoterminal-master` to apply 2 suggestions)
+    Finished `bench` profile [optimized] target(s) in 2m 25s
+     Running benches\latency_e2e_lan.rs (target\release\deps\latency_e2e_lan-27ac7ae665915f4c.exe)
+Gnuplot not found, using plotters backend
+Benchmarking e2e_lan_latency/real_master_rtt_loopback
+Benchmarking e2e_lan_latency/real_master_rtt_loopback: Warming up for 3.0000 s
+2026-08-16T08:29:18.331530Z DEBUG latency_e2e_lan: === BENCHMARK START: Setting up server ===
+2026-08-16T08:29:18.331613Z DEBUG latency_e2e_lan: Step 1: Generating Ed25519 keypair
+2026-08-16T08:29:18.331719Z DEBUG latency_e2e_lan: Step 2: Creating auth service
+2026-08-16T08:29:18.331891Z DEBUG latency_e2e_lan: Step 3: Creating rate limiter
+2026-08-16T08:29:18.331935Z DEBUG latency_e2e_lan: Step 4: Creating session manager
+2026-08-16T08:29:18.332004Z  INFO monoterminal_master::session::manager: SessionManager initialized with default shell: cmd.exe
+2026-08-16T08:29:18.332084Z DEBUG latency_e2e_lan: Step 5: Creating health channel
+2026-08-16T08:29:18.332141Z DEBUG latency_e2e_lan: Step 6: Creating startup notification channel
+2026-08-16T08:29:18.332168Z DEBUG latency_e2e_lan: Step 7: Configuring TLS and server
+2026-08-16T08:29:18.332189Z DEBUG latency_e2e_lan: Step 8: Creating server instance
+2026-08-16T08:29:18.332791Z DEBUG latency_e2e_lan: Step 9: Spawning server task
+2026-08-16T08:29:18.332833Z DEBUG latency_e2e_lan: Step 10: Waiting for server startup confirmation
+2026-08-16T08:29:18.332894Z DEBUG latency_e2e_lan: Server task started, entering run() loop
+2026-08-16T08:29:18.332931Z DEBUG monoterminal_master::server: Attempting to bind TCP listener to 127.0.0.1:18080
+2026-08-16T08:29:18.335341Z  INFO monoterminal_master::server: WebSocket server listening on 127.0.0.1:18080
+2026-08-16T08:29:18.335362Z  INFO monoterminal_master::server: TLS 1.3 only, cipher suites: TLS_AES_256_GCM_SHA384, TLS_AES_128_GCM_SHA256, TLS_CHACHA20_POLY1305_SHA256
+2026-08-16T08:29:18.335370Z DEBUG monoterminal_master::server: Sending startup notification for 127.0.0.1:18080
+2026-08-16T08:29:18.335428Z  INFO latency_e2e_lan: ✓ Server successfully bound to 127.0.0.1:18080
+2026-08-16T08:29:18.335465Z DEBUG latency_e2e_lan: === CLIENT SETUP: Preparing WebSocket connection ===
+2026-08-16T08:29:18.335476Z DEBUG latency_e2e_lan: Step 11: Generating JWT
+2026-08-16T08:29:18.336019Z DEBUG latency_e2e_lan: Step 12: Connecting WebSocket client to wss://127.0.0.1:18080
+2026-08-16T08:29:18.337127Z  INFO monoterminal_master::server: New connection from 127.0.0.1:50749
+2026-08-16T08:29:18.342467Z DEBUG rustls::server::hs: decided upon suite TLS13_AES_256_GCM_SHA384
+2026-08-16T08:29:18.346694Z  INFO monoterminal_master::server: TLS handshake completed with 127.0.0.1:50749
+2026-08-16T08:29:18.365455Z DEBUG tungstenite::handshake::server: Server handshake done.
+2026-08-16T08:29:18.365510Z  INFO monoterminal_master::server: WebSocket handshake completed with 127.0.0.1:50749
+2026-08-16T08:29:18.365541Z  INFO monoterminal_master::server::handler: WebSocket handler started for 127.0.0.1:50749 (client_id: 9482c2a9-2adf-4bc0-8214-c40cedb5a888)
+2026-08-16T08:29:18.366305Z DEBUG tungstenite::handshake::client: Client handshake done.
+2026-08-16T08:29:18.366348Z  INFO latency_e2e_lan: ✓ WebSocket client connected successfully
+2026-08-16T08:29:18.366354Z DEBUG latency_e2e_lan: Step 13: Creating PTY session
+2026-08-16T08:29:18.366367Z  INFO monoterminal_master::session::manager: Creating session 71540ac9-dd20-473d-be20-67e7b87e21b6 (24x80, cwd: "C:\\Users\\nokho\\Desktop\\projects\\monoterminal\\crates\\master", shell: cmd.exe)
+2026-08-16T08:29:18.366475Z  INFO monoterminal_master::pty::conpty: Creating ConPTY: shell=cmd.exe, cwd="C:\\Users\\nokho\\Desktop\\projects\\monoterminal\\crates\\master", size=80x24
+2026-08-16T08:29:18.385852Z  INFO monoterminal_master::pty::conpty: ConPTY session created: pid=12520
+2026-08-16T08:29:18.386154Z  INFO monoterminal_master::session::manager: Session 71540ac9-dd20-473d-be20-67e7b87e21b6 created successfully
+2026-08-16T08:29:18.386199Z  INFO latency_e2e_lan: ✓ PTY session created: 71540ac9-dd20-473d-be20-67e7b87e21b6
+2026-08-16T08:29:18.386208Z DEBUG latency_e2e_lan: Step 14: Waiting for PTY initialization (100ms)
+2026-08-16T08:29:18.495273Z DEBUG latency_e2e_lan: Step 15: Attaching to session via WebSocket
+2026-08-16T08:29:18.495658Z DEBUG monoterminal_master::server::handler: Received binary message from 127.0.0.1:50749 (413 bytes)
+2026-08-16T08:29:18.495718Z DEBUG monoterminal_master::server::handler: Decoded envelope with sequence 1
+2026-08-16T08:29:18.495742Z DEBUG monoterminal_master::server::handler: Processing AttachRequest from 127.0.0.1:50749: session_id=71540ac9-dd20-473d-be20-67e7b87e21b6
+2026-08-16T08:29:18.495912Z DEBUG monoterminal_master::server::handler: JWT verified for AttachRequest from 127.0.0.1:50749

@@ -1,0 +1,10 @@
+{"timestamp":"2026-08-14T14:36:02.846Z","suggestedAgent":"coder","confidence":0.5,"sessionId":"d72b96d2-b72a-4ba5-98ce-5bece8366997","intelligenceFeedback":true}
+{"timestamp":"2026-08-14T19:37:15.051Z","suggestedAgent":"coder","confidence":0.5,"sessionId":"1b42f7fb-bb57-48ad-ac9c-9c17f2ea617e","intelligenceFeedback":true}
+{"timestamp":"2026-08-14T19:38:13.375Z","suggestedAgent":"coder","confidence":0.5,"sessionId":"f6a60837-3ba9-48bf-ae67-5f98d97bdfbd","intelligenceFeedback":true}
+{"timestamp":"2026-08-16T06:29:05.929Z","suggestedAgent":"coder","confidence":0.5,"sessionId":"1b42f7fb-bb57-48ad-ac9c-9c17f2ea617e"}
+{"timestamp":"2026-08-16T10:40:13.408Z","suggestedAgent":"tester","confidence":0.87,"sessionId":"c3f0a62a-c202-4910-b713-d1d790927103"}
+{"timestamp":"2026-08-17T01:30:50.057Z","suggestedAgent":"tester","confidence":0.87,"sessionId":"1b42f7fb-bb57-48ad-ac9c-9c17f2ea617e","intelligenceFeedback":true}
+{"timestamp":"2026-08-17T07:17:51.755Z","suggestedAgent":"tester","confidence":0.87,"sessionId":"d2a59e7c-a174-45e6-8559-c54034453846"}
+{"timestamp":"2026-08-17T07:51:54.709Z","suggestedAgent":"tester","confidence":0.87,"sessionId":"05bb97cb-3a9f-41e7-8df3-6f3c9150f798","intelligenceFeedback":true}
+{"timestamp":"2026-08-18T09:20:37.462Z","suggestedAgent":"tester","confidence":0.87,"sessionId":"1b42f7fb-bb57-48ad-ac9c-9c17f2ea617e","intelligenceFeedback":true}
+{"timestamp":"2026-08-19T00:44:10.784Z","suggestedAgent":"general-purpose","sessionId":"0e8bfd91-1ade-4091-8464-efbe8e385189","intelligenceFeedback":true,"confidence":0.87}

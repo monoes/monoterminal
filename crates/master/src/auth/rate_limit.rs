@@ -22,7 +22,7 @@ pub enum RateLimitError {
 struct TokenBucket {
     capacity: usize,
     tokens: usize,
-    refill_rate: usize,     // Tokens per refill interval
+    refill_rate: usize, // Tokens per refill interval
     refill_interval: Duration,
     last_refill: Instant,
 }
@@ -133,8 +133,8 @@ impl RateLimiter {
             connection_buckets: Arc::new(Mutex::new(HashMap::new())),
             auth_trackers: Arc::new(Mutex::new(HashMap::new())),
             session_buckets: Arc::new(Mutex::new(HashMap::new())),
-            max_connections_per_minute: 100,  // SRS §3.2.4
-            max_sessions_per_minute: 20,      // SRS §3.2.4
+            max_connections_per_minute: 100, // SRS §3.2.4
+            max_sessions_per_minute: 20,     // SRS §3.2.4
         }
     }
 
@@ -175,7 +175,9 @@ impl RateLimiter {
     /// Record an auth failure (triggers ban after 5 failures/hour)
     pub fn record_auth_failure(&self, peer_addr: &SocketAddr) {
         let mut trackers = self.auth_trackers.lock().unwrap();
-        let tracker = trackers.entry(*peer_addr).or_insert_with(AuthFailureTracker::new);
+        let tracker = trackers
+            .entry(*peer_addr)
+            .or_insert_with(AuthFailureTracker::new);
         tracker.record_failure();
     }
 
@@ -206,9 +208,7 @@ impl RateLimiter {
 
         // Cleanup auth trackers with expired bans
         let mut trackers = self.auth_trackers.lock().unwrap();
-        trackers.retain(|_, tracker| {
-            !tracker.failures.is_empty() || tracker.is_banned()
-        });
+        trackers.retain(|_, tracker| !tracker.failures.is_empty() || tracker.is_banned());
 
         // Note: buckets cleanup on access (lazy cleanup via refill)
     }

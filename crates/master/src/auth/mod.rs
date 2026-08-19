@@ -16,7 +16,7 @@ pub use challenge::{Challenge, Ed25519ChallengeHandler};
 pub use jwt::{Claims, JwtService, TokenPair};
 pub use keys::{load_or_generate_keypair, Ed25519KeyPair};
 pub use rate_limit::RateLimiter;
-pub use rbac::{Permission, Action, check_permission};
+pub use rbac::{check_permission, Action, Permission};
 
 // ===== Core Types =====
 

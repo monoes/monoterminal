@@ -10,20 +10,20 @@
 //! - Automatic daily backups (7-day retention)
 //! - Disk space monitoring (80% warning, 95% emergency purge)
 
-pub mod schema;
-pub mod migrations;
-pub mod session;
-pub mod scrollback;
+pub mod audit;
 pub mod backup;
 pub mod disk_monitor;
-pub mod audit;
+pub mod migrations;
+pub mod schema;
+pub mod scrollback;
+pub mod session;
 
-use std::path::{Path, PathBuf};
-use std::time::Duration;
 use anyhow::{Context, Result};
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
 use rusqlite::Connection;
+use std::path::{Path, PathBuf};
+use std::time::Duration;
 
 /// Database connection pool
 pub struct Database {
@@ -44,24 +44,22 @@ impl Database {
 
         // Create parent directory if missing
         if let Some(parent) = db_path.parent() {
-            std::fs::create_dir_all(parent)
-                .context("Failed to create database directory")?;
+            std::fs::create_dir_all(parent).context("Failed to create database directory")?;
         }
 
         // Configure connection manager with WAL mode
-        let manager = SqliteConnectionManager::file(&db_path)
-            .with_init(|conn| {
-                // Enable WAL mode and performance tuning (ADR-012 §1.1)
-                conn.execute_batch(
-                    "PRAGMA journal_mode = WAL;
+        let manager = SqliteConnectionManager::file(&db_path).with_init(|conn| {
+            // Enable WAL mode and performance tuning (ADR-012 §1.1)
+            conn.execute_batch(
+                "PRAGMA journal_mode = WAL;
                      PRAGMA synchronous = NORMAL;
                      PRAGMA foreign_keys = ON;
                      PRAGMA cache_size = -64000;      -- 64MB cache
                      PRAGMA mmap_size = 268435456;    -- 256MB mmap
-                     PRAGMA temp_store = MEMORY;"
-                )?;
-                Ok(())
-            });
+                     PRAGMA temp_store = MEMORY;",
+            )?;
+            Ok(())
+        });
 
         // Create connection pool (max 20 concurrent connections)
         let pool = Pool::builder()
@@ -82,7 +80,8 @@ impl Database {
 
     /// Get a connection from the pool
     pub fn get_conn(&self) -> Result<r2d2::PooledConnection<SqliteConnectionManager>> {
-        self.pool.get()
+        self.pool
+            .get()
             .context("Failed to get connection from pool")
     }
 
@@ -95,7 +94,8 @@ impl Database {
     pub fn integrity_check(&self) -> Result<Vec<String>> {
         let conn = self.get_conn()?;
         let mut stmt = conn.prepare("PRAGMA integrity_check")?;
-        let results = stmt.query_map([], |row| row.get::<_, String>(0))?
+        let results = stmt
+            .query_map([], |row| row.get::<_, String>(0))?
             .collect::<Result<Vec<_>, _>>()?;
         Ok(results)
     }
@@ -111,20 +111,14 @@ impl Database {
         let session_count: i64 = conn.query_row(
             "SELECT COUNT(*) FROM sessions WHERE status != 'TERMINATED'",
             [],
-            |row| row.get(0)
+            |row| row.get(0),
         )?;
 
-        let scrollback_lines: i64 = conn.query_row(
-            "SELECT COUNT(*) FROM scrollback",
-            [],
-            |row| row.get(0)
-        )?;
+        let scrollback_lines: i64 =
+            conn.query_row("SELECT COUNT(*) FROM scrollback", [], |row| row.get(0))?;
 
-        let audit_log_count: i64 = conn.query_row(
-            "SELECT COUNT(*) FROM audit_logs",
-            [],
-            |row| row.get(0)
-        )?;
+        let audit_log_count: i64 =
+            conn.query_row("SELECT COUNT(*) FROM audit_logs", [], |row| row.get(0))?;
 
         Ok(DatabaseStats {
             db_size_bytes: db_size as u64,
@@ -158,19 +152,19 @@ mod tests {
 
         // Verify WAL mode is enabled
         let mut conn = db.get_conn().unwrap();
-        let journal_mode: String = conn.query_row(
-            "PRAGMA journal_mode",
-            [],
-            |row| row.get(0)
-        ).unwrap();
+        let journal_mode: String = conn
+            .query_row("PRAGMA journal_mode", [], |row| row.get(0))
+            .unwrap();
         assert_eq!(journal_mode, "wal");
 
         // Verify schema exists
-        let table_exists: i64 = conn.query_row(
-            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='sessions'",
-            [],
-            |row| row.get(0)
-        ).unwrap();
+        let table_exists: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='sessions'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
         assert_eq!(table_exists, 1);
     }
 

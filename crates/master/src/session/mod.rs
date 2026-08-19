@@ -2,12 +2,12 @@
 // Phase 1: Windows + Web MVP
 // SRS §2.1.3, Architecture: docs/architecture/phase1-overview.md §2
 
-pub mod session;
-pub mod scrollback;
 pub mod manager;
+pub mod scrollback;
+pub mod session;
 
-pub use session::{Session, SessionId, SessionState, SessionSnapshot, ClientId, SessionContainer};
 pub use manager::SessionManager;
+pub use session::{ClientId, Session, SessionContainer, SessionId, SessionSnapshot, SessionState};
 
 #[cfg(test)]
 mod tests;

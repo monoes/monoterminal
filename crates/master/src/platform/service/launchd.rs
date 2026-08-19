@@ -48,7 +48,10 @@ pub fn install_service() -> Result<()> {
 
     // 1. Check if already installed
     if Path::new(PLIST_PATH).exists() {
-        bail!("Service already installed at {}. Uninstall first or use --force.", PLIST_PATH);
+        bail!(
+            "Service already installed at {}. Uninstall first or use --force.",
+            PLIST_PATH
+        );
     }
 
     // 2. Copy binary to system location
@@ -118,15 +121,13 @@ pub fn uninstall_service() -> Result<()> {
 
     // 2. Remove plist file
     if Path::new(PLIST_PATH).exists() {
-        fs::remove_file(PLIST_PATH)
-            .context("Failed to remove plist file")?;
+        fs::remove_file(PLIST_PATH).context("Failed to remove plist file")?;
         tracing::info!("Removed plist file: {}", PLIST_PATH);
     }
 
     // 3. Remove binary
     if Path::new(BINARY_PATH).exists() {
-        fs::remove_file(BINARY_PATH)
-            .context("Failed to remove binary")?;
+        fs::remove_file(BINARY_PATH).context("Failed to remove binary")?;
         tracing::info!("Removed binary: {}", BINARY_PATH);
     }
 
@@ -134,19 +135,26 @@ pub fn uninstall_service() -> Result<()> {
     let data_dir_path = data_dir();
     let log_dir_path = log_dir();
 
-    print!("\nData directory: {}\nRemove data directory? [y/N]: ", data_dir_path.display());
+    print!(
+        "\nData directory: {}\nRemove data directory? [y/N]: ",
+        data_dir_path.display()
+    );
     let remove_data = read_confirmation();
 
     if remove_data {
         println!("\nRemoving data directory...");
         if data_dir_path.exists() {
-            fs::remove_dir_all(&data_dir_path)
-                .context(format!("Failed to remove data directory: {}", data_dir_path.display()))?;
+            fs::remove_dir_all(&data_dir_path).context(format!(
+                "Failed to remove data directory: {}",
+                data_dir_path.display()
+            ))?;
             println!("✓ Data directory removed: {}", data_dir_path.display());
         }
         if log_dir_path.exists() {
-            fs::remove_dir_all(&log_dir_path)
-                .context(format!("Failed to remove log directory: {}", log_dir_path.display()))?;
+            fs::remove_dir_all(&log_dir_path).context(format!(
+                "Failed to remove log directory: {}",
+                log_dir_path.display()
+            ))?;
             println!("✓ Log directory removed: {}", log_dir_path.display());
         }
     } else {
@@ -155,7 +163,10 @@ pub fn uninstall_service() -> Result<()> {
     }
 
     // 5. Interactive prompt for user removal
-    print!("\nService user: {}\nRemove service user and group? [y/N]: ", SERVICE_USER);
+    print!(
+        "\nService user: {}\nRemove service user and group? [y/N]: ",
+        SERVICE_USER
+    );
     let remove_user = read_confirmation();
 
     if remove_user {
@@ -163,8 +174,14 @@ pub fn uninstall_service() -> Result<()> {
         remove_service_user()?;
     } else {
         println!("\nService user preserved: {}", SERVICE_USER);
-        println!("To remove later: sudo dscl . -delete /Users/{}", SERVICE_USER);
-        println!("                 sudo dscl . -delete /Groups/{}", SERVICE_GROUP);
+        println!(
+            "To remove later: sudo dscl . -delete /Users/{}",
+            SERVICE_USER
+        );
+        println!(
+            "                 sudo dscl . -delete /Groups/{}",
+            SERVICE_GROUP
+        );
     }
 
     tracing::info!("✓ MONOTERMINAL service uninstalled successfully");
@@ -198,7 +215,11 @@ pub fn service_status() -> Result<ServiceStatus> {
     let enabled = installed;
 
     let message = if running {
-        format!("Service is running (PID: {})", pid.map(|p| p.to_string()).unwrap_or_else(|| "unknown".to_string()))
+        format!(
+            "Service is running (PID: {})",
+            pid.map(|p| p.to_string())
+                .unwrap_or_else(|| "unknown".to_string())
+        )
     } else if installed {
         "Service is installed but not running".to_string()
     } else {
@@ -217,14 +238,16 @@ pub fn service_status() -> Result<ServiceStatus> {
 /// Install binary to system location
 fn install_binary() -> Result<()> {
     // Get current executable path
-    let current_exe = std::env::current_exe()
-        .context("Failed to get current executable path")?;
+    let current_exe = std::env::current_exe().context("Failed to get current executable path")?;
 
-    tracing::info!("Copying binary: {} -> {}", current_exe.display(), BINARY_PATH);
+    tracing::info!(
+        "Copying binary: {} -> {}",
+        current_exe.display(),
+        BINARY_PATH
+    );
 
     // Copy binary
-    fs::copy(&current_exe, BINARY_PATH)
-        .context("Failed to copy binary to /usr/local/bin")?;
+    fs::copy(&current_exe, BINARY_PATH).context("Failed to copy binary to /usr/local/bin")?;
 
     // Set executable permissions (755)
     #[cfg(unix)]
@@ -262,15 +285,45 @@ fn create_service_user() -> Result<()> {
         // Create user record
         vec![".", "-create", &format!("/Users/{}", SERVICE_USER)],
         // Set real name
-        vec![".", "-create", &format!("/Users/{}", SERVICE_USER), "RealName", "MONOTERMINAL Master Daemon"],
+        vec![
+            ".",
+            "-create",
+            &format!("/Users/{}", SERVICE_USER),
+            "RealName",
+            "MONOTERMINAL Master Daemon",
+        ],
         // Set UID
-        vec![".", "-create", &format!("/Users/{}", SERVICE_USER), "UniqueID", &next_uid.to_string()],
+        vec![
+            ".",
+            "-create",
+            &format!("/Users/{}", SERVICE_USER),
+            "UniqueID",
+            &next_uid.to_string(),
+        ],
         // Set primary group ID (same as UID)
-        vec![".", "-create", &format!("/Users/{}", SERVICE_USER), "PrimaryGroupID", &next_uid.to_string()],
+        vec![
+            ".",
+            "-create",
+            &format!("/Users/{}", SERVICE_USER),
+            "PrimaryGroupID",
+            &next_uid.to_string(),
+        ],
         // Set shell to /usr/bin/false (no login)
-        vec![".", "-create", &format!("/Users/{}", SERVICE_USER), "UserShell", "/usr/bin/false"],
+        vec![
+            ".",
+            "-create",
+            &format!("/Users/{}", SERVICE_USER),
+            "UserShell",
+            "/usr/bin/false",
+        ],
         // Set NFSHomeDirectory
-        vec![".", "-create", &format!("/Users/{}", SERVICE_USER), "NFSHomeDirectory", "/var/empty"],
+        vec![
+            ".",
+            "-create",
+            &format!("/Users/{}", SERVICE_USER),
+            "NFSHomeDirectory",
+            "/var/empty",
+        ],
     ];
 
     for args in commands {
@@ -287,7 +340,13 @@ fn create_service_user() -> Result<()> {
     // Create group with same GID
     let group_commands = vec![
         vec![".", "-create", &format!("/Groups/{}", SERVICE_GROUP)],
-        vec![".", "-create", &format!("/Groups/{}", SERVICE_GROUP), "PrimaryGroupID", &next_uid.to_string()],
+        vec![
+            ".",
+            "-create",
+            &format!("/Groups/{}", SERVICE_GROUP),
+            "PrimaryGroupID",
+            &next_uid.to_string(),
+        ],
     ];
 
     for args in group_commands {
@@ -301,7 +360,11 @@ fn create_service_user() -> Result<()> {
         }
     }
 
-    tracing::info!("✓ Service user created: {} (UID: {})", SERVICE_USER, next_uid);
+    tracing::info!(
+        "✓ Service user created: {} (UID: {})",
+        SERVICE_USER,
+        next_uid
+    );
     Ok(())
 }
 
@@ -350,10 +413,8 @@ fn create_directories() -> Result<()> {
     tracing::info!("Creating log directory: {}", log_dir_path.display());
 
     // Create directories
-    fs::create_dir_all(&data_dir_path)
-        .context("Failed to create data directory")?;
-    fs::create_dir_all(&log_dir_path)
-        .context("Failed to create log directory")?;
+    fs::create_dir_all(&data_dir_path).context("Failed to create data directory")?;
+    fs::create_dir_all(&log_dir_path).context("Failed to create log directory")?;
 
     // Set ownership to service user
     set_directory_owner(&data_dir_path, SERVICE_USER, SERVICE_GROUP)?;
@@ -398,8 +459,7 @@ fn install_plist_file() -> Result<()> {
     let plist_content = generate_plist();
 
     // Write plist file
-    let mut file = fs::File::create(PLIST_PATH)
-        .context("Failed to create plist file")?;
+    let mut file = fs::File::create(PLIST_PATH).context("Failed to create plist file")?;
     file.write_all(plist_content.as_bytes())
         .context("Failed to write plist file")?;
 
@@ -424,8 +484,7 @@ fn set_plist_permissions() -> Result<()> {
     {
         use std::os::unix::fs::PermissionsExt;
         let permissions = fs::Permissions::from_mode(0o644);
-        fs::set_permissions(PLIST_PATH, permissions)
-            .context("Failed to set plist permissions")?;
+        fs::set_permissions(PLIST_PATH, permissions).context("Failed to set plist permissions")?;
     }
 
     tracing::info!("✓ Plist permissions set: root:wheel 644");
@@ -439,7 +498,8 @@ fn generate_plist() -> String {
     let data_dir_path = data_dir();
     let log_dir_path = log_dir();
 
-    format!(r#"<?xml version="1.0" encoding="UTF-8"?>
+    format!(
+        r#"<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
@@ -635,9 +695,7 @@ fn get_service_pid() -> Result<u32> {
         bail!("Service not running");
     }
 
-    let pid: u32 = pid_str
-        .parse()
-        .context("Failed to parse PID as number")?;
+    let pid: u32 = pid_str.parse().context("Failed to parse PID as number")?;
 
     Ok(pid)
 }
@@ -665,6 +723,9 @@ mod tests {
         assert_eq!(SERVICE_LABEL, "com.monoterminal.master");
         assert_eq!(SERVICE_USER, "_monoterminal");
         assert_eq!(BINARY_PATH, "/usr/local/bin/monoterminal-master");
-        assert_eq!(PLIST_PATH, "/Library/LaunchDaemons/com.monoterminal.master.plist");
+        assert_eq!(
+            PLIST_PATH,
+            "/Library/LaunchDaemons/com.monoterminal.master.plist"
+        );
     }
 }

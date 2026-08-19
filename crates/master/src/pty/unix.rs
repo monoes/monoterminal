@@ -160,8 +160,13 @@ impl PtyBackend for UnixPtyBackend {
     where
         Self: Sized,
     {
-        tracing::info!("Creating Unix PTY: shell={}, cwd={:?}, {}x{}",
-            config.shell, config.working_dir, config.rows, config.cols);
+        tracing::info!(
+            "Creating Unix PTY: shell={}, cwd={:?}, {}x{}",
+            config.shell,
+            config.working_dir,
+            config.rows,
+            config.cols
+        );
 
         // Get native PTY system (Linux: posix_openpt, macOS: openpty)
         let pty_system = NativePtySystem::default();
@@ -206,10 +211,8 @@ impl PtyBackend for UnixPtyBackend {
             .map_err(|e| PtyError::CreateFailed(format!("take writer failed: {}", e)))?;
 
         // Wrap I/O in async readers/writers with 4KB buffer (SRS §3.1.4)
-        let output_reader = BufReader::with_capacity(
-            PTY_BUFFER_SIZE,
-            PtyReader::new(master_reader),
-        );
+        let output_reader =
+            BufReader::with_capacity(PTY_BUFFER_SIZE, PtyReader::new(master_reader));
 
         let input_writer = PtyWriter::new(master_writer);
 
@@ -282,7 +285,10 @@ impl PtyBackend for UnixPtyBackend {
                 Ok(())
             }
             Ok(Ok(Err(e))) => Err(PtyError::TerminateFailed(format!("wait failed: {}", e))),
-            Ok(Err(e)) => Err(PtyError::TerminateFailed(format!("spawn_blocking failed: {}", e))),
+            Ok(Err(e)) => Err(PtyError::TerminateFailed(format!(
+                "spawn_blocking failed: {}",
+                e
+            ))),
             Err(_) => {
                 tracing::warn!("Unix PTY terminate timeout: pid={}", self.shell_pid);
                 Ok(()) // Continue cleanup even on timeout
@@ -552,7 +558,11 @@ mod tests {
         assert!(pid > 0, "Shell PID should be greater than 0");
 
         // PID should be reasonable (not too large, not process 1)
-        assert!(pid > 1 && pid < 100000, "Shell PID should be reasonable: {}", pid);
+        assert!(
+            pid > 1 && pid < 100000,
+            "Shell PID should be reasonable: {}",
+            pid
+        );
     }
 
     #[tokio::test]

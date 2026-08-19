@@ -12,11 +12,11 @@ pub mod transport;
 #[cfg(test)]
 mod tests;
 
-pub use config::{WebRtcConfig, StunServerConfig};
-pub use error::{WebRtcError, Result};
-pub use handshake::{PeerHandshake, PeerHandshakeResponse, HandshakeVerifier};
-pub use ice::{IceCandidate, IceCandidateGatherer, probe_stun_server};
-pub use peer_connection::{PeerConnection, PeerConnectionState, DataChannelMessage};
+pub use config::{StunServerConfig, WebRtcConfig};
+pub use error::{Result, WebRtcError};
+pub use handshake::{HandshakeVerifier, PeerHandshake, PeerHandshakeResponse};
+pub use ice::{probe_stun_server, IceCandidate, IceCandidateGatherer};
+pub use peer_connection::{DataChannelMessage, PeerConnection, PeerConnectionState};
 pub use transport::{DualTransport, Transport, TransportType};
 
 use prometheus::{Counter, Gauge, Histogram, HistogramOpts, Registry};
@@ -56,51 +56,42 @@ impl WebRtcMetrics {
     pub fn new(registry: &Registry) -> prometheus::Result<Self> {
         let webrtc_success_rate = Gauge::new(
             "webrtc_success_rate",
-            "WebRTC connection success rate (0-1)"
+            "WebRTC connection success rate (0-1)",
         )?;
         registry.register(Box::new(webrtc_success_rate.clone()))?;
 
-        let webrtc_attempts_total = Counter::new(
-            "webrtc_attempts_total",
-            "Total WebRTC connection attempts"
-        )?;
+        let webrtc_attempts_total =
+            Counter::new("webrtc_attempts_total", "Total WebRTC connection attempts")?;
         registry.register(Box::new(webrtc_attempts_total.clone()))?;
 
-        let webrtc_success_total = Counter::new(
-            "webrtc_success_total",
-            "Successful WebRTC connections"
-        )?;
+        let webrtc_success_total =
+            Counter::new("webrtc_success_total", "Successful WebRTC connections")?;
         registry.register(Box::new(webrtc_success_total.clone()))?;
 
-        let webrtc_failed_total = Counter::new(
-            "webrtc_failed_total",
-            "Failed WebRTC connections"
-        )?;
+        let webrtc_failed_total = Counter::new("webrtc_failed_total", "Failed WebRTC connections")?;
         registry.register(Box::new(webrtc_failed_total.clone()))?;
 
         let webrtc_connection_state = Gauge::new(
             "webrtc_connection_state",
-            "Current WebRTC connection state (0=disconnected, 1=connecting, 2=connected, 3=failed)"
+            "Current WebRTC connection state (0=disconnected, 1=connecting, 2=connected, 3=failed)",
         )?;
         registry.register(Box::new(webrtc_connection_state.clone()))?;
 
-        let ice_gathering_duration = Histogram::with_opts(
-            HistogramOpts::new(
-                "ice_gathering_duration_seconds",
-                "ICE candidate gathering duration in seconds",
-            )
-        )?;
+        let ice_gathering_duration = Histogram::with_opts(HistogramOpts::new(
+            "ice_gathering_duration_seconds",
+            "ICE candidate gathering duration in seconds",
+        ))?;
         registry.register(Box::new(ice_gathering_duration.clone()))?;
 
         let turn_health_status = Gauge::new(
             "turn_health_status",
-            "TURN server health status (0=unknown, 1=healthy, 2=unhealthy)"
+            "TURN server health status (0=unknown, 1=healthy, 2=unhealthy)",
         )?;
         registry.register(Box::new(turn_health_status.clone()))?;
 
         let stun_health_status = Gauge::new(
             "stun_health_status",
-            "STUN server health status (0=unknown, 1=healthy, 2=unhealthy)"
+            "STUN server health status (0=unknown, 1=healthy, 2=unhealthy)",
         )?;
         registry.register(Box::new(stun_health_status.clone()))?;
 

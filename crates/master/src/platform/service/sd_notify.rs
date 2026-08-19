@@ -67,11 +67,11 @@ pub fn notify(state: &str) -> Result<()> {
     };
 
     // Create unbound Unix datagram socket
-    let socket = UnixDatagram::unbound()
-        .context("Failed to create Unix datagram socket")?;
+    let socket = UnixDatagram::unbound().context("Failed to create Unix datagram socket")?;
 
     // Send notification to systemd
-    socket.send_to(state.as_bytes(), &socket_path)
+    socket
+        .send_to(state.as_bytes(), &socket_path)
         .context("Failed to send notification to systemd")?;
 
     tracing::info!("✓ systemd notification sent: {}", state);

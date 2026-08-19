@@ -1,0 +1,152 @@
+.install-prompt-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 16px;
+}
+
+.install-prompt {
+  background: #2d2d2d;
+  border-radius: 8px;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+  color: #e5e5e5;
+}
+
+.install-prompt-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #444;
+}
+
+.install-prompt-header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.install-prompt-header .close-btn {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 28px;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.install-prompt-header .close-btn:hover {
+  background: #444;
+  color: #fff;
+}
+
+.install-prompt-content {
+  padding: 20px;
+}
+
+.install-prompt-content p {
+  margin: 0 0 16px 0;
+  line-height: 1.5;
+}
+
+.install-prompt-content ul {
+  margin: 0 0 16px 0;
+  padding-left: 24px;
+}
+
+.install-prompt-content li {
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.platform-note {
+  margin-top: 16px;
+  padding: 12px;
+  background: rgba(229, 229, 16, 0.1);
+  border-left: 3px solid #e5e510;
+  border-radius: 4px;
+}
+
+.ios-note {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #e5e5e5;
+}
+
+.ios-note strong {
+  color: #f5f543;
+}
+
+.install-prompt-actions {
+  display: flex;
+  gap: 12px;
+  padding: 20px;
+  border-top: 1px solid #444;
+  justify-content: flex-end;
+}
+
+.install-prompt-actions button {
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.btn-secondary {
+  background: #444;
+  color: #e5e5e5;
+}
+
+.btn-secondary:hover {
+  background: #555;
+}
+
+.btn-primary {
+  background: #2472c8;
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: #3b8eea;
+}
+
+/* Mobile responsive */
+@media (max-width: 600px) {
+  .install-prompt {
+    max-width: 100%;
+    margin: 0;
+    border-radius: 8px 8px 0 0;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+  }
+
+  .install-prompt-actions {
+    flex-direction: column-reverse;
+  }
+
+  .install-prompt-actions button {
+    width: 100%;
+  }
+}

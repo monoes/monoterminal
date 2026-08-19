@@ -1,0 +1,39 @@
+{
+  "approvals": [
+    {
+      "roleId": "eng-director",
+      "action": "Bash",
+      "question": "Approve Bash tool call?",
+      "ts": 1787001662845,
+      "approved": true
+    },
+    {
+      "roleId": "eng-director",
+      "action": "org_complete",
+      "question": "Approve org_complete tool call?",
+      "ts": 1787001662250,
+      "approved": false
+    },
+    {
+      "roleId": "rust-backend-lead",
+      "action": "WebFetch",
+      "question": "Approve WebFetch tool call?",
+      "ts": 1787079336619,
+      "approved": null
+    },
+    {
+      "roleId": "gpu-rendering-engineer",
+      "action": "Bash",
+      "question": "Approve Bash tool call?",
+      "ts": 1787085157002,
+      "approved": null
+    },
+    {
+      "roleId": "rust-backend-lead",
+      "action": "WebSearch",
+      "question": "Approve WebSearch tool call?",
+      "ts": 1787165722471,
+      "approved": null
+    }
+  ]
+}

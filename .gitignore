@@ -1,0 +1,62 @@
+# Rust
+/target
+**/*.rs.bk
+*.pdb
+Cargo.lock
+
+# Node / Web Client
+/web/node_modules
+/web/dist
+/web/.vite
+/web/.env.local
+/web/.env.*.local
+
+# Coverage reports
+/cobertura.xml
+/tarpaulin-report.html
+lcov.info
+*.profraw
+*.profdata
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build artifacts
+*.exe
+*.dll
+*.so
+*.dylib
+flamegraph.svg
+
+# TLS certificates (development - self-signed)
+/certs/*.crt
+/certs/*.key
+/certs/*.pem
+
+# Monomind (local state, not workspace metadata)
+.monomind/cache/
+.monomind/temp/
+.swarm/runs/
+.swarm/temp/
+
+# Soak test outputs (ephemeral test artifacts)
+soak-logs/
+soak-results/

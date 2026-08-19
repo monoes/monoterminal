@@ -27,13 +27,13 @@ pub const MIGRATIONS: &[Migration] = &[
 /// Apply all pending migrations
 pub fn apply_pending_migrations(conn: &mut Connection) -> Result<()> {
     // Get current version
-    let current_version = super::schema::current_version(conn)
-        .unwrap_or(0);
+    let current_version = super::schema::current_version(conn).unwrap_or(0);
 
     info!("Current schema version: {}", current_version);
 
     // Find pending migrations
-    let pending: Vec<_> = MIGRATIONS.iter()
+    let pending: Vec<_> = MIGRATIONS
+        .iter()
         .filter(|m| m.version > current_version)
         .collect();
 
@@ -46,7 +46,10 @@ pub fn apply_pending_migrations(conn: &mut Connection) -> Result<()> {
 
     // Apply each migration in order
     for migration in pending {
-        info!("Applying migration {}: {}", migration.version, migration.description);
+        info!(
+            "Applying migration {}: {}",
+            migration.version, migration.description
+        );
 
         apply_migration(conn, migration)
             .with_context(|| format!("Failed to apply migration {}", migration.version))?;
@@ -77,13 +80,12 @@ fn apply_migration(conn: &mut Connection, migration: &Migration) -> Result<()> {
 
 /// Verify migration history integrity
 pub fn verify_migrations(conn: &Connection) -> Result<()> {
-    let mut stmt = conn.prepare(
-        "SELECT version, description FROM schema_migrations ORDER BY version ASC"
-    )?;
+    let mut stmt =
+        conn.prepare("SELECT version, description FROM schema_migrations ORDER BY version ASC")?;
 
-    let applied: Vec<(i32, String)> = stmt.query_map([], |row| {
-        Ok((row.get(0)?, row.get(1)?))
-    })?.collect::<Result<_, _>>()?;
+    let applied: Vec<(i32, String)> = stmt
+        .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?
+        .collect::<Result<_, _>>()?;
 
     info!("Applied migrations:");
     for (version, description) in &applied {
@@ -94,7 +96,10 @@ pub fn verify_migrations(conn: &Connection) -> Result<()> {
     for (i, (version, _)) in applied.iter().enumerate() {
         let expected = i as i32 + 1;
         if *version != expected {
-            warn!("Migration version gap detected: expected v{}, found v{}", expected, version);
+            warn!(
+                "Migration version gap detected: expected v{}, found v{}",
+                expected, version
+            );
         }
     }
 

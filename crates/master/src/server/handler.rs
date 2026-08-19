@@ -3,24 +3,24 @@
 // Implements task-2: Monomind bridge integration (health/upgrade/detection/dashboard)
 // Implements task-8: JWT authentication integration
 
-use std::net::SocketAddr;
-use std::sync::Arc;
-use std::path::PathBuf;
 use futures_util::{SinkExt, StreamExt};
 use prost::Message;
+use std::net::SocketAddr;
+use std::path::PathBuf;
+use std::sync::Arc;
 use tokio::net::TcpStream;
 use tokio::sync::mpsc;
 use tokio_rustls::server::TlsStream;
-use tokio_tungstenite::WebSocketStream;
 use tokio_tungstenite::tungstenite::protocol::Message as WsMessage;
-use tracing::{debug, info, warn, error};
+use tokio_tungstenite::WebSocketStream;
+use tracing::{debug, error, info, warn};
 use uuid::Uuid;
 
-use monoterminal_protocol::{Envelope, envelope, ErrorCode};
+use super::error::{Result, ServerError};
 use crate::auth::{AuthService, Claims};
 use crate::session::manager::SessionManager;
-use crate::session::{SessionId, ClientId};
-use super::error::{ServerError, Result};
+use crate::session::{ClientId, SessionId};
+use monoterminal_protocol::{envelope, Envelope, ErrorCode};
 
 /// Handle WebSocket connection with bidirectional streaming
 /// Client → Server: AttachRequest, InputData, ResizeRequest, DetachRequest
@@ -36,7 +36,10 @@ pub async fn handle_websocket(
     let mut sequence_number: u64 = 0;
     let client_id = Uuid::new_v4();
 
-    info!("WebSocket handler started for {} (client_id: {})", peer_addr, client_id);
+    info!(
+        "WebSocket handler started for {} (client_id: {})",
+        peer_addr, client_id
+    );
 
     // Connection state
     let mut attached_session: Option<SessionId> = None;
@@ -187,9 +190,15 @@ pub async fn handle_websocket(
     // Cleanup: detach from session if attached
     if let Some(session_id) = attached_session {
         if let Err(e) = session_manager.detach_client(session_id, client_id).await {
-            error!("Failed to detach client {} from session {}: {}", client_id, session_id, e);
+            error!(
+                "Failed to detach client {} from session {}: {}",
+                client_id, session_id, e
+            );
         } else {
-            info!("Client {} detached from session {} on disconnect", client_id, session_id);
+            info!(
+                "Client {} detached from session {} on disconnect",
+                client_id, session_id
+            );
         }
     }
 
@@ -208,10 +217,7 @@ pub async fn handle_websocket(
 /// # Returns
 /// * `Ok(Claims)` - Valid token with user claims
 /// * `Err(ServerError::AuthFailed)` - Invalid, expired, or malformed token
-fn verify_auth_token(
-    auth_service: &dyn AuthService,
-    token: &str,
-) -> Result<Claims> {
+fn verify_auth_token(auth_service: &dyn AuthService, token: &str) -> Result<Claims> {
     auth_service
         .verify_access(token)
         .map_err(|e| ServerError::AuthFailed(format!("JWT verification failed: {}", e)))
@@ -230,7 +236,10 @@ async fn process_message(
 ) -> Result<Option<Envelope>> {
     match envelope.message {
         Some(envelope::Message::AttachRequest(req)) => {
-            debug!("Processing AttachRequest from {}: session_id={}", peer_addr, req.session_id);
+            debug!(
+                "Processing AttachRequest from {}: session_id={}",
+                peer_addr, req.session_id
+            );
 
             // SRS §3.2.2: JWT authentication verification
             // Phase 2: Extract user_id from JWT claims for RBAC
@@ -238,30 +247,49 @@ async fn process_message(
                 // Production mode: verify JWT token and extract user_id
                 if req.auth_token.is_empty() {
                     warn!("AttachRequest from {} missing auth_token", peer_addr);
-                    return Err(ServerError::AuthFailed("Missing authentication token".to_string()));
+                    return Err(ServerError::AuthFailed(
+                        "Missing authentication token".to_string(),
+                    ));
                 }
 
                 let claims = verify_auth_token(auth_service, &req.auth_token)?;
-                debug!("JWT verified for AttachRequest from {}: user_id={}", peer_addr, claims.sub);
+                debug!(
+                    "JWT verified for AttachRequest from {}: user_id={}",
+                    peer_addr, claims.sub
+                );
                 Some(claims.sub)
             } else {
                 // Dev mode: bypass auth (for E2E testing only)
-                warn!("⚠️  DEV MODE: Skipping JWT verification for AttachRequest from {}", peer_addr);
+                warn!(
+                    "⚠️  DEV MODE: Skipping JWT verification for AttachRequest from {}",
+                    peer_addr
+                );
                 None
             };
 
             // Parse or create session_id (protocol: "UUID or empty for new session")
             let session_id = if req.session_id.is_empty() {
                 // Create new session with requested dimensions (Phase 2: set owner from JWT)
-                info!("Creating new session for {} ({}x{}, user_id={:?})", peer_addr, req.rows, req.cols, user_id);
+                info!(
+                    "Creating new session for {} ({}x{}, user_id={:?})",
+                    peer_addr, req.rows, req.cols, user_id
+                );
                 session_manager
-                    .create_session_with_user(user_id.clone(), None, req.rows as u16, req.cols as u16)
+                    .create_session_with_user(
+                        user_id.clone(),
+                        None,
+                        req.rows as u16,
+                        req.cols as u16,
+                    )
                     .await
-                    .map_err(|e| ServerError::InvalidMessage(format!("Failed to create session: {}", e)))?
+                    .map_err(|e| {
+                        ServerError::InvalidMessage(format!("Failed to create session: {}", e))
+                    })?
             } else {
                 // Attach to existing session
-                Uuid::parse_str(&req.session_id)
-                    .map_err(|e| ServerError::InvalidMessage(format!("Invalid session_id UUID: {}", e)))?
+                Uuid::parse_str(&req.session_id).map_err(|e| {
+                    ServerError::InvalidMessage(format!("Invalid session_id UUID: {}", e))
+                })?
             };
 
             // Create output channel for this client
@@ -272,8 +300,9 @@ async fn process_message(
                 .attach_client_with_user(session_id, client_id, output_tx, user_id.clone())
                 .await
                 .map_err(|e| match e {
-                    crate::session::SessionError::NotFound(_) =>
-                        ServerError::SessionNotFound(req.session_id.clone()),
+                    crate::session::SessionError::NotFound(_) => {
+                        ServerError::SessionNotFound(req.session_id.clone())
+                    }
                     _ => ServerError::InvalidMessage(format!("Attach failed: {}", e)),
                 })?;
 
@@ -305,8 +334,8 @@ async fn process_message(
                 cols: snapshot.cols as u32,
                 shell_type: snapshot.shell_type,
                 working_dir: snapshot.working_dir.to_string_lossy().to_string(),
-                created_at: now,  // TODO: Get actual created_at from session
-                last_activity: now,  // TODO: Get actual last_activity from session
+                created_at: now,    // TODO: Get actual created_at from session
+                last_activity: now, // TODO: Get actual last_activity from session
             });
 
             let response = Envelope {
@@ -316,14 +345,18 @@ async fn process_message(
                         session_id: req.session_id,
                         metadata,
                         scrollback: scrollback_lines,
-                    }
+                    },
                 )),
             };
 
             Ok(Some(response))
         }
         Some(envelope::Message::InputData(input)) => {
-            debug!("Processing InputData from {}: {} bytes", peer_addr, input.data.len());
+            debug!(
+                "Processing InputData from {}: {} bytes",
+                peer_addr,
+                input.data.len()
+            );
 
             // SRS §3.2.2: JWT authentication verification
             // Phase 2: Extract user_id from JWT claims for RBAC
@@ -331,19 +364,25 @@ async fn process_message(
                 // Production mode: verify JWT token and extract user_id
                 if input.auth_token.is_empty() {
                     warn!("InputData from {} missing auth_token", peer_addr);
-                    return Err(ServerError::AuthFailed("Missing authentication token".to_string()));
+                    return Err(ServerError::AuthFailed(
+                        "Missing authentication token".to_string(),
+                    ));
                 }
 
                 let claims = verify_auth_token(auth_service, &input.auth_token)?;
-                debug!("JWT verified for InputData from {}: user_id={}", peer_addr, claims.sub);
+                debug!(
+                    "JWT verified for InputData from {}: user_id={}",
+                    peer_addr, claims.sub
+                );
                 Some(claims.sub)
             } else {
                 None
             };
 
             // Ensure client is attached
-            let session_id = attached_session
-                .ok_or_else(|| ServerError::InvalidMessage("Not attached to session".to_string()))?;
+            let session_id = attached_session.ok_or_else(|| {
+                ServerError::InvalidMessage("Not attached to session".to_string())
+            })?;
 
             // Forward input to session PTY (Phase 2: RBAC permission check)
             session_manager
@@ -355,7 +394,10 @@ async fn process_message(
             Ok(None)
         }
         Some(envelope::Message::ResizeRequest(resize)) => {
-            debug!("Processing ResizeRequest from {}: {}x{}", peer_addr, resize.rows, resize.cols);
+            debug!(
+                "Processing ResizeRequest from {}: {}x{}",
+                peer_addr, resize.rows, resize.cols
+            );
 
             // SRS §3.2.2: JWT authentication verification
             // Phase 2: Extract user_id from JWT claims for RBAC
@@ -363,23 +405,34 @@ async fn process_message(
                 // Production mode: verify JWT token and extract user_id
                 if resize.auth_token.is_empty() {
                     warn!("ResizeRequest from {} missing auth_token", peer_addr);
-                    return Err(ServerError::AuthFailed("Missing authentication token".to_string()));
+                    return Err(ServerError::AuthFailed(
+                        "Missing authentication token".to_string(),
+                    ));
                 }
 
                 let claims = verify_auth_token(auth_service, &resize.auth_token)?;
-                debug!("JWT verified for ResizeRequest from {}: user_id={}", peer_addr, claims.sub);
+                debug!(
+                    "JWT verified for ResizeRequest from {}: user_id={}",
+                    peer_addr, claims.sub
+                );
                 Some(claims.sub)
             } else {
                 None
             };
 
             // Ensure client is attached
-            let session_id = attached_session
-                .ok_or_else(|| ServerError::InvalidMessage("Not attached to session".to_string()))?;
+            let session_id = attached_session.ok_or_else(|| {
+                ServerError::InvalidMessage("Not attached to session".to_string())
+            })?;
 
             // Resize session PTY (Phase 2: RBAC permission check)
             session_manager
-                .resize_session_with_user(session_id, resize.rows as u16, resize.cols as u16, user_id)
+                .resize_session_with_user(
+                    session_id,
+                    resize.rows as u16,
+                    resize.cols as u16,
+                    user_id,
+                )
                 .await
                 .map_err(|e| ServerError::InvalidMessage(format!("Resize failed: {}", e)))?;
 
@@ -390,8 +443,9 @@ async fn process_message(
             debug!("Processing DetachRequest from {}", peer_addr);
 
             // Ensure client is attached
-            let session_id = attached_session
-                .ok_or_else(|| ServerError::InvalidMessage("Not attached to session".to_string()))?;
+            let session_id = attached_session.ok_or_else(|| {
+                ServerError::InvalidMessage("Not attached to session".to_string())
+            })?;
 
             // Detach from session
             session_manager
@@ -409,7 +463,10 @@ async fn process_message(
             Ok(None)
         }
         Some(envelope::Message::DashboardRequest(req)) => {
-            debug!("Processing DashboardRequest from {}: command={}", peer_addr, req.command);
+            debug!(
+                "Processing DashboardRequest from {}: command={}",
+                peer_addr, req.command
+            );
 
             // Execute monomind CLI command and return JSON response
             // Commands: "status", "agents", "memory", "orgs", etc.
@@ -421,14 +478,17 @@ async fn process_message(
                     monoterminal_protocol::DashboardResponse {
                         json_data: result.0,
                         error: result.1 as i32,
-                    }
+                    },
                 )),
             };
 
             Ok(Some(response))
         }
         Some(envelope::Message::HealthCheckRequest(req)) => {
-            debug!("Processing HealthCheckRequest from {}: project_dir={}", peer_addr, req.project_dir);
+            debug!(
+                "Processing HealthCheckRequest from {}: project_dir={}",
+                peer_addr, req.project_dir
+            );
 
             // Get project directory - use session cwd if not specified
             let project_dir = if req.project_dir.is_empty() {
@@ -448,20 +508,28 @@ async fn process_message(
                 });
 
             // Convert to protobuf format
-            let issues: Vec<monoterminal_protocol::HealthIssue> = health_status.issues
+            let issues: Vec<monoterminal_protocol::HealthIssue> = health_status
+                .issues
                 .iter()
                 .map(|issue| monoterminal_protocol::HealthIssue {
                     severity: match issue.severity {
-                        monoterminal_monomind_bridge::Severity::Info => monoterminal_protocol::IssueSeverity::Info as i32,
-                        monoterminal_monomind_bridge::Severity::Warning => monoterminal_protocol::IssueSeverity::Warning as i32,
-                        monoterminal_monomind_bridge::Severity::Error => monoterminal_protocol::IssueSeverity::Error as i32,
+                        monoterminal_monomind_bridge::Severity::Info => {
+                            monoterminal_protocol::IssueSeverity::Info as i32
+                        }
+                        monoterminal_monomind_bridge::Severity::Warning => {
+                            monoterminal_protocol::IssueSeverity::Warning as i32
+                        }
+                        monoterminal_monomind_bridge::Severity::Error => {
+                            monoterminal_protocol::IssueSeverity::Error as i32
+                        }
                     },
                     message: issue.message.clone(),
                     resolution: issue.resolution.clone().unwrap_or_default(),
                 })
                 .collect();
 
-            let last_check_timestamp = health_status.last_check
+            let last_check_timestamp = health_status
+                .last_check
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap_or_default()
                 .as_secs() as i64;
@@ -476,20 +544,22 @@ async fn process_message(
                         broker_registered: health_status.broker_registered,
                         last_check_timestamp,
                         issues,
-                    }
+                    },
                 )),
             };
 
             Ok(Some(response))
         }
         Some(envelope::Message::UpgradeRequest(req)) => {
-            debug!("Processing UpgradeRequest from {}: project_dir={}, confirmed={}",
-                peer_addr, req.project_dir, req.confirmed);
+            debug!(
+                "Processing UpgradeRequest from {}: project_dir={}, confirmed={}",
+                peer_addr, req.project_dir, req.confirmed
+            );
 
             // Require explicit confirmation per SRS §2.4.3
             if !req.confirmed {
                 return Err(ServerError::InvalidMessage(
-                    "Upgrade requires user confirmation".to_string()
+                    "Upgrade requires user confirmation".to_string(),
                 ));
             }
 
@@ -523,14 +593,17 @@ async fn process_message(
                         old_version: upgrade_result.old_version.unwrap_or_default(),
                         new_version: upgrade_result.new_version.unwrap_or_default(),
                         output: upgrade_result.output,
-                    }
+                    },
                 )),
             };
 
             Ok(Some(response))
         }
         Some(envelope::Message::DetectionRequest(req)) => {
-            debug!("Processing DetectionRequest from {}: project_dir={}", peer_addr, req.project_dir);
+            debug!(
+                "Processing DetectionRequest from {}: project_dir={}",
+                peer_addr, req.project_dir
+            );
 
             // Get project directory
             let project_dir = if req.project_dir.is_empty() {
@@ -549,7 +622,8 @@ async fn process_message(
                 message: Some(envelope::Message::DetectionResponse(
                     monoterminal_protocol::DetectionResponse {
                         found: detection_result.found,
-                        monomind_root: detection_result.monomind_root
+                        monomind_root: detection_result
+                            .monomind_root
                             .map(|p| p.to_string_lossy().to_string())
                             .unwrap_or_default(),
                         suggest_install: detection_result.suggest_install,
@@ -559,25 +633,30 @@ async fn process_message(
                         } else {
                             String::new()
                         },
-                    }
+                    },
                 )),
             };
 
             Ok(Some(response))
         }
-        Some(envelope::Message::AttachResponse(_)) |
-        Some(envelope::Message::OutputData(_)) |
-        Some(envelope::Message::ErrorResponse(_)) |
-        Some(envelope::Message::DashboardResponse(_)) |
-        Some(envelope::Message::HealthCheckResponse(_)) |
-        Some(envelope::Message::UpgradeResponse(_)) |
-        Some(envelope::Message::DetectionResponse(_)) |
-        Some(envelope::Message::MonitoringData(_)) |
-        Some(envelope::Message::WebrtcOffer(_)) |
-        Some(envelope::Message::WebrtcAnswer(_)) |
-        Some(envelope::Message::IceCandidate(_)) => {
-            warn!("Received unexpected server->client or P2P message from {}", peer_addr);
-            Err(ServerError::InvalidMessage("Client sent server/P2P message type".to_string()))
+        Some(envelope::Message::AttachResponse(_))
+        | Some(envelope::Message::OutputData(_))
+        | Some(envelope::Message::ErrorResponse(_))
+        | Some(envelope::Message::DashboardResponse(_))
+        | Some(envelope::Message::HealthCheckResponse(_))
+        | Some(envelope::Message::UpgradeResponse(_))
+        | Some(envelope::Message::DetectionResponse(_))
+        | Some(envelope::Message::MonitoringData(_))
+        | Some(envelope::Message::WebrtcOffer(_))
+        | Some(envelope::Message::WebrtcAnswer(_))
+        | Some(envelope::Message::IceCandidate(_)) => {
+            warn!(
+                "Received unexpected server->client or P2P message from {}",
+                peer_addr
+            );
+            Err(ServerError::InvalidMessage(
+                "Client sent server/P2P message type".to_string(),
+            ))
         }
         None => {
             warn!("Received envelope with no message from {}", peer_addr);
@@ -608,7 +687,11 @@ async fn execute_monomind_command(
     debug!("Executing monomind command: {}", command);
 
     // Build command arguments
-    let mut args = vec!["monomind@latest".to_string(), command.to_string(), "--json".to_string()];
+    let mut args = vec![
+        "monomind@latest".to_string(),
+        command.to_string(),
+        "--json".to_string(),
+    ];
 
     // Add params as arguments
     for (key, value) in params {
@@ -617,12 +700,8 @@ async fn execute_monomind_command(
     }
 
     // Execute command
-    let result = tokio::task::spawn_blocking(move || {
-        Command::new("npx")
-            .args(&args)
-            .output()
-    })
-    .await;
+    let result =
+        tokio::task::spawn_blocking(move || Command::new("npx").args(&args).output()).await;
 
     match result {
         Ok(Ok(output)) if output.status.success() => {
@@ -636,8 +715,9 @@ async fn execute_monomind_command(
                 serde_json::json!({
                     "error": error_msg,
                     "exitCode": output.status.code(),
-                }).to_string(),
-                ErrorCode::ServerError
+                })
+                .to_string(),
+                ErrorCode::ServerError,
             )
         }
         Ok(Err(e)) => {
@@ -645,8 +725,9 @@ async fn execute_monomind_command(
             (
                 serde_json::json!({
                     "error": format!("Command execution failed: {}", e),
-                }).to_string(),
-                ErrorCode::ServerError
+                })
+                .to_string(),
+                ErrorCode::ServerError,
             )
         }
         Err(e) => {
@@ -654,8 +735,9 @@ async fn execute_monomind_command(
             (
                 serde_json::json!({
                     "error": format!("Task join failed: {}", e),
-                }).to_string(),
-                ErrorCode::ServerError
+                })
+                .to_string(),
+                ErrorCode::ServerError,
             )
         }
     }
@@ -668,10 +750,7 @@ fn create_error_envelope(sequence_number: u64, error: ServerError) -> Envelope {
             monoterminal_protocol::ErrorCode::SessionNotFound as i32,
             msg,
         ),
-        ServerError::AuthFailed(msg) => (
-            monoterminal_protocol::ErrorCode::AuthFailed as i32,
-            msg,
-        ),
+        ServerError::AuthFailed(msg) => (monoterminal_protocol::ErrorCode::AuthFailed as i32, msg),
         ServerError::PermissionDenied => (
             monoterminal_protocol::ErrorCode::PermissionDenied as i32,
             "Permission denied".to_string(),
@@ -689,7 +768,7 @@ fn create_error_envelope(sequence_number: u64, error: ServerError) -> Envelope {
     Envelope {
         sequence_number,
         message: Some(envelope::Message::ErrorResponse(
-            monoterminal_protocol::ErrorResponse { code, message }
+            monoterminal_protocol::ErrorResponse { code, message },
         )),
     }
 }
@@ -707,7 +786,10 @@ mod tests {
 
         match envelope.message {
             Some(envelope::Message::ErrorResponse(err)) => {
-                assert_eq!(err.code, monoterminal_protocol::ErrorCode::SessionNotFound as i32);
+                assert_eq!(
+                    err.code,
+                    monoterminal_protocol::ErrorCode::SessionNotFound as i32
+                );
                 assert_eq!(err.message, "session-123");
             }
             _ => panic!("Expected ErrorResponse"),

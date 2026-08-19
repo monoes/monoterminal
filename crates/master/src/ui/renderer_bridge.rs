@@ -6,13 +6,13 @@
 //! Integration Point: Day 2 of Criterion #1 (60 FPS rendering)
 //! Delivered by rust-backend-lead per Monday 18:00 commitment
 
-use tokio::sync::mpsc;
+use anyhow::Result;
 use bytes::Bytes;
 use std::sync::Arc;
+use tokio::sync::mpsc;
 use uuid::Uuid;
-use anyhow::Result;
 
-use crate::session::{SessionManager, SessionId};
+use crate::session::{SessionId, SessionManager};
 
 /// Client ID for local UI rendering attachment
 pub type ClientId = Uuid;
@@ -69,7 +69,9 @@ impl RendererBridge {
 
         tracing::info!(
             "RendererBridge attaching to session {} (client: {}, buffer: {} msgs)",
-            session_id, client_id, channel_capacity
+            session_id,
+            client_id,
+            channel_capacity
         );
 
         // Attach as local UI client to SessionManager
@@ -128,7 +130,10 @@ impl RendererBridge {
             }
             Err(mpsc::error::TryRecvError::Empty) => None,
             Err(mpsc::error::TryRecvError::Disconnected) => {
-                tracing::info!("RendererBridge: Session {} PTY channel closed", self.session_id);
+                tracing::info!(
+                    "RendererBridge: Session {} PTY channel closed",
+                    self.session_id
+                );
                 None
             }
         }
@@ -158,7 +163,8 @@ mod tests {
     #[tokio::test]
     async fn test_renderer_bridge_attach() {
         let manager = Arc::new(SessionManager::new(None));
-        let session_id = manager.create_session(None, 24, 80)
+        let session_id = manager
+            .create_session(None, 24, 80)
             .await
             .expect("Failed to create session");
 
@@ -174,7 +180,8 @@ mod tests {
     #[tokio::test]
     async fn test_renderer_bridge_try_recv_empty() {
         let manager = Arc::new(SessionManager::new(None));
-        let session_id = manager.create_session(None, 24, 80)
+        let session_id = manager
+            .create_session(None, 24, 80)
             .await
             .expect("Failed to create session");
 
@@ -191,7 +198,8 @@ mod tests {
     #[ignore = "AsyncPipeReader/Writer use blocking I/O in poll functions, violates tokio async contract. Phase 2: migrate to windows.rs PtyHandle"]
     async fn test_renderer_bridge_recv_data() {
         let manager = Arc::new(SessionManager::new(None));
-        let session_id = manager.create_session(None, 24, 80)
+        let session_id = manager
+            .create_session(None, 24, 80)
             .await
             .expect("Failed to create session");
 
@@ -201,7 +209,8 @@ mod tests {
             .expect("Failed to attach RendererBridge");
 
         // Send input to trigger PTY output
-        manager.send_input(session_id, b"echo test\r\n")
+        manager
+            .send_input(session_id, b"echo test\r\n")
             .await
             .expect("Failed to send input");
 
@@ -209,10 +218,7 @@ mod tests {
         tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
 
         // Should receive PTY output
-        let output = tokio::time::timeout(
-            tokio::time::Duration::from_secs(2),
-            bridge.recv()
-        ).await;
+        let output = tokio::time::timeout(tokio::time::Duration::from_secs(2), bridge.recv()).await;
 
         assert!(output.is_ok(), "Timeout waiting for PTY output");
         assert!(output.unwrap().is_some(), "Expected PTY output, got None");

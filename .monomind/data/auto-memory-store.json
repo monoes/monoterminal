@@ -1,0 +1,241 @@
+[
+  {
+    "id": "auto-1786717533398-0",
+    "type": "pattern",
+    "content": "Successful edit pattern: control-start.cjs",
+    "summary": "Successful task editing 1 files: control-start.cjs",
+    "confidence": 0.5,
+    "files": [
+      "C:\\Users\\nokho\\Desktop\\projects\\monoterminal\\.claude\\helpers\\control-start.cjs"
+    ],
+    "ts": 1786717533398
+  },
+  {
+    "id": "auto-1786718412340-3",
+    "type": "pattern",
+    "content": "Successful edit pattern: monoterminal-dev.json",
+    "summary": "ye (files: monoterminal-dev.json)",
+    "confidence": 0.5,
+    "files": [
+      "C:\\Users\\nokho\\Desktop\\projects\\monoterminal\\.monomind\\orgs\\monoterminal-dev.json"
+    ],
+    "ts": 1786718412340
+  },
+  {
+    "id": "auto-1786719969428-9",
+    "type": "pattern",
+    "content": "Successful edit pattern: monoterminal-dev.json, statusline.cjs",
+    "summary": "Successful task editing 2 files: monoterminal-dev.json, statusline.cjs",
+    "confidence": 0.5,
+    "files": [
+      "C:\\Users\\nokho\\Desktop\\projects\\monoterminal\\.monomind\\orgs\\monoterminal-dev.json",
+      "C:\\Users\\nokho\\Desktop\\projects\\monoterminal\\.claude\\helpers\\statusline.cjs"
+    ],
+    "ts": 1786719969428
+  },
+  {
+    "id": "auto-1786736293375-20",
+    "type": "pattern",
+    "content": "Successful edit pattern: control-start.cjs, control-start.test.mjs, statusline.cjs, statusline.test.mjs, org.ts, mock401.cjs, manual-repro.cjs, mock401.cjs, heal-test.cjs, daemon.ts, session.ts, org-stop-timeout-roster.test.ts, adopt-test.cjs, org-complete-scope-guidance.test.ts",
+    "summary": "can you report these bugs too (files: control-start.cjs, control-start.test.mjs, statusline.cjs, statusline.test.mjs, org.ts)",
+    "confidence": 0.6,
+    "files": [
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\.claude\\helpers\\control-start.cjs",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\tests\\hooks\\control-start.test.mjs",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\.claude\\helpers\\statusline.cjs",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\tests\\hooks\\statusline.test.mjs",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\commands\\org.ts",
+      "C:\\Users\\nokho\\AppData\\Local\\Temp\\claude\\C--Users-nokho-Desktop-projects-monoterminal\\f6a60837-3ba9-48bf-ae67-5f98d97bdfbd\\scratchpad\\mock401.cjs",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\manual-repro.cjs",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\mock401.cjs",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\heal-test.cjs",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\orgrt\\daemon.ts",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\orgrt\\session.ts",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\__tests__\\org-stop-timeout-roster.test.ts",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\adopt-test.cjs",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\__tests__\\org-complete-scope-guidance.test.ts"
+    ],
+    "ts": 1786736293375
+  },
+  {
+    "id": "auto-1786745810199-27",
+    "type": "pattern",
+    "content": "Successful edit pattern: control-start.cjs, control-start.test.mjs",
+    "summary": "Successful task editing 2 files: control-start.cjs, control-start.test.mjs",
+    "confidence": 0.6,
+    "files": [
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\.claude\\helpers\\control-start.cjs",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\tests\\hooks\\control-start.test.mjs"
+    ],
+    "ts": 1786745810199
+  },
+  {
+    "id": "auto-1786749123657-32",
+    "type": "pattern",
+    "content": "Successful edit pattern: control-start.cjs, control-start.test.mjs, statusline.cjs, statusline.test.mjs",
+    "summary": "Successful task editing 4 files: control-start.cjs, control-start.test.mjs, statusline.cjs, statusline.test.mjs",
+    "confidence": 0.6,
+    "files": [
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\.claude\\helpers\\control-start.cjs",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\tests\\hooks\\control-start.test.mjs",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\.claude\\helpers\\statusline.cjs",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\tests\\hooks\\statusline.test.mjs"
+    ],
+    "ts": 1786749123657
+  },
+  {
+    "id": "auto-1786775367214-39",
+    "type": "pattern",
+    "content": "Successful edit pattern: control-start.cjs, control-start.test.mjs, statusline.cjs, statusline.test.mjs, org.ts, mock401.cjs, manual-repro.cjs, mock401.cjs, heal-test.cjs",
+    "summary": "Successful task editing 9 files: control-start.cjs, control-start.test.mjs, statusline.cjs, statusline.test.mjs, org.ts",
+    "confidence": 0.6,
+    "files": [
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\.claude\\helpers\\control-start.cjs",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\tests\\hooks\\control-start.test.mjs",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\.claude\\helpers\\statusline.cjs",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\tests\\hooks\\statusline.test.mjs",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\commands\\org.ts",
+      "C:\\Users\\nokho\\AppData\\Local\\Temp\\claude\\C--Users-nokho-Desktop-projects-monoterminal\\f6a60837-3ba9-48bf-ae67-5f98d97bdfbd\\scratchpad\\mock401.cjs",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\manual-repro.cjs",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\mock401.cjs",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\heal-test.cjs"
+    ],
+    "ts": 1786775367214
+  },
+  {
+    "id": "auto-1786777975879-42",
+    "type": "pattern",
+    "content": "Successful edit pattern: control-start.cjs, control-start.test.mjs, statusline.cjs, statusline.test.mjs, org.ts, mock401.cjs, manual-repro.cjs, mock401.cjs, heal-test.cjs, daemon.ts, session.ts, org-stop-timeout-roster.test.ts",
+    "summary": "Successful task editing 12 files: control-start.cjs, control-start.test.mjs, statusline.cjs, statusline.test.mjs, org.ts",
+    "confidence": 0.6,
+    "files": [
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\.claude\\helpers\\control-start.cjs",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\tests\\hooks\\control-start.test.mjs",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\.claude\\helpers\\statusline.cjs",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\tests\\hooks\\statusline.test.mjs",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\commands\\org.ts",
+      "C:\\Users\\nokho\\AppData\\Local\\Temp\\claude\\C--Users-nokho-Desktop-projects-monoterminal\\f6a60837-3ba9-48bf-ae67-5f98d97bdfbd\\scratchpad\\mock401.cjs",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\manual-repro.cjs",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\mock401.cjs",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\heal-test.cjs",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\orgrt\\daemon.ts",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\orgrt\\session.ts",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\__tests__\\org-stop-timeout-roster.test.ts"
+    ],
+    "ts": 1786777975879
+  },
+  {
+    "id": "auto-1786820992257-84",
+    "type": "pattern",
+    "content": "Successful edit pattern: control-start.cjs, control-start.test.mjs, statusline.cjs, statusline.test.mjs, org.ts, mock401.cjs, manual-repro.cjs, mock401.cjs, heal-test.cjs, daemon.ts, session.ts, org-stop-timeout-roster.test.ts, adopt-test.cjs",
+    "summary": "Successful task editing 13 files: control-start.cjs, control-start.test.mjs, statusline.cjs, statusline.test.mjs, org.ts",
+    "confidence": 0.6,
+    "files": [
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\.claude\\helpers\\control-start.cjs",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\tests\\hooks\\control-start.test.mjs",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\.claude\\helpers\\statusline.cjs",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\tests\\hooks\\statusline.test.mjs",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\commands\\org.ts",
+      "C:\\Users\\nokho\\AppData\\Local\\Temp\\claude\\C--Users-nokho-Desktop-projects-monoterminal\\f6a60837-3ba9-48bf-ae67-5f98d97bdfbd\\scratchpad\\mock401.cjs",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\manual-repro.cjs",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\mock401.cjs",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\heal-test.cjs",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\orgrt\\daemon.ts",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\orgrt\\session.ts",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\__tests__\\org-stop-timeout-roster.test.ts",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\adopt-test.cjs"
+    ],
+    "ts": 1786820992257
+  },
+  {
+    "id": "auto-1786737856163-21",
+    "type": "pattern",
+    "content": "Successful edit pattern: org-observe.ts, org-live-delivery-auth.test.ts, types.ts, approvals.ts, org-approval-gate.test.ts, resource-governor.ts, resource-governor-windows.test.ts",
+    "summary": "can you report these bugs too (files: org-observe.ts, org-live-delivery-auth.test.ts, types.ts, approvals.ts, org-approval-gate.test.ts)",
+    "confidence": 0.6,
+    "files": [
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\commands\\org-observe.ts",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\__tests__\\org-live-delivery-auth.test.ts",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\orgrt\\types.ts",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\orgrt\\approvals.ts",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\__tests__\\org-approval-gate.test.ts",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\utils\\resource-governor.ts",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\__tests__\\resource-governor-windows.test.ts"
+    ],
+    "ts": 1786737856163
+  },
+  {
+    "id": "auto-1786738181676-22",
+    "type": "pattern",
+    "content": "Successful edit pattern: daemon.ts, approvals.ts, org-approval-gate.test.ts, idle-watchdog-nudge-reset.test.ts",
+    "summary": "Successful task editing 4 files: daemon.ts, approvals.ts, org-approval-gate.test.ts, idle-watchdog-nudge-reset.test.ts",
+    "confidence": 0.6,
+    "files": [
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\orgrt\\daemon.ts",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\orgrt\\approvals.ts",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\__tests__\\org-approval-gate.test.ts",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\__tests__\\idle-watchdog-nudge-reset.test.ts"
+    ],
+    "ts": 1786738181676
+  },
+  {
+    "id": "auto-1786910337807-107",
+    "type": "pattern",
+    "content": "Successful edit pattern: daemon.ts, approvals.ts, org-approval-gate.test.ts",
+    "summary": "Successful task editing 3 files: daemon.ts, approvals.ts, org-approval-gate.test.ts",
+    "confidence": 0.6,
+    "files": [
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\orgrt\\daemon.ts",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\orgrt\\approvals.ts",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\__tests__\\org-approval-gate.test.ts"
+    ],
+    "ts": 1786910337807
+  },
+  {
+    "id": "auto-1786742492626-23",
+    "type": "pattern",
+    "content": "Successful edit pattern: daemon.ts, idle-watchdog-nudge-reset.test.ts, task-dag.ts, decisions.ts, session.ts, task-dag-block.test.ts, dag-block-task.test.ts, idle-nudge-mentions-task-block.test.ts",
+    "summary": "Successful task editing 8 files: daemon.ts, idle-watchdog-nudge-reset.test.ts, task-dag.ts, decisions.ts, session.ts",
+    "confidence": 0.6,
+    "files": [
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\orgrt\\daemon.ts",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\__tests__\\idle-watchdog-nudge-reset.test.ts",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\orgrt\\task-dag.ts",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\orgrt\\decisions.ts",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\orgrt\\session.ts",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\__tests__\\task-dag-block.test.ts",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\__tests__\\dag-block-task.test.ts",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\__tests__\\idle-nudge-mentions-task-block.test.ts"
+    ],
+    "ts": 1786742492626
+  },
+  {
+    "id": "auto-1786954841357-137",
+    "type": "pattern",
+    "content": "Successful edit pattern: daemon.ts, idle-watchdog-nudge-reset.test.ts",
+    "summary": "Check the monoterminal-dev org's status (monomind org status monoterminal-dev) and dashboard health. Report progress briefly. (files: daemon.ts, idle-watchdog-nudge-reset.test.ts)",
+    "confidence": 0.6,
+    "files": [
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\orgrt\\daemon.ts",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\__tests__\\idle-watchdog-nudge-reset.test.ts"
+    ],
+    "ts": 1786954841357
+  },
+  {
+    "id": "auto-1786989640877-175",
+    "type": "pattern",
+    "content": "Successful edit pattern: daemon.ts, idle-watchdog-nudge-reset.test.ts, task-dag.ts, decisions.ts, session.ts, task-dag-block.test.ts, dag-block-task.test.ts",
+    "summary": "Successful task editing 7 files: daemon.ts, idle-watchdog-nudge-reset.test.ts, task-dag.ts, decisions.ts, session.ts",
+    "confidence": 0.6,
+    "files": [
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\orgrt\\daemon.ts",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\__tests__\\idle-watchdog-nudge-reset.test.ts",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\orgrt\\task-dag.ts",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\orgrt\\decisions.ts",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\orgrt\\session.ts",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\__tests__\\task-dag-block.test.ts",
+      "C:\\Users\\nokho\\Desktop\\projects\\monomind\\packages\\@monomind\\cli\\src\\__tests__\\dag-block-task.test.ts"
+    ],
+    "ts": 1786989640877
+  }
+]

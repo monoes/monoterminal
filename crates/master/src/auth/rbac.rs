@@ -76,7 +76,8 @@ pub fn check_permission(
 
     // Check ACL for explicit permission
     let permission = if let Some(acl_map) = acl {
-        acl_map.get(user_id)
+        acl_map
+            .get(user_id)
             .and_then(|p| Permission::from_str(p).ok())
     } else {
         None
@@ -95,16 +96,26 @@ pub fn check_permission(
         (Some(Permission::ReadWrite), Action::Write) => Ok(()),
         (Some(Permission::ReadWrite), Action::Resize) => Ok(()),
         (Some(Permission::ReadWrite), Action::Kill) => {
-            bail!("User {} does not have permission to kill session (requires owner)", user_id)
+            bail!(
+                "User {} does not have permission to kill session (requires owner)",
+                user_id
+            )
         }
         (Some(Permission::ReadWrite), Action::Share) => {
-            bail!("User {} does not have permission to share session (requires owner)", user_id)
+            bail!(
+                "User {} does not have permission to share session (requires owner)",
+                user_id
+            )
         }
 
         // ReadOnly can only read
         (Some(Permission::ReadOnly), Action::Read) => Ok(()),
         (Some(Permission::ReadOnly), _) => {
-            bail!("User {} has read-only access, cannot perform {:?}", user_id, action)
+            bail!(
+                "User {} has read-only access, cannot perform {:?}",
+                user_id,
+                action
+            )
         }
     }
 }
@@ -116,8 +127,14 @@ mod tests {
     #[test]
     fn test_permission_parsing() {
         assert_eq!(Permission::from_str("owner").unwrap(), Permission::Owner);
-        assert_eq!(Permission::from_str("editor").unwrap(), Permission::ReadWrite);
-        assert_eq!(Permission::from_str("viewer").unwrap(), Permission::ReadOnly);
+        assert_eq!(
+            Permission::from_str("editor").unwrap(),
+            Permission::ReadWrite
+        );
+        assert_eq!(
+            Permission::from_str("viewer").unwrap(),
+            Permission::ReadOnly
+        );
         assert_eq!(Permission::from_str("ro").unwrap(), Permission::ReadOnly);
         assert!(Permission::from_str("invalid").is_err());
     }
@@ -154,7 +171,9 @@ mod tests {
 
         assert!(check_permission(owner, Some(&acl), "charlie@example.com", Action::Read).is_ok());
         assert!(check_permission(owner, Some(&acl), "charlie@example.com", Action::Write).is_err());
-        assert!(check_permission(owner, Some(&acl), "charlie@example.com", Action::Resize).is_err());
+        assert!(
+            check_permission(owner, Some(&acl), "charlie@example.com", Action::Resize).is_err()
+        );
         assert!(check_permission(owner, Some(&acl), "charlie@example.com", Action::Kill).is_err());
     }
 

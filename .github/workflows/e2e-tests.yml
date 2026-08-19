@@ -1,0 +1,292 @@
+name: E2E Tests - Cross-Platform Matrix
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+env:
+  RUST_BACKTRACE: 1
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # Phase 1: Windows x86_64 (primary platform)
+  e2e-windows:
+    name: E2E Tests - Windows x86_64
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+          target: x86_64-pc-windows-msvc
+
+      - name: Install Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          cd tests
+          pip install -r requirements.txt
+          playwright install chromium firefox
+
+      - name: Install Node.js (for web client)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install web client dependencies
+        run: |
+          cd web-client
+          npm ci
+
+      - name: Build Rust daemon
+        run: cargo build --release --bin monoterminal-master
+
+      - name: Start web client dev server
+        run: |
+          cd web-client
+          npm run dev &
+        shell: pwsh
+
+      - name: Wait for web client
+        run: |
+          Start-Sleep -Seconds 10
+        shell: pwsh
+
+      - name: Run E2E tests
+        run: |
+          cd tests
+          pytest -v -m "e2e and not soak" `
+            --html=evidence/phase1/e2e-report-windows.html `
+            --json-report --json-report-file=evidence/phase1/e2e-report-windows.json
+        shell: pwsh
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-evidence-windows-x86_64
+          path: tests/evidence/
+
+  # Phase 1: Browser compatibility matrix
+  e2e-browsers:
+    name: E2E Tests - ${{ matrix.browser }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest]
+        browser: [chromium, firefox, webkit]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          cd tests
+          pip install -r requirements.txt
+          playwright install ${{ matrix.browser }}
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build and start services
+        run: |
+          cargo build --release
+          cd web-client && npm ci && npm run dev &
+        shell: bash
+
+      - name: Run browser-specific tests
+        run: |
+          cd tests
+          pytest -v -m e2e -k browser --browser=${{ matrix.browser }} \
+            --html=evidence/phase1/browser-${{ matrix.browser }}-${{ matrix.os }}.html
+        shell: bash
+
+      - name: Upload browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-evidence-${{ matrix.browser }}-${{ matrix.os }}
+          path: tests/evidence/
+
+  # Phase 3: Linux x86_64 (expansion phase)
+  e2e-linux:
+    name: E2E Tests - Linux x86_64
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'  # Only on main branch (Phase 3)
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 \
+            libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-xinerama0
+
+      - name: Install Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          cd tests
+          pip install -r requirements.txt
+          playwright install chromium
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build daemon
+        run: cargo build --release
+
+      - name: Start web client
+        run: |
+          cd web-client
+          npm ci
+          npm run dev &
+          sleep 5
+
+      - name: Run E2E tests
+        run: |
+          cd tests
+          pytest -v -m "e2e and not soak" \
+            --html=evidence/phase1/e2e-report-linux.html \
+            --json-report --json-report-file=evidence/phase1/e2e-report-linux.json
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-evidence-linux-x86_64
+          path: tests/evidence/
+
+  # Phase 3: macOS (expansion phase)
+  e2e-macos:
+    name: E2E Tests - macOS x86_64
+    runs-on: macos-latest
+    if: github.ref == 'refs/heads/main'  # Only on main branch (Phase 3)
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          cd tests
+          pip install -r requirements.txt
+          playwright install chromium
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build daemon
+        run: cargo build --release
+
+      - name: Start web client
+        run: |
+          cd web-client
+          npm ci
+          npm run dev &
+          sleep 5
+
+      - name: Run E2E tests
+        run: |
+          cd tests
+          pytest -v -m "e2e and not soak" \
+            --html=evidence/phase1/e2e-report-macos.html \
+            --json-report --json-report-file=evidence/phase1/e2e-report-macos.json
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-evidence-macos-x86_64
+          path: tests/evidence/
+
+  # Weekly soak test (24 hours)
+  soak-test:
+    name: Soak Test - 24 Hours
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'  # Only on scheduled runs
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          cd tests
+          pip install -r requirements.txt
+
+      - name: Build daemon
+        run: cargo build --release
+
+      - name: Run 24-hour soak test
+        run: |
+          cd tests
+          pytest -v -m soak tests/e2e/test_soak.py::test_24h_stability \
+            --html=evidence/soak/soak-test-report.html
+        timeout-minutes: 1500  # 25 hours (24h test + buffer)
+
+      - name: Upload soak test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: soak-test-evidence
+          path: tests/evidence/soak/
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "24-hour soak test FAILED"
+          # Add notification hook here (Slack, email, etc.)

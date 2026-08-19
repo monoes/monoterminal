@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+
+# Pytest
+.pytest_cache/
+.coverage
+htmlcov/
+*.xml
+test-results.xml
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test artifacts
+*.log
+*.tmp

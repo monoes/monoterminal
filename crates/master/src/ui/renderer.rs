@@ -4,15 +4,15 @@
 //! Target: 8ms GPU render time (per SRS Â§2.1.1)
 
 use anyhow::{Context, Result};
-use std::sync::Arc;
 use bytes::Bytes;
+use std::sync::Arc;
 use wgpu;
 use winit::window::Window;
 
+use super::glyph_cache::{GlyphCache, GlyphKey};
 use super::performance::PerformanceMonitor;
 use super::terminal_grid::TerminalGrid;
 use super::vt_parser::VtParser;
-use super::glyph_cache::{GlyphCache, GlyphKey};
 
 /// Vertex data for a single glyph quad corner
 /// Layout matches WGSL VertexInput in shaders/text.wgsl
@@ -98,11 +98,15 @@ impl Renderer {
         tracing::info!("wgpu instance created with {:?} backend", backends);
 
         // Initialize font manager (16px Consolas for Windows Phase 1)
-        let font_manager = super::fonts::FontManager::new(16.0)
-            .context("Failed to create FontManager")?;
+        let font_manager =
+            super::fonts::FontManager::new(16.0).context("Failed to create FontManager")?;
         let (cell_width, cell_height) = font_manager.cell_dimensions();
 
-        tracing::info!("Font loaded: cell size {}x{} pixels", cell_width, cell_height);
+        tracing::info!(
+            "Font loaded: cell size {}x{} pixels",
+            cell_width,
+            cell_height
+        );
 
         Ok(Self {
             instance,
@@ -228,11 +232,9 @@ impl Renderer {
             return Ok(());
         }
 
-        if let (Some(surface), Some(device), Some(config)) = (
-            &self.surface,
-            &self.device,
-            &mut self.surface_config,
-        ) {
+        if let (Some(surface), Some(device), Some(config)) =
+            (&self.surface, &self.device, &mut self.surface_config)
+        {
             config.width = width;
             config.height = height;
             surface.configure(device, config);
@@ -247,10 +249,15 @@ impl Renderer {
     /// Creates shaders, atlas texture, sampler, and render pipeline
     /// Called after surface initialization (window.rs:91-97)
     pub fn init_text_pipeline(&mut self) -> Result<()> {
-        tracing::info!("Initializing text rendering pipeline (Option A: single-pass with bg_color)");
+        tracing::info!(
+            "Initializing text rendering pipeline (Option A: single-pass with bg_color)"
+        );
 
         let device = self.device.as_ref().context("Device not initialized")?;
-        let config = self.surface_config.as_ref().context("Surface config not initialized")?;
+        let config = self
+            .surface_config
+            .as_ref()
+            .context("Surface config not initialized")?;
 
         // 1. Create glyph atlas texture (4096Ã—4096 R8Unorm, per SRS Â§2.1.1)
         let (atlas_width, atlas_height) = self.glyph_cache.atlas_size();
@@ -271,15 +278,19 @@ impl Renderer {
 
         let atlas_texture_view = atlas_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
-        tracing::info!("Glyph atlas created: {}x{} R8Unorm", atlas_width, atlas_height);
+        tracing::info!(
+            "Glyph atlas created: {}x{} R8Unorm",
+            atlas_width,
+            atlas_height
+        );
 
         // 2. Create sampler (LINEAR filter for antialiasing, per gpu-rendering-engineer recommendation)
         let atlas_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
             label: Some("Glyph Atlas Sampler"),
             address_mode_u: wgpu::AddressMode::ClampToEdge,
             address_mode_v: wgpu::AddressMode::ClampToEdge,
-            mag_filter: wgpu::FilterMode::Linear,  // â† Linear for antialiasing
-            min_filter: wgpu::FilterMode::Linear,  // â† Linear for antialiasing
+            mag_filter: wgpu::FilterMode::Linear, // â† Linear for antialiasing
+            min_filter: wgpu::FilterMode::Linear, // â† Linear for antialiasing
             mipmap_filter: wgpu::FilterMode::Nearest,
             ..Default::default()
         });
@@ -331,12 +342,14 @@ impl Renderer {
             label: Some("Text Render Pipeline"),
             layout: Some(&pipeline_layout),
             vertex: wgpu::VertexState {
-                compilation_options: wgpu::PipelineCompilationOptions::default(),module: &shader,
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+                module: &shader,
                 entry_point: "vs_main",
                 buffers: &[GlyphVertex::desc()],
             },
             fragment: Some(wgpu::FragmentState {
-                compilation_options: wgpu::PipelineCompilationOptions::default(),module: &shader,
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+                module: &shader,
                 entry_point: "fs_main",
                 targets: &[Some(wgpu::ColorTargetState {
                     format: config.format,
@@ -348,12 +361,12 @@ impl Renderer {
                 topology: wgpu::PrimitiveTopology::TriangleList,
                 strip_index_format: None,
                 front_face: wgpu::FrontFace::Ccw,
-                cull_mode: None,  // No culling for 2D quads
+                cull_mode: None, // No culling for 2D quads
                 unclipped_depth: false,
                 polygon_mode: wgpu::PolygonMode::Fill,
                 conservative: false,
             },
-            depth_stencil: None,  // No depth testing for 2D
+            depth_stencil: None, // No depth testing for 2D
             multisample: wgpu::MultisampleState::default(),
             multiview: None,
         });
@@ -424,7 +437,9 @@ impl Renderer {
 
         // Get current surface texture
         let output = surface.get_current_texture()?;
-        let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let view = output
+            .texture
+            .create_view(&wgpu::TextureViewDescriptor::default());
 
         perf.mark("acquire_texture");
 
@@ -436,7 +451,9 @@ impl Renderer {
         // Upload vertices to GPU
         if !vertices.is_empty() {
             queue.write_buffer(
-                self.vertex_buffer.as_ref().context("Vertex buffer not initialized")?,
+                self.vertex_buffer
+                    .as_ref()
+                    .context("Vertex buffer not initialized")?,
                 0,
                 bytemuck::cast_slice(&vertices),
             );
@@ -469,9 +486,25 @@ impl Renderer {
 
             // Draw glyphs if we have vertices
             if !vertices.is_empty() {
-                render_pass.set_pipeline(self.text_pipeline.as_ref().context("Pipeline not initialized")?);
-                render_pass.set_bind_group(0, self.bind_group.as_ref().context("Bind group not initialized")?, &[]);
-                render_pass.set_vertex_buffer(0, self.vertex_buffer.as_ref().context("Vertex buffer not initialized")?.slice(..));
+                render_pass.set_pipeline(
+                    self.text_pipeline
+                        .as_ref()
+                        .context("Pipeline not initialized")?,
+                );
+                render_pass.set_bind_group(
+                    0,
+                    self.bind_group
+                        .as_ref()
+                        .context("Bind group not initialized")?,
+                    &[],
+                );
+                render_pass.set_vertex_buffer(
+                    0,
+                    self.vertex_buffer
+                        .as_ref()
+                        .context("Vertex buffer not initialized")?
+                        .slice(..),
+                );
                 render_pass.draw(0..vertices.len() as u32, 0..1);
             }
 
@@ -515,7 +548,10 @@ impl Renderer {
     fn build_vertices(&mut self, perf: &mut PerformanceMonitor) -> Result<Vec<GlyphVertex>> {
         let mut vertices = Vec::new();
 
-        let surface_config = self.surface_config.as_ref().context("Surface not configured")?;
+        let surface_config = self
+            .surface_config
+            .as_ref()
+            .context("Surface not configured")?;
         let (rows, cols) = self.terminal_grid.dimensions();
 
         // Calculate NDC (Normalized Device Coordinates) scale
@@ -529,11 +565,14 @@ impl Renderer {
 
         // Collect dirty cells into Vec to release immutable borrow before calling ensure_glyph_cached
         // (ensure_glyph_cached needs mutable borrow of self)
-        let dirty_cells: Vec<_> = self.terminal_grid
+        let dirty_cells: Vec<_> = self
+            .terminal_grid
             .dirty_region()
             .iter_dirty()
             .filter_map(|(row, col)| {
-                self.terminal_grid.get_cell(row, col).map(|cell| (row, col, *cell))
+                self.terminal_grid
+                    .get_cell(row, col)
+                    .map(|cell| (row, col, *cell))
             })
             .collect();
 
@@ -628,16 +667,22 @@ impl Renderer {
         }
 
         // Slow path: rasterize glyph and upload to GPU
-        let rasterized = self.font_manager.rasterize_glyph(key.ch, key.bold, key.italic)?;
+        let rasterized = self
+            .font_manager
+            .rasterize_glyph(key.ch, key.bold, key.italic)?;
 
         // Allocate space in atlas
-        let glyph_info = self.glyph_cache
+        let glyph_info = self
+            .glyph_cache
             .insert(key, rasterized.width as u32, rasterized.height as u32)
             .context("Failed to allocate space in glyph atlas")?;
 
         // Upload glyph bitmap to GPU texture atlas
         let queue = self.queue.as_ref().context("Queue not initialized")?;
-        let atlas_texture = self.atlas_texture.as_ref().context("Atlas texture not initialized")?;
+        let atlas_texture = self
+            .atlas_texture
+            .as_ref()
+            .context("Atlas texture not initialized")?;
 
         // Calculate atlas pixel coordinates from normalized UV
         let (atlas_width, atlas_height) = self.glyph_cache.atlas_size();

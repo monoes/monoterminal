@@ -76,23 +76,22 @@ impl PeerHandshake {
         }
 
         // Step 3: Verify Ed25519 signature
-        let public_key_bytes = hex::decode(&self.peer_id)
-            .map_err(|e| WebRtcError::HandshakeVerificationFailed(format!("Invalid peer_id hex: {}", e)))?;
+        let public_key_bytes = hex::decode(&self.peer_id).map_err(|e| {
+            WebRtcError::HandshakeVerificationFailed(format!("Invalid peer_id hex: {}", e))
+        })?;
 
-        let verifying_key = VerifyingKey::from_bytes(
-            public_key_bytes
-                .as_slice()
-                .try_into()
-                .map_err(|_| WebRtcError::HandshakeVerificationFailed("Invalid key length".to_string()))?,
-        )
-        .map_err(|e| WebRtcError::HandshakeVerificationFailed(format!("Invalid public key: {}", e)))?;
+        let verifying_key =
+            VerifyingKey::from_bytes(public_key_bytes.as_slice().try_into().map_err(|_| {
+                WebRtcError::HandshakeVerificationFailed("Invalid key length".to_string())
+            })?)
+            .map_err(|e| {
+                WebRtcError::HandshakeVerificationFailed(format!("Invalid public key: {}", e))
+            })?;
 
-        let signature = Signature::from_bytes(
-            self.signature
-                .as_slice()
-                .try_into()
-                .map_err(|_| WebRtcError::HandshakeVerificationFailed("Invalid signature length".to_string()))?,
-        );
+        let signature =
+            Signature::from_bytes(self.signature.as_slice().try_into().map_err(|_| {
+                WebRtcError::HandshakeVerificationFailed("Invalid signature length".to_string())
+            })?);
 
         // Reconstruct payload
         let payload = format!(

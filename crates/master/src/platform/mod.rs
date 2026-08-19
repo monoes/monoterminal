@@ -16,5 +16,5 @@
 pub mod paths;
 pub mod service;
 
-pub use paths::{data_dir, user_data_dir, log_dir, session_db_path};
-pub use service::{install_service, uninstall_service, service_status, ServiceStatus};
+pub use paths::{data_dir, log_dir, session_db_path, user_data_dir};
+pub use service::{install_service, service_status, uninstall_service, ServiceStatus};

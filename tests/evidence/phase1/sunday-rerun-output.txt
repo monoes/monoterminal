@@ -1,0 +1,1871 @@
+﻿
+node.exe : [WebServer] (node:26680) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([WebServer] (no... env being set.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 120 tests using 1 worker
+
+(node:30048) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/120] [chromium] › e2e\dashboard-embedded.spec.ts:14:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › dashboard embedded in web client - same port/domain
+[2/120] [chromium] › e2e\dashboard-embedded.spec.ts:34:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › health check executes and displays result
+  1) [chromium] › e2e\dashboard-embedded.spec.ts:34:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › health check executes and displays result 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('[data-testid="health-result"]')
+    Expected pattern: /✅|✓|pass/i
+    Received string:  "?Status unknown"
+    Timeout: 10000ms
+
+    Call log:
+      - Expect "toContainText" with timeout 10000ms
+      - waiting for locator('[data-testid="health-result"]')
+        24 × locator resolved to <div class="health-status" data-testid="health-result">…</div>
+           - unexpected value "?Status unknown"
+
+
+      46 |     // Verify health check result appears within 10 seconds
+      47 |     const healthResult = page.locator('[data-testid="health-result"]');
+    > 48 |     await expect(healthResult).toContainText(/✅|✓|pass/i, { timeout: 10000 });
+         |                                ^
+      49 |   });
+      50 |
+      51 |   test('one-click upgrade button present', async ({ page }) => {
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\dashboard-embedded.spec.ts:48:32
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\dashboard-embedded-Phase-1-7ae01-xecutes-and-displays-result-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\dashboard-embedded-Phase-1-7ae01-xecutes-and-displays-result-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\dashboard-embedded-Phase-1-7ae01-xecutes-and-displays-result-chromium\error-context.md
+
+
+(node:16020) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[3/120] [chromium] › e2e\dashboard-embedded.spec.ts:51:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › one-click upgrade button present
+  2) [chromium] › e2e\dashboard-embedded.spec.ts:51:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › one-click upgrade button present 
+
+    Error: expect(locator).toBeEnabled() failed
+
+    Locator:  locator('[data-testid="upgrade-button"]')
+    Expected: enabled
+    Received: disabled
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeEnabled" with timeout 5000ms
+      - waiting for locator('[data-testid="upgrade-button"]')
+        14 × locator resolved to <button disabled class="action-btn secondary" data-testid="upgrade-button" title="Monomind not installed">Upgrade to Latest</button>
+           - unexpected value "disabled"
+
+
+      59 |     const upgradeButton = page.locator('[data-testid="upgrade-button"]');
+      60 |     await expect(upgradeButton).toBeVisible();
+    > 61 |     await expect(upgradeButton).toBeEnabled();
+         |                                 ^
+      62 |   });
+      63 |
+      64 |   test('dashboard uses same WebSocket connection - no separate port', async ({ page }) => {
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\dashboard-embedded.spec.ts:61:33
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\dashboard-embedded-Phase-1-32902-lick-upgrade-button-present-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\dashboard-embedded-Phase-1-32902-lick-upgrade-button-present-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\dashboard-embedded-Phase-1-32902-lick-upgrade-button-present-chromium\error-context.md
+
+
+
+(node:28400) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[4/120] [chromium] › e2e\dashboard-embedded.spec.ts:64:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › dashboard uses same WebSocket connection - no separate port
+[5/120] [chromium] › e2e\dashboard-embedded.spec.ts:90:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › no separate authentication required - uses session JWT
+[6/120] [chromium] › e2e\dashboard-embedded.spec.ts:112:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › dashboard shows live monomind state
+[7/120] [chromium] › e2e\dashboard-embedded.spec.ts:137:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › dashboard accessible from main UI - not separate tab
+[8/120] [chromium] › e2e\dashboard-embedded.spec.ts:158:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › dashboard can be toggled open and closed
+  3) [chromium] › e2e\dashboard-embedded.spec.ts:158:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › dashboard can be toggled open and closed 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('[data-testid="dashboard-toggle"]')
+        - locator resolved to <button class="panel-toggle-btn" data-testid="dashboard-toggle" aria-label="Toggle Monomind panel" title="Toggle Monomind panel (Ctrl+M)">✗</button>
+      - attempting click action
+        2 × waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <button class="close-btn" aria-label="Close panel" data-testid="close-button">×</button> from <main class="app-main panel-open">…</main> subtree intercepts pointer events
+        - retrying click action
+        - waiting 20ms
+        2 × waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <button class="close-btn" aria-label="Close panel" data-testid="close-button">×</button> from <main class="app-main panel-open">…</main> subtree intercepts pointer events
+        - retrying click action
+          - waiting 100ms
+        57 × waiting for element to be visible, enabled and stable
+           - element is visible, enabled and stable
+           - scrolling into view if needed
+           - done scrolling
+           - <button class="close-btn" aria-label="Close panel" data-testid="close-button">×</button> from <main class="app-main panel-open">…</main> subtree intercepts pointer events
+         - retrying click action
+           - waiting 500ms
+
+
+      168 |
+      169 |     // Toggle dashboard closed
+    > 170 |     await dashboardToggle.click();
+          |                           ^
+      171 |     await expect(dashboard).not.toBeVisible();
+      172 |   });
+      173 | });
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\dashboard-embedded.spec.ts:170:27
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\dashboard-embedded-Phase-1-f60de--be-toggled-open-and-closed-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\dashboard-embedded-Phase-1-f60de--be-toggled-open-and-closed-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\dashboard-embedded-Phase-1-f60de--be-toggled-open-and-closed-chromium\error-context.md
+
+
+(node:29400) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[9/120] [chromium] › e2e\mobile-browser.spec.ts:19:3 › Phase 1 Criterion #2: Mobile Browser Usability › mobile browser full workflow - iOS Safari viewport
+[10/120] [chromium] › e2e\mobile-browser.spec.ts:64:3 › Phase 1 Criterion #2: Mobile Browser Usability › mobile browser full workflow - Android Chrome viewport
+[11/120] [chromium] › e2e\mobile-browser.spec.ts:110:3 › Phase 1 Criterion #2: Mobile Browser Usability › PWA "Add to Home Screen" metadata present
+[12/120] [chromium] › e2e\mobile-browser.spec.ts:129:3 › Phase 1 Criterion #2: Mobile Browser Usability › responsive layout adapts to portrait orientation
+[13/120] [chromium] › e2e\mobile-browser.spec.ts:142:3 › Phase 1 Criterion #2: Mobile Browser Usability › responsive layout adapts to landscape orientation
+[14/120] [chromium] › e2e\monomind-detection.spec.ts:16:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario A: Project without .monomind/ › suggestion appears within 5 seconds for directory without monomind
+  4) [chromium] › e2e\monomind-detection.spec.ts:16:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario A: Project without .monomind/ › suggestion appears within 5 seconds for directory without monomind 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('[data-testid="monomind-suggestion"]')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('[data-testid="monomind-suggestion"]')
+
+
+      27 |       const suggestionBanner = page.locator('[data-testid="monomind-suggestion"]');
+      28 |
+    > 29 |       await expect(suggestionBanner).toBeVisible({ timeout: 5000 });
+         |                                      ^
+      30 |
+      31 |       // 4. Verify suggestion has correct content
+      32 |       await expect(suggestionBanner).toContainText(/install monomind/i);
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\monomind-detection.spec.ts:29:38
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\monomind-detection-Phase-1-64615--directory-without-monomind-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\monomind-detection-Phase-1-64615--directory-without-monomind-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\monomind-detection-Phase-1-64615--directory-without-monomind-chromium\error-context.md
+
+
+(node:30160) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[15/120] [chromium] › e2e\monomind-detection.spec.ts:36:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario A: Project without .monomind/ › suggestion displays "Install monomind?" message
+  5) [chromium] › e2e\monomind-detection.spec.ts:36:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario A: Project without .monomind/ › suggestion displays "Install monomind?" message 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('[data-testid="monomind-suggestion"]')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('[data-testid="monomind-suggestion"]')
+
+
+      39 |       // TODO: Create session without .monomind/
+      40 |       const suggestionBanner = page.locator('[data-testid="monomind-suggestion"]');
+    > 41 |       await expect(suggestionBanner).toBeVisible({ timeout: 5000 });
+         |                                      ^
+      42 |       await expect(suggestionBanner).toContainText(/install monomind/i);
+      43 |     });
+      44 |   });
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\monomind-detection.spec.ts:41:38
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\monomind-detection-Phase-1-c2128-ys-Install-monomind-message-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\monomind-detection-Phase-1-c2128-ys-Install-monomind-message-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\monomind-detection-Phase-1-c2128-ys-Install-monomind-message-chromium\error-context.md
+
+
+(node:19116) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[16/120] [chromium] › e2e\monomind-detection.spec.ts:47:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario B: Dismiss suggestion › dismissed suggestion does not reappear on reload
+  6) [chromium] › e2e\monomind-detection.spec.ts:47:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario B: Dismiss suggestion › dismissed suggestion does not reappear on reload 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('[data-testid="monomind-suggestion-dismiss"]')
+
+
+      52 |       // 2. Dismiss suggestion
+      53 |       const dismissButton = page.locator('[data-testid="monomind-suggestion-dismiss"]');
+    > 54 |       await dismissButton.click();
+         |                           ^
+      55 |
+      56 |       // 3. Verify suggestion disappears
+      57 |       const suggestionBanner = page.locator('[data-testid="monomind-suggestion"]');
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\monomind-detection.spec.ts:54:27
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\monomind-detection-Phase-1-52161-does-not-reappear-on-reload-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\monomind-detection-Phase-1-52161-does-not-reappear-on-reload-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\monomind-detection-Phase-1-52161-does-not-reappear-on-reload-chromium\error-context.md
+
+
+
+(node:30360) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[17/120] [chromium] › e2e\monomind-detection.spec.ts:68:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario B: Dismiss suggestion › dismissal persists in localStorage or SQLite
+[18/120] [chromium] › e2e\monomind-detection.spec.ts:90:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario C: Project with .monomind/ › no suggestion appears for directory with monomind
+[19/120] [chromium] › e2e\monomind-detection.spec.ts:108:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Multi-session independence › dismissing in session A does not affect session B
+[20/120] [chromium] › e2e\monomind-detection.spec.ts:123:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Daemon restart persistence › dismissal persists across master daemon restart
+[21/120] [chromium] › e2e\smoke.spec.ts:11:3 › Web Client Smoke Tests › web client loads and connects to daemon
+  7) [chromium] › e2e\smoke.spec.ts:11:3 › Web Client Smoke Tests › web client loads and connects to daemon 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('[data-testid="connection-status"]')
+    Expected pattern: /connected/i
+    Received string:  "✗Connection ErrorReconnect"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" with timeout 5000ms
+      - waiting for locator('[data-testid="connection-status"]')
+        8 × locator resolved to <div data-testid="connection-status" class="connection-status connecting">…</div>
+          - unexpected value "○Connecting..."
+        6 × locator resolved to <div class="connection-status error" data-testid="connection-status">…</div>
+          - unexpected value "✗Connection ErrorReconnect"
+
+
+      23 |     // The status indicator should show "Connected" within 5 seconds
+      24 |     const statusIndicator = page.locator('[data-testid="connection-status"]');
+    > 25 |     await expect(statusIndicator).toContainText(/connected/i, { timeout: 5000 });
+         |                                   ^
+      26 |
+      27 |     // Verify no console errors during load
+      28 |     const consoleErrors: string[] = [];
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\smoke.spec.ts:25:35
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\smoke-Web-Client-Smoke-Tes-5cf01-oads-and-connects-to-daemon-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\smoke-Web-Client-Smoke-Tes-5cf01-oads-and-connects-to-daemon-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\smoke-Web-Client-Smoke-Tes-5cf01-oads-and-connects-to-daemon-chromium\error-context.md
+
+
+(node:29336) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[22/120] [chromium] › e2e\smoke.spec.ts:46:3 › Web Client Smoke Tests › xterm.js terminal is initialized
+  8) [chromium] › e2e\smoke.spec.ts:46:3 › Web Client Smoke Tests › xterm.js terminal is initialized 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('.xterm-text-layer')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('.xterm-text-layer')
+
+
+      53 |     // Verify terminal has canvas element (xterm-text-layer)
+      54 |     const textLayer = page.locator('.xterm-text-layer');
+    > 55 |     await expect(textLayer).toBeVisible();
+         |                             ^
+      56 |
+      57 |     // Verify terminal is interactive (has cursor)
+      58 |     const cursor = page.locator('.xterm-cursor-layer');
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\smoke.spec.ts:55:29
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\smoke-Web-Client-Smoke-Tes-49893--js-terminal-is-initialized-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\smoke-Web-Client-Smoke-Tes-49893--js-terminal-is-initialized-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\smoke-Web-Client-Smoke-Tes-49893--js-terminal-is-initialized-chromium\error-context.md
+
+
+(node:17536) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[23/120] [chromium] › e2e\smoke.spec.ts:62:3 › Web Client Smoke Tests › PWA manifest is loaded
+[24/120] [chromium] › e2e\smoke.spec.ts:83:3 › Web Client Smoke Tests › service worker registers successfully
+(node:9548) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[25/120] [firefox] › e2e\dashboard-embedded.spec.ts:14:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › dashboard embedded in web client - same port/domain
+[26/120] [firefox] › e2e\dashboard-embedded.spec.ts:34:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › health check executes and displays result
+  9) [firefox] › e2e\dashboard-embedded.spec.ts:34:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › health check executes and displays result 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('[data-testid="health-result"]')
+    Expected pattern: /✅|✓|pass/i
+    Received string:  "?Status unknown"
+    Timeout: 10000ms
+
+    Call log:
+      - Expect "toContainText" with timeout 10000ms
+      - waiting for locator('[data-testid="health-result"]')
+        24 × locator resolved to <div class="health-status" data-testid="health-result">…</div>
+           - unexpected value "?Status unknown"
+
+
+      46 |     // Verify health check result appears within 10 seconds
+      47 |     const healthResult = page.locator('[data-testid="health-result"]');
+    > 48 |     await expect(healthResult).toContainText(/✅|✓|pass/i, { timeout: 10000 });
+         |                                ^
+      49 |   });
+      50 |
+      51 |   test('one-click upgrade button present', async ({ page }) => {
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\dashboard-embedded.spec.ts:48:32
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\dashboard-embedded-Phase-1-7ae01-xecutes-and-displays-result-firefox\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\dashboard-embedded-Phase-1-7ae01-xecutes-and-displays-result-firefox\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\dashboard-embedded-Phase-1-7ae01-xecutes-and-displays-result-firefox\error-context.md
+
+
+(node:25208) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[27/120] [firefox] › e2e\dashboard-embedded.spec.ts:51:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › one-click upgrade button present
+  10) [firefox] › e2e\dashboard-embedded.spec.ts:51:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › one-click upgrade button present 
+
+    Error: expect(locator).toBeEnabled() failed
+
+    Locator:  locator('[data-testid="upgrade-button"]')
+    Expected: enabled
+    Received: disabled
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeEnabled" with timeout 5000ms
+      - waiting for locator('[data-testid="upgrade-button"]')
+        14 × locator resolved to <button disabled class="action-btn secondary" data-testid="upgrade-button" title="Monomind not installed">Upgrade to Latest</button>
+           - unexpected value "disabled"
+
+
+      59 |     const upgradeButton = page.locator('[data-testid="upgrade-button"]');
+      60 |     await expect(upgradeButton).toBeVisible();
+    > 61 |     await expect(upgradeButton).toBeEnabled();
+         |                                 ^
+      62 |   });
+      63 |
+      64 |   test('dashboard uses same WebSocket connection - no separate port', async ({ page }) => {
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\dashboard-embedded.spec.ts:61:33
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\dashboard-embedded-Phase-1-32902-lick-upgrade-button-present-firefox\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\dashboard-embedded-Phase-1-32902-lick-upgrade-button-present-firefox\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\dashboard-embedded-Phase-1-32902-lick-upgrade-button-present-firefox\error-context.md
+
+
+(node:22720) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[28/120] [firefox] › e2e\dashboard-embedded.spec.ts:64:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › dashboard uses same WebSocket connection - no separate port
+[29/120] [firefox] › e2e\dashboard-embedded.spec.ts:90:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › no separate authentication required - uses session JWT
+[30/120] [firefox] › e2e\dashboard-embedded.spec.ts:112:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › dashboard shows live monomind state
+[31/120] [firefox] › e2e\dashboard-embedded.spec.ts:137:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › dashboard accessible from main UI - not separate tab
+[32/120] [firefox] › e2e\dashboard-embedded.spec.ts:158:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › dashboard can be toggled open and closed
+  11) [firefox] › e2e\dashboard-embedded.spec.ts:158:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › dashboard can be toggled open and closed 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('[data-testid="dashboard-toggle"]')
+        - locator resolved to <button class="panel-toggle-btn" data-testid="dashboard-toggle" aria-label="Toggle Monomind panel" title="Toggle Monomind panel (Ctrl+M)">✗</button>
+      - attempting click action
+        2 × waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <button class="close-btn" aria-label="Close panel" data-testid="close-button">×</button> from <main class="app-main panel-open">…</main> subtree intercepts pointer events
+        - retrying click action
+        - waiting 20ms
+        2 × waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <button class="close-btn" aria-label="Close panel" data-testid="close-button">×</button> from <main class="app-main panel-open">…</main> subtree intercepts pointer events
+        - retrying click action
+          - waiting 100ms
+        52 × waiting for element to be visible, enabled and stable
+           - element is visible, enabled and stable
+           - scrolling into view if needed
+           - done scrolling
+           - <button class="close-btn" aria-label="Close panel" data-testid="close-button">×</button> from <main class="app-main panel-open">…</main> subtree intercepts pointer events
+         - retrying click action
+           - waiting 500ms
+
+
+      168 |
+      169 |     // Toggle dashboard closed
+    > 170 |     await dashboardToggle.click();
+          |                           ^
+      171 |     await expect(dashboard).not.toBeVisible();
+      172 |   });
+      173 | });
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\dashboard-embedded.spec.ts:170:27
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\dashboard-embedded-Phase-1-f60de--be-toggled-open-and-closed-firefox\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\dashboard-embedded-Phase-1-f60de--be-toggled-open-and-closed-firefox\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\dashboard-embedded-Phase-1-f60de--be-toggled-open-and-closed-firefox\error-context.md
+
+
+
+
+(node:22088) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[33/120] [firefox] › e2e\mobile-browser.spec.ts:19:3 › Phase 1 Criterion #2: Mobile Browser Usability › mobile browser full workflow - iOS Safari viewport
+[34/120] [firefox] › e2e\mobile-browser.spec.ts:64:3 › Phase 1 Criterion #2: Mobile Browser Usability › mobile browser full workflow - Android Chrome viewport
+[35/120] [firefox] › e2e\mobile-browser.spec.ts:110:3 › Phase 1 Criterion #2: Mobile Browser Usability › PWA "Add to Home Screen" metadata present
+[36/120] [firefox] › e2e\mobile-browser.spec.ts:129:3 › Phase 1 Criterion #2: Mobile Browser Usability › responsive layout adapts to portrait orientation
+[37/120] [firefox] › e2e\mobile-browser.spec.ts:142:3 › Phase 1 Criterion #2: Mobile Browser Usability › responsive layout adapts to landscape orientation
+[38/120] [firefox] › e2e\monomind-detection.spec.ts:16:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario A: Project without .monomind/ › suggestion appears within 5 seconds for directory without monomind
+  12) [firefox] › e2e\monomind-detection.spec.ts:16:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario A: Project without .monomind/ › suggestion appears within 5 seconds for directory without monomind 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('[data-testid="monomind-suggestion"]')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('[data-testid="monomind-suggestion"]')
+
+
+      27 |       const suggestionBanner = page.locator('[data-testid="monomind-suggestion"]');
+      28 |
+    > 29 |       await expect(suggestionBanner).toBeVisible({ timeout: 5000 });
+         |                                      ^
+      30 |
+      31 |       // 4. Verify suggestion has correct content
+      32 |       await expect(suggestionBanner).toContainText(/install monomind/i);
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\monomind-detection.spec.ts:29:38
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\monomind-detection-Phase-1-64615--directory-without-monomind-firefox\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\monomind-detection-Phase-1-64615--directory-without-monomind-firefox\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\monomind-detection-Phase-1-64615--directory-without-monomind-firefox\error-context.md
+
+
+(node:28956) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[39/120] [firefox] › e2e\monomind-detection.spec.ts:36:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario A: Project without .monomind/ › suggestion displays "Install monomind?" message
+  13) [firefox] › e2e\monomind-detection.spec.ts:36:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario A: Project without .monomind/ › suggestion displays "Install monomind?" message 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('[data-testid="monomind-suggestion"]')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('[data-testid="monomind-suggestion"]')
+
+
+      39 |       // TODO: Create session without .monomind/
+      40 |       const suggestionBanner = page.locator('[data-testid="monomind-suggestion"]');
+    > 41 |       await expect(suggestionBanner).toBeVisible({ timeout: 5000 });
+         |                                      ^
+      42 |       await expect(suggestionBanner).toContainText(/install monomind/i);
+      43 |     });
+      44 |   });
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\monomind-detection.spec.ts:41:38
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\monomind-detection-Phase-1-c2128-ys-Install-monomind-message-firefox\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\monomind-detection-Phase-1-c2128-ys-Install-monomind-message-firefox\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\monomind-detection-Phase-1-c2128-ys-Install-monomind-message-firefox\error-context.md
+
+
+(node:18684) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[40/120] [firefox] › e2e\monomind-detection.spec.ts:47:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario B: Dismiss suggestion › dismissed suggestion does not reappear on reload
+  14) [firefox] › e2e\monomind-detection.spec.ts:47:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario B: Dismiss suggestion › dismissed suggestion does not reappear on reload 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('[data-testid="monomind-suggestion-dismiss"]')
+
+
+      52 |       // 2. Dismiss suggestion
+      53 |       const dismissButton = page.locator('[data-testid="monomind-suggestion-dismiss"]');
+    > 54 |       await dismissButton.click();
+         |                           ^
+      55 |
+      56 |       // 3. Verify suggestion disappears
+      57 |       const suggestionBanner = page.locator('[data-testid="monomind-suggestion"]');
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\monomind-detection.spec.ts:54:27
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\monomind-detection-Phase-1-52161-does-not-reappear-on-reload-firefox\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\monomind-detection-Phase-1-52161-does-not-reappear-on-reload-firefox\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\monomind-detection-Phase-1-52161-does-not-reappear-on-reload-firefox\error-context.md
+
+
+(node:5684) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[41/120] [firefox] › e2e\monomind-detection.spec.ts:68:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario B: Dismiss suggestion › dismissal persists in localStorage or SQLite
+[42/120] [firefox] › e2e\monomind-detection.spec.ts:90:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario C: Project with .monomind/ › no suggestion appears for directory with monomind
+[43/120] [firefox] › e2e\monomind-detection.spec.ts:108:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Multi-session independence › dismissing in session A does not affect session B
+[44/120] [firefox] › e2e\monomind-detection.spec.ts:123:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Daemon restart persistence › dismissal persists across master daemon restart
+[45/120] [firefox] › e2e\smoke.spec.ts:11:3 › Web Client Smoke Tests › web client loads and connects to daemon
+  15) [firefox] › e2e\smoke.spec.ts:11:3 › Web Client Smoke Tests › web client loads and connects to daemon 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('[data-testid="connection-status"]')
+    Expected pattern: /connected/i
+    Received string:  "✗Connection ErrorReconnect"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" with timeout 5000ms
+      - waiting for locator('[data-testid="connection-status"]')
+        8 × locator resolved to <div data-testid="connection-status" class="connection-status connecting">…</div>
+          - unexpected value "○Connecting..."
+        6 × locator resolved to <div class="connection-status error" data-testid="connection-status">…</div>
+          - unexpected value "✗Connection ErrorReconnect"
+
+
+      23 |     // The status indicator should show "Connected" within 5 seconds
+      24 |     const statusIndicator = page.locator('[data-testid="connection-status"]');
+    > 25 |     await expect(statusIndicator).toContainText(/connected/i, { timeout: 5000 });
+         |                                   ^
+      26 |
+      27 |     // Verify no console errors during load
+      28 |     const consoleErrors: string[] = [];
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\smoke.spec.ts:25:35
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\smoke-Web-Client-Smoke-Tes-5cf01-oads-and-connects-to-daemon-firefox\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\smoke-Web-Client-Smoke-Tes-5cf01-oads-and-connects-to-daemon-firefox\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\smoke-Web-Client-Smoke-Tes-5cf01-oads-and-connects-to-daemon-firefox\error-context.md
+
+
+
+
+(node:22228) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[46/120] [firefox] › e2e\smoke.spec.ts:46:3 › Web Client Smoke Tests › xterm.js terminal is initialized
+  16) [firefox] › e2e\smoke.spec.ts:46:3 › Web Client Smoke Tests › xterm.js terminal is initialized 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('.xterm-text-layer')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('.xterm-text-layer')
+
+
+      53 |     // Verify terminal has canvas element (xterm-text-layer)
+      54 |     const textLayer = page.locator('.xterm-text-layer');
+    > 55 |     await expect(textLayer).toBeVisible();
+         |                             ^
+      56 |
+      57 |     // Verify terminal is interactive (has cursor)
+      58 |     const cursor = page.locator('.xterm-cursor-layer');
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\smoke.spec.ts:55:29
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\smoke-Web-Client-Smoke-Tes-49893--js-terminal-is-initialized-firefox\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\smoke-Web-Client-Smoke-Tes-49893--js-terminal-is-initialized-firefox\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\smoke-Web-Client-Smoke-Tes-49893--js-terminal-is-initialized-firefox\error-context.md
+
+
+
+
+(node:10356) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[47/120] [firefox] › e2e\smoke.spec.ts:62:3 › Web Client Smoke Tests › PWA manifest is loaded
+  17) [firefox] › e2e\smoke.spec.ts:62:3 › Web Client Smoke Tests › PWA manifest is loaded ─────────
+
+    Error: page.goto: Download is starting
+    Call log:
+      - navigating to "http://localhost:8080/manifest.webmanifest", waiting until "load"
+
+
+      71 |
+      72 |     // Verify manifest file is accessible
+    > 73 |     const manifestResponse = await page.goto(manifestHref!);
+         |                                         ^
+      74 |     expect(manifestResponse?.status()).toBe(200);
+      75 |
+      76 |     // Verify manifest has required PWA fields
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\smoke.spec.ts:73:41
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\smoke-Web-Client-Smoke-Tests-PWA-manifest-is-loaded-firefox\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\smoke-Web-Client-Smoke-Tests-PWA-manifest-is-loaded-firefox\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\smoke-Web-Client-Smoke-Tests-PWA-manifest-is-loaded-firefox\error-context.md
+
+
+(node:5744) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[48/120] [firefox] › e2e\smoke.spec.ts:83:3 › Web Client Smoke Tests › service worker registers successfully
+
+
+(node:10520) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[49/120] [webkit] › e2e\dashboard-embedded.spec.ts:14:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › dashboard embedded in web client - same port/domain
+[50/120] [webkit] › e2e\dashboard-embedded.spec.ts:34:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › health check executes and displays result
+  18) [webkit] › e2e\dashboard-embedded.spec.ts:34:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › health check executes and displays result 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('[data-testid="health-result"]')
+    Expected pattern: /✅|✓|pass/i
+    Received string:  "?Status unknown"
+    Timeout: 10000ms
+
+    Call log:
+      - Expect "toContainText" with timeout 10000ms
+      - waiting for locator('[data-testid="health-result"]')
+        23 × locator resolved to <div class="health-status" data-testid="health-result">…</div>
+           - unexpected value "?Status unknown"
+
+
+      46 |     // Verify health check result appears within 10 seconds
+      47 |     const healthResult = page.locator('[data-testid="health-result"]');
+    > 48 |     await expect(healthResult).toContainText(/✅|✓|pass/i, { timeout: 10000 });
+         |                                ^
+      49 |   });
+      50 |
+      51 |   test('one-click upgrade button present', async ({ page }) => {
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\dashboard-embedded.spec.ts:48:32
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\dashboard-embedded-Phase-1-7ae01-xecutes-and-displays-result-webkit\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\dashboard-embedded-Phase-1-7ae01-xecutes-and-displays-result-webkit\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\dashboard-embedded-Phase-1-7ae01-xecutes-and-displays-result-webkit\error-context.md
+
+
+(node:6516) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[51/120] [webkit] › e2e\dashboard-embedded.spec.ts:51:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › one-click upgrade button present
+  19) [webkit] › e2e\dashboard-embedded.spec.ts:51:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › one-click upgrade button present 
+
+    Error: expect(locator).toBeEnabled() failed
+
+    Locator:  locator('[data-testid="upgrade-button"]')
+    Expected: enabled
+    Received: disabled
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeEnabled" with timeout 5000ms
+      - waiting for locator('[data-testid="upgrade-button"]')
+        13 × locator resolved to <button disabled class="action-btn secondary" data-testid="upgrade-button" title="Monomind not installed">Upgrade to Latest</button>
+           - unexpected value "disabled"
+
+
+      59 |     const upgradeButton = page.locator('[data-testid="upgrade-button"]');
+      60 |     await expect(upgradeButton).toBeVisible();
+    > 61 |     await expect(upgradeButton).toBeEnabled();
+         |                                 ^
+      62 |   });
+      63 |
+      64 |   test('dashboard uses same WebSocket connection - no separate port', async ({ page }) => {
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\dashboard-embedded.spec.ts:61:33
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\dashboard-embedded-Phase-1-32902-lick-upgrade-button-present-webkit\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\dashboard-embedded-Phase-1-32902-lick-upgrade-button-present-webkit\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\dashboard-embedded-Phase-1-32902-lick-upgrade-button-present-webkit\error-context.md
+
+
+(node:15488) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[52/120] [webkit] › e2e\dashboard-embedded.spec.ts:64:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › dashboard uses same WebSocket connection - no separate port
+[53/120] [webkit] › e2e\dashboard-embedded.spec.ts:90:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › no separate authentication required - uses session JWT
+[54/120] [webkit] › e2e\dashboard-embedded.spec.ts:112:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › dashboard shows live monomind state
+[55/120] [webkit] › e2e\dashboard-embedded.spec.ts:137:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › dashboard accessible from main UI - not separate tab
+[56/120] [webkit] › e2e\dashboard-embedded.spec.ts:158:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › dashboard can be toggled open and closed
+  20) [webkit] › e2e\dashboard-embedded.spec.ts:158:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › dashboard can be toggled open and closed 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('[data-testid="dashboard-toggle"]')
+        - locator resolved to <button class="panel-toggle-btn" data-testid="dashboard-toggle" aria-label="Toggle Monomind panel" title="Toggle Monomind panel (Ctrl+M)">✗</button>
+      - attempting click action
+        2 × waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <button class="close-btn" aria-label="Close panel" data-testid="close-button">×</button> from <main class="app-main panel-open">…</main> subtree intercepts pointer events
+        - retrying click action
+        - waiting 20ms
+        2 × waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <button class="close-btn" aria-label="Close panel" data-testid="close-button">×</button> from <main class="app-main panel-open">…</main> subtree intercepts pointer events
+        - retrying click action
+          - waiting 100ms
+        41 × waiting for element to be visible, enabled and stable
+           - element is visible, enabled and stable
+           - scrolling into view if needed
+           - done scrolling
+           - <button class="close-btn" aria-label="Close panel" data-testid="close-button">×</button> from <main class="app-main panel-open">…</main> subtree intercepts pointer events
+         - retrying click action
+           - waiting 500ms
+
+
+      168 |
+      169 |     // Toggle dashboard closed
+    > 170 |     await dashboardToggle.click();
+          |                           ^
+      171 |     await expect(dashboard).not.toBeVisible();
+      172 |   });
+      173 | });
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\dashboard-embedded.spec.ts:170:27
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\dashboard-embedded-Phase-1-f60de--be-toggled-open-and-closed-webkit\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\dashboard-embedded-Phase-1-f60de--be-toggled-open-and-closed-webkit\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\dashboard-embedded-Phase-1-f60de--be-toggled-open-and-closed-webkit\error-context.md
+
+
+
+
+(node:30680) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[57/120] [webkit] › e2e\mobile-browser.spec.ts:19:3 › Phase 1 Criterion #2: Mobile Browser Usability › mobile browser full workflow - iOS Safari viewport
+[58/120] [webkit] › e2e\mobile-browser.spec.ts:64:3 › Phase 1 Criterion #2: Mobile Browser Usability › mobile browser full workflow - Android Chrome viewport
+[59/120] [webkit] › e2e\mobile-browser.spec.ts:110:3 › Phase 1 Criterion #2: Mobile Browser Usability › PWA "Add to Home Screen" metadata present
+[60/120] [webkit] › e2e\mobile-browser.spec.ts:129:3 › Phase 1 Criterion #2: Mobile Browser Usability › responsive layout adapts to portrait orientation
+[61/120] [webkit] › e2e\mobile-browser.spec.ts:142:3 › Phase 1 Criterion #2: Mobile Browser Usability › responsive layout adapts to landscape orientation
+[62/120] [webkit] › e2e\monomind-detection.spec.ts:16:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario A: Project without .monomind/ › suggestion appears within 5 seconds for directory without monomind
+  21) [webkit] › e2e\monomind-detection.spec.ts:16:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario A: Project without .monomind/ › suggestion appears within 5 seconds for directory without monomind 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('[data-testid="monomind-suggestion"]')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('[data-testid="monomind-suggestion"]')
+
+
+      27 |       const suggestionBanner = page.locator('[data-testid="monomind-suggestion"]');
+      28 |
+    > 29 |       await expect(suggestionBanner).toBeVisible({ timeout: 5000 });
+         |                                      ^
+      30 |
+      31 |       // 4. Verify suggestion has correct content
+      32 |       await expect(suggestionBanner).toContainText(/install monomind/i);
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\monomind-detection.spec.ts:29:38
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\monomind-detection-Phase-1-64615--directory-without-monomind-webkit\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\monomind-detection-Phase-1-64615--directory-without-monomind-webkit\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\monomind-detection-Phase-1-64615--directory-without-monomind-webkit\error-context.md
+
+
+
+(node:12380) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[63/120] [webkit] › e2e\monomind-detection.spec.ts:36:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario A: Project without .monomind/ › suggestion displays "Install monomind?" message
+  22) [webkit] › e2e\monomind-detection.spec.ts:36:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario A: Project without .monomind/ › suggestion displays "Install monomind?" message 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('[data-testid="monomind-suggestion"]')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('[data-testid="monomind-suggestion"]')
+
+
+      39 |       // TODO: Create session without .monomind/
+      40 |       const suggestionBanner = page.locator('[data-testid="monomind-suggestion"]');
+    > 41 |       await expect(suggestionBanner).toBeVisible({ timeout: 5000 });
+         |                                      ^
+      42 |       await expect(suggestionBanner).toContainText(/install monomind/i);
+      43 |     });
+      44 |   });
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\monomind-detection.spec.ts:41:38
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\monomind-detection-Phase-1-c2128-ys-Install-monomind-message-webkit\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\monomind-detection-Phase-1-c2128-ys-Install-monomind-message-webkit\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\monomind-detection-Phase-1-c2128-ys-Install-monomind-message-webkit\error-context.md
+
+
+(node:27568) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[64/120] [webkit] › e2e\monomind-detection.spec.ts:47:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario B: Dismiss suggestion › dismissed suggestion does not reappear on reload
+  23) [webkit] › e2e\monomind-detection.spec.ts:47:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario B: Dismiss suggestion › dismissed suggestion does not reappear on reload 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('[data-testid="monomind-suggestion-dismiss"]')
+
+
+      52 |       // 2. Dismiss suggestion
+      53 |       const dismissButton = page.locator('[data-testid="monomind-suggestion-dismiss"]');
+    > 54 |       await dismissButton.click();
+         |                           ^
+      55 |
+      56 |       // 3. Verify suggestion disappears
+      57 |       const suggestionBanner = page.locator('[data-testid="monomind-suggestion"]');
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\monomind-detection.spec.ts:54:27
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\monomind-detection-Phase-1-52161-does-not-reappear-on-reload-webkit\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\monomind-detection-Phase-1-52161-does-not-reappear-on-reload-webkit\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\monomind-detection-Phase-1-52161-does-not-reappear-on-reload-webkit\error-context.md
+
+
+
+
+(node:24552) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[65/120] [webkit] › e2e\monomind-detection.spec.ts:68:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario B: Dismiss suggestion › dismissal persists in localStorage or SQLite
+[66/120] [webkit] › e2e\monomind-detection.spec.ts:90:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario C: Project with .monomind/ › no suggestion appears for directory with monomind
+[67/120] [webkit] › e2e\monomind-detection.spec.ts:108:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Multi-session independence › dismissing in session A does not affect session B
+[68/120] [webkit] › e2e\monomind-detection.spec.ts:123:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Daemon restart persistence › dismissal persists across master daemon restart
+[69/120] [webkit] › e2e\smoke.spec.ts:11:3 › Web Client Smoke Tests › web client loads and connects to daemon
+  24) [webkit] › e2e\smoke.spec.ts:11:3 › Web Client Smoke Tests › web client loads and connects to daemon 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('[data-testid="connection-status"]')
+    Expected pattern: /connected/i
+    Received string:  "✗Connection ErrorReconnect"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" with timeout 5000ms
+      - waiting for locator('[data-testid="connection-status"]')
+        8 × locator resolved to <div data-testid="connection-status" class="connection-status connecting">…</div>
+          - unexpected value "○Connecting..."
+        5 × locator resolved to <div class="connection-status error" data-testid="connection-status">…</div>
+          - unexpected value "✗Connection ErrorReconnect"
+
+
+      23 |     // The status indicator should show "Connected" within 5 seconds
+      24 |     const statusIndicator = page.locator('[data-testid="connection-status"]');
+    > 25 |     await expect(statusIndicator).toContainText(/connected/i, { timeout: 5000 });
+         |                                   ^
+      26 |
+      27 |     // Verify no console errors during load
+      28 |     const consoleErrors: string[] = [];
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\smoke.spec.ts:25:35
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\smoke-Web-Client-Smoke-Tes-5cf01-oads-and-connects-to-daemon-webkit\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\smoke-Web-Client-Smoke-Tes-5cf01-oads-and-connects-to-daemon-webkit\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\smoke-Web-Client-Smoke-Tes-5cf01-oads-and-connects-to-daemon-webkit\error-context.md
+
+
+
+
+(node:5592) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[70/120] [webkit] › e2e\smoke.spec.ts:46:3 › Web Client Smoke Tests › xterm.js terminal is initialized
+  25) [webkit] › e2e\smoke.spec.ts:46:3 › Web Client Smoke Tests › xterm.js terminal is initialized 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('.xterm-text-layer')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('.xterm-text-layer')
+
+
+      53 |     // Verify terminal has canvas element (xterm-text-layer)
+      54 |     const textLayer = page.locator('.xterm-text-layer');
+    > 55 |     await expect(textLayer).toBeVisible();
+         |                             ^
+      56 |
+      57 |     // Verify terminal is interactive (has cursor)
+      58 |     const cursor = page.locator('.xterm-cursor-layer');
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\smoke.spec.ts:55:29
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\smoke-Web-Client-Smoke-Tes-49893--js-terminal-is-initialized-webkit\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\smoke-Web-Client-Smoke-Tes-49893--js-terminal-is-initialized-webkit\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\smoke-Web-Client-Smoke-Tes-49893--js-terminal-is-initialized-webkit\error-context.md
+
+
+(node:16996) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[71/120] [webkit] › e2e\smoke.spec.ts:62:3 › Web Client Smoke Tests › PWA manifest is loaded
+[72/120] [webkit] › e2e\smoke.spec.ts:83:3 › Web Client Smoke Tests › service worker registers successfully
+
+
+(node:1156) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[73/120] [mobile-chrome] › e2e\dashboard-embedded.spec.ts:14:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › dashboard embedded in web client - same port/domain
+[74/120] [mobile-chrome] › e2e\dashboard-embedded.spec.ts:34:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › health check executes and displays result
+  26) [mobile-chrome] › e2e\dashboard-embedded.spec.ts:34:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › health check executes and displays result 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('[data-testid="health-result"]')
+    Expected pattern: /✅|✓|pass/i
+    Received string:  "?Status unknown"
+    Timeout: 10000ms
+
+    Call log:
+      - Expect "toContainText" with timeout 10000ms
+      - waiting for locator('[data-testid="health-result"]')
+        24 × locator resolved to <div class="health-status" data-testid="health-result">…</div>
+           - unexpected value "?Status unknown"
+
+
+      46 |     // Verify health check result appears within 10 seconds
+      47 |     const healthResult = page.locator('[data-testid="health-result"]');
+    > 48 |     await expect(healthResult).toContainText(/✅|✓|pass/i, { timeout: 10000 });
+         |                                ^
+      49 |   });
+      50 |
+      51 |   test('one-click upgrade button present', async ({ page }) => {
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\dashboard-embedded.spec.ts:48:32
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\dashboard-embedded-Phase-1-7ae01-xecutes-and-displays-result-mobile-chrome\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\dashboard-embedded-Phase-1-7ae01-xecutes-and-displays-result-mobile-chrome\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\dashboard-embedded-Phase-1-7ae01-xecutes-and-displays-result-mobile-chrome\error-context.md
+
+
+
+
+(node:23036) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[75/120] [mobile-chrome] › e2e\dashboard-embedded.spec.ts:51:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › one-click upgrade button present
+  27) [mobile-chrome] › e2e\dashboard-embedded.spec.ts:51:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › one-click upgrade button present 
+
+    Error: expect(locator).toBeEnabled() failed
+
+    Locator:  locator('[data-testid="upgrade-button"]')
+    Expected: enabled
+    Received: disabled
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeEnabled" with timeout 5000ms
+      - waiting for locator('[data-testid="upgrade-button"]')
+        14 × locator resolved to <button disabled class="action-btn secondary" data-testid="upgrade-button" title="Monomind not installed">Upgrade to Latest</button>
+           - unexpected value "disabled"
+
+
+      59 |     const upgradeButton = page.locator('[data-testid="upgrade-button"]');
+      60 |     await expect(upgradeButton).toBeVisible();
+    > 61 |     await expect(upgradeButton).toBeEnabled();
+         |                                 ^
+      62 |   });
+      63 |
+      64 |   test('dashboard uses same WebSocket connection - no separate port', async ({ page }) => {
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\dashboard-embedded.spec.ts:61:33
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\dashboard-embedded-Phase-1-32902-lick-upgrade-button-present-mobile-chrome\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\dashboard-embedded-Phase-1-32902-lick-upgrade-button-present-mobile-chrome\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\dashboard-embedded-Phase-1-32902-lick-upgrade-button-present-mobile-chrome\error-context.md
+
+
+(node:9540) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[76/120] [mobile-chrome] › e2e\dashboard-embedded.spec.ts:64:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › dashboard uses same WebSocket connection - no separate port
+[77/120] [mobile-chrome] › e2e\dashboard-embedded.spec.ts:90:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › no separate authentication required - uses session JWT
+[78/120] [mobile-chrome] › e2e\dashboard-embedded.spec.ts:112:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › dashboard shows live monomind state
+[79/120] [mobile-chrome] › e2e\dashboard-embedded.spec.ts:137:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › dashboard accessible from main UI - not separate tab
+[80/120] [mobile-chrome] › e2e\dashboard-embedded.spec.ts:158:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › dashboard can be toggled open and closed
+  28) [mobile-chrome] › e2e\dashboard-embedded.spec.ts:158:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › dashboard can be toggled open and closed 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('[data-testid="dashboard-toggle"]')
+        - locator resolved to <button class="panel-toggle-btn" data-testid="dashboard-toggle" aria-label="Toggle Monomind panel" title="Toggle Monomind panel (Ctrl+M)">✗</button>
+      - attempting click action
+        2 × waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <button class="close-btn" aria-label="Close panel" data-testid="close-button">×</button> from <main class="app-main panel-open">…</main> subtree intercepts pointer events
+        - retrying click action
+        - waiting 20ms
+        2 × waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <button class="close-btn" aria-label="Close panel" data-testid="close-button">×</button> from <main class="app-main panel-open">…</main> subtree intercepts pointer events
+        - retrying click action
+          - waiting 100ms
+        57 × waiting for element to be visible, enabled and stable
+           - element is visible, enabled and stable
+           - scrolling into view if needed
+           - done scrolling
+           - <button class="close-btn" aria-label="Close panel" data-testid="close-button">×</button> from <main class="app-main panel-open">…</main> subtree intercepts pointer events
+         - retrying click action
+           - waiting 500ms
+
+
+      168 |
+      169 |     // Toggle dashboard closed
+    > 170 |     await dashboardToggle.click();
+          |                           ^
+      171 |     await expect(dashboard).not.toBeVisible();
+      172 |   });
+      173 | });
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\dashboard-embedded.spec.ts:170:27
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\dashboard-embedded-Phase-1-f60de--be-toggled-open-and-closed-mobile-chrome\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\dashboard-embedded-Phase-1-f60de--be-toggled-open-and-closed-mobile-chrome\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\dashboard-embedded-Phase-1-f60de--be-toggled-open-and-closed-mobile-chrome\error-context.md
+
+
+
+
+(node:17652) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[81/120] [mobile-chrome] › e2e\mobile-browser.spec.ts:19:3 › Phase 1 Criterion #2: Mobile Browser Usability › mobile browser full workflow - iOS Safari viewport
+[82/120] [mobile-chrome] › e2e\mobile-browser.spec.ts:64:3 › Phase 1 Criterion #2: Mobile Browser Usability › mobile browser full workflow - Android Chrome viewport
+[83/120] [mobile-chrome] › e2e\mobile-browser.spec.ts:110:3 › Phase 1 Criterion #2: Mobile Browser Usability › PWA "Add to Home Screen" metadata present
+[84/120] [mobile-chrome] › e2e\mobile-browser.spec.ts:129:3 › Phase 1 Criterion #2: Mobile Browser Usability › responsive layout adapts to portrait orientation
+[85/120] [mobile-chrome] › e2e\mobile-browser.spec.ts:142:3 › Phase 1 Criterion #2: Mobile Browser Usability › responsive layout adapts to landscape orientation
+[86/120] [mobile-chrome] › e2e\monomind-detection.spec.ts:16:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario A: Project without .monomind/ › suggestion appears within 5 seconds for directory without monomind
+  29) [mobile-chrome] › e2e\monomind-detection.spec.ts:16:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario A: Project without .monomind/ › suggestion appears within 5 seconds for directory without monomind 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('[data-testid="monomind-suggestion"]')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('[data-testid="monomind-suggestion"]')
+
+
+      27 |       const suggestionBanner = page.locator('[data-testid="monomind-suggestion"]');
+      28 |
+    > 29 |       await expect(suggestionBanner).toBeVisible({ timeout: 5000 });
+         |                                      ^
+      30 |
+      31 |       // 4. Verify suggestion has correct content
+      32 |       await expect(suggestionBanner).toContainText(/install monomind/i);
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\monomind-detection.spec.ts:29:38
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\monomind-detection-Phase-1-64615--directory-without-monomind-mobile-chrome\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\monomind-detection-Phase-1-64615--directory-without-monomind-mobile-chrome\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\monomind-detection-Phase-1-64615--directory-without-monomind-mobile-chrome\error-context.md
+
+
+
+
+(node:22572) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[87/120] [mobile-chrome] › e2e\monomind-detection.spec.ts:36:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario A: Project without .monomind/ › suggestion displays "Install monomind?" message
+  30) [mobile-chrome] › e2e\monomind-detection.spec.ts:36:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario A: Project without .monomind/ › suggestion displays "Install monomind?" message 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('[data-testid="monomind-suggestion"]')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('[data-testid="monomind-suggestion"]')
+
+
+      39 |       // TODO: Create session without .monomind/
+      40 |       const suggestionBanner = page.locator('[data-testid="monomind-suggestion"]');
+    > 41 |       await expect(suggestionBanner).toBeVisible({ timeout: 5000 });
+         |                                      ^
+      42 |       await expect(suggestionBanner).toContainText(/install monomind/i);
+      43 |     });
+      44 |   });
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\monomind-detection.spec.ts:41:38
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\monomind-detection-Phase-1-c2128-ys-Install-monomind-message-mobile-chrome\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\monomind-detection-Phase-1-c2128-ys-Install-monomind-message-mobile-chrome\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\monomind-detection-Phase-1-c2128-ys-Install-monomind-message-mobile-chrome\error-context.md
+
+
+(node:20804) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[88/120] [mobile-chrome] › e2e\monomind-detection.spec.ts:47:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario B: Dismiss suggestion › dismissed suggestion does not reappear on reload
+  31) [mobile-chrome] › e2e\monomind-detection.spec.ts:47:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario B: Dismiss suggestion › dismissed suggestion does not reappear on reload 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('[data-testid="monomind-suggestion-dismiss"]')
+
+
+      52 |       // 2. Dismiss suggestion
+      53 |       const dismissButton = page.locator('[data-testid="monomind-suggestion-dismiss"]');
+    > 54 |       await dismissButton.click();
+         |                           ^
+      55 |
+      56 |       // 3. Verify suggestion disappears
+      57 |       const suggestionBanner = page.locator('[data-testid="monomind-suggestion"]');
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\monomind-detection.spec.ts:54:27
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\monomind-detection-Phase-1-52161-does-not-reappear-on-reload-mobile-chrome\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\monomind-detection-Phase-1-52161-does-not-reappear-on-reload-mobile-chrome\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\monomind-detection-Phase-1-52161-does-not-reappear-on-reload-mobile-chrome\error-context.md
+
+
+(node:20028) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[89/120] [mobile-chrome] › e2e\monomind-detection.spec.ts:68:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario B: Dismiss suggestion › dismissal persists in localStorage or SQLite
+[90/120] [mobile-chrome] › e2e\monomind-detection.spec.ts:90:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario C: Project with .monomind/ › no suggestion appears for directory with monomind
+[91/120] [mobile-chrome] › e2e\monomind-detection.spec.ts:108:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Multi-session independence › dismissing in session A does not affect session B
+[92/120] [mobile-chrome] › e2e\monomind-detection.spec.ts:123:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Daemon restart persistence › dismissal persists across master daemon restart
+[93/120] [mobile-chrome] › e2e\smoke.spec.ts:11:3 › Web Client Smoke Tests › web client loads and connects to daemon
+  32) [mobile-chrome] › e2e\smoke.spec.ts:11:3 › Web Client Smoke Tests › web client loads and connects to daemon 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('[data-testid="connection-status"]')
+    Expected pattern: /connected/i
+    Received string:  "✗Connection ErrorReconnect"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" with timeout 5000ms
+      - waiting for locator('[data-testid="connection-status"]')
+        8 × locator resolved to <div data-testid="connection-status" class="connection-status connecting">…</div>
+          - unexpected value "○Connecting..."
+        6 × locator resolved to <div class="connection-status error" data-testid="connection-status">…</div>
+          - unexpected value "✗Connection ErrorReconnect"
+
+
+      23 |     // The status indicator should show "Connected" within 5 seconds
+      24 |     const statusIndicator = page.locator('[data-testid="connection-status"]');
+    > 25 |     await expect(statusIndicator).toContainText(/connected/i, { timeout: 5000 });
+         |                                   ^
+      26 |
+      27 |     // Verify no console errors during load
+      28 |     const consoleErrors: string[] = [];
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\smoke.spec.ts:25:35
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\smoke-Web-Client-Smoke-Tes-5cf01-oads-and-connects-to-daemon-mobile-chrome\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\smoke-Web-Client-Smoke-Tes-5cf01-oads-and-connects-to-daemon-mobile-chrome\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\smoke-Web-Client-Smoke-Tes-5cf01-oads-and-connects-to-daemon-mobile-chrome\error-context.md
+
+
+
+
+(node:19156) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[94/120] [mobile-chrome] › e2e\smoke.spec.ts:46:3 › Web Client Smoke Tests › xterm.js terminal is initialized
+  33) [mobile-chrome] › e2e\smoke.spec.ts:46:3 › Web Client Smoke Tests › xterm.js terminal is initialized 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('.xterm-text-layer')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('.xterm-text-layer')
+
+
+      53 |     // Verify terminal has canvas element (xterm-text-layer)
+      54 |     const textLayer = page.locator('.xterm-text-layer');
+    > 55 |     await expect(textLayer).toBeVisible();
+         |                             ^
+      56 |
+      57 |     // Verify terminal is interactive (has cursor)
+      58 |     const cursor = page.locator('.xterm-cursor-layer');
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\smoke.spec.ts:55:29
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\smoke-Web-Client-Smoke-Tes-49893--js-terminal-is-initialized-mobile-chrome\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\smoke-Web-Client-Smoke-Tes-49893--js-terminal-is-initialized-mobile-chrome\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\smoke-Web-Client-Smoke-Tes-49893--js-terminal-is-initialized-mobile-chrome\error-context.md
+
+
+
+
+(node:27512) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[95/120] [mobile-chrome] › e2e\smoke.spec.ts:62:3 › Web Client Smoke Tests › PWA manifest is loaded
+[96/120] [mobile-chrome] › e2e\smoke.spec.ts:83:3 › Web Client Smoke Tests › service worker registers successfully
+(node:1208) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[97/120] [mobile-safari] › e2e\dashboard-embedded.spec.ts:14:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › dashboard embedded in web client - same port/domain
+[98/120] [mobile-safari] › e2e\dashboard-embedded.spec.ts:34:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › health check executes and displays result
+  34) [mobile-safari] › e2e\dashboard-embedded.spec.ts:34:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › health check executes and displays result 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('[data-testid="health-result"]')
+    Expected pattern: /✅|✓|pass/i
+    Received string:  "?Status unknown"
+    Timeout: 10000ms
+
+    Call log:
+      - Expect "toContainText" with timeout 10000ms
+      - waiting for locator('[data-testid="health-result"]')
+        23 × locator resolved to <div class="health-status" data-testid="health-result">…</div>
+           - unexpected value "?Status unknown"
+
+
+      46 |     // Verify health check result appears within 10 seconds
+      47 |     const healthResult = page.locator('[data-testid="health-result"]');
+    > 48 |     await expect(healthResult).toContainText(/✅|✓|pass/i, { timeout: 10000 });
+         |                                ^
+      49 |   });
+      50 |
+      51 |   test('one-click upgrade button present', async ({ page }) => {
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\dashboard-embedded.spec.ts:48:32
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\dashboard-embedded-Phase-1-7ae01-xecutes-and-displays-result-mobile-safari\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\dashboard-embedded-Phase-1-7ae01-xecutes-and-displays-result-mobile-safari\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\dashboard-embedded-Phase-1-7ae01-xecutes-and-displays-result-mobile-safari\error-context.md
+
+
+(node:26396) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[99/120] [mobile-safari] › e2e\dashboard-embedded.spec.ts:51:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › one-click upgrade button present
+  35) [mobile-safari] › e2e\dashboard-embedded.spec.ts:51:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › one-click upgrade button present 
+
+    Error: expect(locator).toBeEnabled() failed
+
+    Locator:  locator('[data-testid="upgrade-button"]')
+    Expected: enabled
+    Received: disabled
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeEnabled" with timeout 5000ms
+      - waiting for locator('[data-testid="upgrade-button"]')
+        13 × locator resolved to <button disabled class="action-btn secondary" data-testid="upgrade-button" title="Monomind not installed">Upgrade to Latest</button>
+           - unexpected value "disabled"
+
+
+      59 |     const upgradeButton = page.locator('[data-testid="upgrade-button"]');
+      60 |     await expect(upgradeButton).toBeVisible();
+    > 61 |     await expect(upgradeButton).toBeEnabled();
+         |                                 ^
+      62 |   });
+      63 |
+      64 |   test('dashboard uses same WebSocket connection - no separate port', async ({ page }) => {
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\dashboard-embedded.spec.ts:61:33
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\dashboard-embedded-Phase-1-32902-lick-upgrade-button-present-mobile-safari\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\dashboard-embedded-Phase-1-32902-lick-upgrade-button-present-mobile-safari\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\dashboard-embedded-Phase-1-32902-lick-upgrade-button-present-mobile-safari\error-context.md
+
+
+(node:19588) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[100/120] [mobile-safari] › e2e\dashboard-embedded.spec.ts:64:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › dashboard uses same WebSocket connection - no separate port
+[101/120] [mobile-safari] › e2e\dashboard-embedded.spec.ts:90:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › no separate authentication required - uses session JWT
+[102/120] [mobile-safari] › e2e\dashboard-embedded.spec.ts:112:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › dashboard shows live monomind state
+[103/120] [mobile-safari] › e2e\dashboard-embedded.spec.ts:137:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › dashboard accessible from main UI - not separate tab
+[104/120] [mobile-safari] › e2e\dashboard-embedded.spec.ts:158:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › dashboard can be toggled open and closed
+  36) [mobile-safari] › e2e\dashboard-embedded.spec.ts:158:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › dashboard can be toggled open and closed 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('[data-testid="dashboard-toggle"]')
+        - locator resolved to <button class="panel-toggle-btn" data-testid="dashboard-toggle" aria-label="Toggle Monomind panel" title="Toggle Monomind panel (Ctrl+M)">✗</button>
+      - attempting click action
+        2 × waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <button class="close-btn" aria-label="Close panel" data-testid="close-button">×</button> from <main class="app-main panel-open">…</main> subtree intercepts pointer events
+        - retrying click action
+        - waiting 20ms
+        2 × waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <button class="close-btn" aria-label="Close panel" data-testid="close-button">×</button> from <main class="app-main panel-open">…</main> subtree intercepts pointer events
+        - retrying click action
+          - waiting 100ms
+        37 × waiting for element to be visible, enabled and stable
+           - element is visible, enabled and stable
+           - scrolling into view if needed
+           - done scrolling
+           - <button class="close-btn" aria-label="Close panel" data-testid="close-button">×</button> from <main class="app-main panel-open">…</main> subtree intercepts pointer events
+         - retrying click action
+           - waiting 500ms
+        2 × waiting for element to be visible, enabled and stable
+          - element is not stable
+        - retrying click action
+          - waiting 500ms
+          - waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <button class="close-btn" aria-label="Close panel" data-testid="close-button">×</button> from <main class="app-main panel-open">…</main> subtree intercepts pointer events
+        - retrying click action
+          - waiting 500ms
+          - waiting for element to be visible, enabled and stable
+          - element is visible, enabled and stable
+          - scrolling into view if needed
+          - done scrolling
+          - <button class="close-btn" aria-label="Close panel" data-testid="close-button">×</button> from <main class="app-main panel-open">…</main> subtree intercepts pointer events
+        - retrying click action
+          - waiting 500ms
+        - waiting for element to be visible, enabled and stable
+
+
+      168 |
+      169 |     // Toggle dashboard closed
+    > 170 |     await dashboardToggle.click();
+          |                           ^
+      171 |     await expect(dashboard).not.toBeVisible();
+      172 |   });
+      173 | });
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\dashboard-embedded.spec.ts:170:27
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\dashboard-embedded-Phase-1-f60de--be-toggled-open-and-closed-mobile-safari\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\dashboard-embedded-Phase-1-f60de--be-toggled-open-and-closed-mobile-safari\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\dashboard-embedded-Phase-1-f60de--be-toggled-open-and-closed-mobile-safari\error-context.md
+
+
+(node:8940) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[105/120] [mobile-safari] › e2e\mobile-browser.spec.ts:19:3 › Phase 1 Criterion #2: Mobile Browser Usability › mobile browser full workflow - iOS Safari viewport
+[106/120] [mobile-safari] › e2e\mobile-browser.spec.ts:64:3 › Phase 1 Criterion #2: Mobile Browser Usability › mobile browser full workflow - Android Chrome viewport
+[107/120] [mobile-safari] › e2e\mobile-browser.spec.ts:110:3 › Phase 1 Criterion #2: Mobile Browser Usability › PWA "Add to Home Screen" metadata present
+[108/120] [mobile-safari] › e2e\mobile-browser.spec.ts:129:3 › Phase 1 Criterion #2: Mobile Browser Usability › responsive layout adapts to portrait orientation
+[109/120] [mobile-safari] › e2e\mobile-browser.spec.ts:142:3 › Phase 1 Criterion #2: Mobile Browser Usability › responsive layout adapts to landscape orientation
+[110/120] [mobile-safari] › e2e\monomind-detection.spec.ts:16:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario A: Project without .monomind/ › suggestion appears within 5 seconds for directory without monomind
+  37) [mobile-safari] › e2e\monomind-detection.spec.ts:16:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario A: Project without .monomind/ › suggestion appears within 5 seconds for directory without monomind 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('[data-testid="monomind-suggestion"]')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('[data-testid="monomind-suggestion"]')
+
+
+      27 |       const suggestionBanner = page.locator('[data-testid="monomind-suggestion"]');
+      28 |
+    > 29 |       await expect(suggestionBanner).toBeVisible({ timeout: 5000 });
+         |                                      ^
+      30 |
+      31 |       // 4. Verify suggestion has correct content
+      32 |       await expect(suggestionBanner).toContainText(/install monomind/i);
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\monomind-detection.spec.ts:29:38
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\monomind-detection-Phase-1-64615--directory-without-monomind-mobile-safari\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\monomind-detection-Phase-1-64615--directory-without-monomind-mobile-safari\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\monomind-detection-Phase-1-64615--directory-without-monomind-mobile-safari\error-context.md
+
+
+
+
+(node:3800) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[111/120] [mobile-safari] › e2e\monomind-detection.spec.ts:36:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario A: Project without .monomind/ › suggestion displays "Install monomind?" message
+  38) [mobile-safari] › e2e\monomind-detection.spec.ts:36:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario A: Project without .monomind/ › suggestion displays "Install monomind?" message 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('[data-testid="monomind-suggestion"]')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('[data-testid="monomind-suggestion"]')
+
+
+      39 |       // TODO: Create session without .monomind/
+      40 |       const suggestionBanner = page.locator('[data-testid="monomind-suggestion"]');
+    > 41 |       await expect(suggestionBanner).toBeVisible({ timeout: 5000 });
+         |                                      ^
+      42 |       await expect(suggestionBanner).toContainText(/install monomind/i);
+      43 |     });
+      44 |   });
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\monomind-detection.spec.ts:41:38
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\monomind-detection-Phase-1-c2128-ys-Install-monomind-message-mobile-safari\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\monomind-detection-Phase-1-c2128-ys-Install-monomind-message-mobile-safari\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\monomind-detection-Phase-1-c2128-ys-Install-monomind-message-mobile-safari\error-context.md
+
+
+(node:29904) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[112/120] [mobile-safari] › e2e\monomind-detection.spec.ts:47:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario B: Dismiss suggestion › dismissed suggestion does not reappear on reload
+  39) [mobile-safari] › e2e\monomind-detection.spec.ts:47:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario B: Dismiss suggestion › dismissed suggestion does not reappear on reload 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('[data-testid="monomind-suggestion-dismiss"]')
+
+
+      52 |       // 2. Dismiss suggestion
+      53 |       const dismissButton = page.locator('[data-testid="monomind-suggestion-dismiss"]');
+    > 54 |       await dismissButton.click();
+         |                           ^
+      55 |
+      56 |       // 3. Verify suggestion disappears
+      57 |       const suggestionBanner = page.locator('[data-testid="monomind-suggestion"]');
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\monomind-detection.spec.ts:54:27
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\monomind-detection-Phase-1-52161-does-not-reappear-on-reload-mobile-safari\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\monomind-detection-Phase-1-52161-does-not-reappear-on-reload-mobile-safari\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\monomind-detection-Phase-1-52161-does-not-reappear-on-reload-mobile-safari\error-context.md
+
+
+
+(node:30328) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[113/120] [mobile-safari] › e2e\monomind-detection.spec.ts:68:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario B: Dismiss suggestion › dismissal persists in localStorage or SQLite
+[114/120] [mobile-safari] › e2e\monomind-detection.spec.ts:90:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario C: Project with .monomind/ › no suggestion appears for directory with monomind
+[115/120] [mobile-safari] › e2e\monomind-detection.spec.ts:108:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Multi-session independence › dismissing in session A does not affect session B
+[116/120] [mobile-safari] › e2e\monomind-detection.spec.ts:123:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Daemon restart persistence › dismissal persists across master daemon restart
+[117/120] [mobile-safari] › e2e\smoke.spec.ts:11:3 › Web Client Smoke Tests › web client loads and connects to daemon
+  40) [mobile-safari] › e2e\smoke.spec.ts:11:3 › Web Client Smoke Tests › web client loads and connects to daemon 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('[data-testid="connection-status"]')
+    Expected pattern: /connected/i
+    Received string:  "✗Connection ErrorReconnect"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toContainText" with timeout 5000ms
+      - waiting for locator('[data-testid="connection-status"]')
+        8 × locator resolved to <div data-testid="connection-status" class="connection-status connecting">…</div>
+          - unexpected value "○Connecting..."
+        5 × locator resolved to <div class="connection-status error" data-testid="connection-status">…</div>
+          - unexpected value "✗Connection ErrorReconnect"
+
+
+      23 |     // The status indicator should show "Connected" within 5 seconds
+      24 |     const statusIndicator = page.locator('[data-testid="connection-status"]');
+    > 25 |     await expect(statusIndicator).toContainText(/connected/i, { timeout: 5000 });
+         |                                   ^
+      26 |
+      27 |     // Verify no console errors during load
+      28 |     const consoleErrors: string[] = [];
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\smoke.spec.ts:25:35
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\smoke-Web-Client-Smoke-Tes-5cf01-oads-and-connects-to-daemon-mobile-safari\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\smoke-Web-Client-Smoke-Tes-5cf01-oads-and-connects-to-daemon-mobile-safari\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\smoke-Web-Client-Smoke-Tes-5cf01-oads-and-connects-to-daemon-mobile-safari\error-context.md
+
+
+
+
+(node:20464) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[118/120] [mobile-safari] › e2e\smoke.spec.ts:46:3 › Web Client Smoke Tests › xterm.js terminal is initialized
+  41) [mobile-safari] › e2e\smoke.spec.ts:46:3 › Web Client Smoke Tests › xterm.js terminal is initialized 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('.xterm-text-layer')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('.xterm-text-layer')
+
+
+      53 |     // Verify terminal has canvas element (xterm-text-layer)
+      54 |     const textLayer = page.locator('.xterm-text-layer');
+    > 55 |     await expect(textLayer).toBeVisible();
+         |                             ^
+      56 |
+      57 |     // Verify terminal is interactive (has cursor)
+      58 |     const cursor = page.locator('.xterm-cursor-layer');
+        at C:\Users\nokho\Desktop\projects\monoterminal\web\e2e\smoke.spec.ts:55:29
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\smoke-Web-Client-Smoke-Tes-49893--js-terminal-is-initialized-mobile-safari\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\smoke-Web-Client-Smoke-Tes-49893--js-terminal-is-initialized-mobile-safari\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\smoke-Web-Client-Smoke-Tes-49893--js-terminal-is-initialized-mobile-safari\error-context.md
+
+
+(node:29900) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[119/120] [mobile-safari] › e2e\smoke.spec.ts:62:3 › Web Client Smoke Tests › PWA manifest is loaded
+[120/120] [mobile-safari] › e2e\smoke.spec.ts:83:3 › Web Client Smoke Tests › service worker registers successfully
+  41 failed
+    [chromium] › e2e\dashboard-embedded.spec.ts:34:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › health check executes and displays result 
+    [chromium] › e2e\dashboard-embedded.spec.ts:51:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › one-click upgrade button present 
+    [chromium] › e2e\dashboard-embedded.spec.ts:158:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › dashboard can be toggled open and closed 
+    [chromium] › e2e\monomind-detection.spec.ts:16:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario A: Project without .monomind/ › suggestion appears within 5 seconds for directory without monomind 
+    [chromium] › e2e\monomind-detection.spec.ts:36:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario A: Project without .monomind/ › suggestion displays "Install monomind?" message 
+    [chromium] › e2e\monomind-detection.spec.ts:47:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario B: Dismiss suggestion › dismissed suggestion does not reappear on reload 
+    [chromium] › e2e\smoke.spec.ts:11:3 › Web Client Smoke Tests › web client loads and connects to daemon 
+    [chromium] › e2e\smoke.spec.ts:46:3 › Web Client Smoke Tests › xterm.js terminal is initialized 
+    [firefox] › e2e\dashboard-embedded.spec.ts:34:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › health check executes and displays result 
+    [firefox] › e2e\dashboard-embedded.spec.ts:51:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › one-click upgrade button present 
+    [firefox] › e2e\dashboard-embedded.spec.ts:158:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › dashboard can be toggled open and closed 
+    [firefox] › e2e\monomind-detection.spec.ts:16:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario A: Project without .monomind/ › suggestion appears within 5 seconds for directory without monomind 
+    [firefox] › e2e\monomind-detection.spec.ts:36:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario A: Project without .monomind/ › suggestion displays "Install monomind?" message 
+    [firefox] › e2e\monomind-detection.spec.ts:47:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario B: Dismiss suggestion › dismissed suggestion does not reappear on reload 
+    [firefox] › e2e\smoke.spec.ts:11:3 › Web Client Smoke Tests › web client loads and connects to daemon 
+    [firefox] › e2e\smoke.spec.ts:46:3 › Web Client Smoke Tests › xterm.js terminal is initialized ─
+    [firefox] › e2e\smoke.spec.ts:62:3 › Web Client Smoke Tests › PWA manifest is loaded ───────────
+    [webkit] › e2e\dashboard-embedded.spec.ts:34:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › health check executes and displays result 
+    [webkit] › e2e\dashboard-embedded.spec.ts:51:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › one-click upgrade button present 
+    [webkit] › e2e\dashboard-embedded.spec.ts:158:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › dashboard can be toggled open and closed 
+    [webkit] › e2e\monomind-detection.spec.ts:16:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario A: Project without .monomind/ › suggestion appears within 5 seconds for directory without monomind 
+    [webkit] › e2e\monomind-detection.spec.ts:36:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario A: Project without .monomind/ › suggestion displays "Install monomind?" message 
+    [webkit] › e2e\monomind-detection.spec.ts:47:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario B: Dismiss suggestion › dismissed suggestion does not reappear on reload 
+    [webkit] › e2e\smoke.spec.ts:11:3 › Web Client Smoke Tests › web client loads and connects to daemon 
+    [webkit] › e2e\smoke.spec.ts:46:3 › Web Client Smoke Tests › xterm.js terminal is initialized ──
+    [mobile-chrome] › e2e\dashboard-embedded.spec.ts:34:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › health check executes and displays result 
+    [mobile-chrome] › e2e\dashboard-embedded.spec.ts:51:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › one-click upgrade button present 
+    [mobile-chrome] › e2e\dashboard-embedded.spec.ts:158:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › dashboard can be toggled open and closed 
+    [mobile-chrome] › e2e\monomind-detection.spec.ts:16:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario A: Project without .monomind/ › suggestion appears within 5 seconds for directory without monomind 
+    [mobile-chrome] › e2e\monomind-detection.spec.ts:36:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario A: Project without .monomind/ › suggestion displays "Install monomind?" message 
+    [mobile-chrome] › e2e\monomind-detection.spec.ts:47:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario B: Dismiss suggestion › dismissed suggestion does not reappear on reload 
+    [mobile-chrome] › e2e\smoke.spec.ts:11:3 › Web Client Smoke Tests › web client loads and connects to daemon 
+    [mobile-chrome] › e2e\smoke.spec.ts:46:3 › Web Client Smoke Tests › xterm.js terminal is initialized 
+    [mobile-safari] › e2e\dashboard-embedded.spec.ts:34:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › health check executes and displays result 
+    [mobile-safari] › e2e\dashboard-embedded.spec.ts:51:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › one-click upgrade button present 
+    [mobile-safari] › e2e\dashboard-embedded.spec.ts:158:3 › Phase 1 Criterion #4: Embedded Dashboard (No Separate Service) › dashboard can be toggled open and closed 
+    [mobile-safari] › e2e\monomind-detection.spec.ts:16:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario A: Project without .monomind/ › suggestion appears within 5 seconds for directory without monomind 
+    [mobile-safari] › e2e\monomind-detection.spec.ts:36:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario A: Project without .monomind/ › suggestion displays "Install monomind?" message 
+    [mobile-safari] › e2e\monomind-detection.spec.ts:47:5 › Phase 1 Criterion #3: Monomind Detection & Dismissal › Scenario B: Dismiss suggestion › dismissed suggestion does not reappear on reload 
+    [mobile-safari] › e2e\smoke.spec.ts:11:3 › Web Client Smoke Tests › web client loads and connects to daemon 
+    [mobile-safari] › e2e\smoke.spec.ts:46:3 › Web Client Smoke Tests › xterm.js terminal is initialized 
+  6 skipped
+  73 passed (11.3m)

@@ -3,14 +3,14 @@
 
 use anyhow::{Context, Result};
 use std::path::Path;
-use tracing::{info, warn, error};
+use tracing::{error, info, warn};
 
 /// Disk usage threshold levels
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DiskUsageLevel {
-    Normal,       // < 80%
-    Warning,      // 80-95%
-    Emergency,    // >= 95%
+    Normal,    // < 80%
+    Warning,   // 80-95%
+    Emergency, // >= 95%
 }
 
 /// Disk usage information
@@ -45,9 +45,7 @@ pub fn get_disk_usage(path: &Path) -> Result<DiskUsage> {
     use windows::Win32::Storage::FileSystem::GetDiskFreeSpaceExW;
 
     // Get the root path (drive letter)
-    let root = path.ancestors()
-        .last()
-        .context("Failed to get root path")?;
+    let root = path.ancestors().last().context("Failed to get root path")?;
 
     let mut root_str = root.as_os_str().to_os_string();
     root_str.push("\\");
@@ -95,8 +93,7 @@ pub fn get_disk_usage(path: &Path) -> Result<DiskUsage> {
 pub fn get_disk_usage(path: &Path) -> Result<DiskUsage> {
     use std::os::unix::fs::statvfs;
 
-    let stat = statvfs(path)
-        .context("Failed to get filesystem stats")?;
+    let stat = statvfs(path).context("Failed to get filesystem stats")?;
 
     let block_size = stat.f_bsize as u64;
     let total_bytes = stat.f_blocks as u64 * block_size;
@@ -126,7 +123,8 @@ pub fn check_disk_usage(path: &Path) -> Result<DiskUsage> {
 
     match usage.level {
         DiskUsageLevel::Normal => {
-            info!("Disk usage: {:.1}% ({} GB available)",
+            info!(
+                "Disk usage: {:.1}% ({} GB available)",
                 usage.usage_percent,
                 usage.available_bytes / (1024 * 1024 * 1024)
             );
@@ -138,7 +136,8 @@ pub fn check_disk_usage(path: &Path) -> Result<DiskUsage> {
             );
         }
         DiskUsageLevel::Emergency => {
-            error!("🚨 Disk usage EMERGENCY: {:.1}% ({} GB available) - Automatic purge recommended",
+            error!(
+                "🚨 Disk usage EMERGENCY: {:.1}% ({} GB available) - Automatic purge recommended",
                 usage.usage_percent,
                 usage.available_bytes / (1024 * 1024 * 1024)
             );
@@ -149,8 +148,14 @@ pub fn check_disk_usage(path: &Path) -> Result<DiskUsage> {
 }
 
 /// Emergency purge: delete old terminated sessions to free space
-pub fn emergency_purge_old_sessions(conn: &mut rusqlite::Connection, target_percent: f64) -> Result<u64> {
-    info!("Starting emergency purge of old sessions (target: {:.1}% usage)", target_percent);
+pub fn emergency_purge_old_sessions(
+    conn: &mut rusqlite::Connection,
+    target_percent: f64,
+) -> Result<u64> {
+    info!(
+        "Starting emergency purge of old sessions (target: {:.1}% usage)",
+        target_percent
+    );
 
     // Find old terminated sessions (oldest first)
     // Collect session IDs first, then delete (avoid borrow conflicts)
@@ -158,11 +163,10 @@ pub fn emergency_purge_old_sessions(conn: &mut rusqlite::Connection, target_perc
         let mut stmt = conn.prepare(
             "SELECT session_id FROM sessions
              WHERE status = 'TERMINATED'
-             ORDER BY last_accessed_at ASC"
+             ORDER BY last_accessed_at ASC",
         )?;
 
-        let ids: Result<Vec<String>, _> = stmt.query_map([], |row| row.get(0))?
-            .collect();
+        let ids: Result<Vec<String>, _> = stmt.query_map([], |row| row.get(0))?.collect();
         ids?
     }; // stmt dropped here, releasing immutable borrow
 
@@ -171,8 +175,7 @@ pub fn emergency_purge_old_sessions(conn: &mut rusqlite::Connection, target_perc
     let mut purged_count = 0u64;
 
     for session_id_str in session_ids {
-        let session_id = uuid::Uuid::parse_str(&session_id_str)
-            .context("Invalid session UUID")?;
+        let session_id = uuid::Uuid::parse_str(&session_id_str).context("Invalid session UUID")?;
 
         // Delete session and scrollback (now safe - no active immutable borrow)
         super::session::delete_session(conn, &session_id)?;
@@ -199,7 +202,10 @@ mod tests {
     fn test_disk_usage_levels() {
         assert_eq!(DiskUsage::level_from_percent(50.0), DiskUsageLevel::Normal);
         assert_eq!(DiskUsage::level_from_percent(85.0), DiskUsageLevel::Warning);
-        assert_eq!(DiskUsage::level_from_percent(96.0), DiskUsageLevel::Emergency);
+        assert_eq!(
+            DiskUsage::level_from_percent(96.0),
+            DiskUsageLevel::Emergency
+        );
     }
 
     #[test]

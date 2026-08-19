@@ -1,0 +1,2 @@
+# Keep this directory for TLS certificates
+# Actual certificates are ignored by .gitignore

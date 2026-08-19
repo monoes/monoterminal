@@ -1,4 +1,4 @@
-﻿//! End-to-End LAN Latency Benchmark
+//! End-to-End LAN Latency Benchmark
 //!
 //! Phase 1 Acceptance Criterion #5 Verification
 //! SRS Ãƒâ€šÃ‚Â§7.1: p95 < 10ms (Phase 1 gate), SRS Ãƒâ€šÃ‚Â§5.1.2: LAN p95 < 30ms
@@ -25,20 +25,21 @@
 //!   3. Stop: Save as tests/evidence/phase1/criterion-5-latency/lan_traffic.pcapng
 //!   4. Statistics ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Conversations ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ TCP ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ verify p95 < 10ms
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
-use std::time::{Duration, Instant};
-use tokio::runtime::Runtime;
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 use std::net::SocketAddr;
 use std::sync::Arc;
+use std::time::{Duration, Instant};
+use tokio::runtime::Runtime;
 
 // Server and auth components
-use monoterminal_master::{server::TlsConfig,
+use monoterminal_master::{
     auth::{AuthService, Ed25519AuthService, RateLimiter, UserId},
+    server::TlsConfig,
     server::{Server, ServerConfig},
     session::manager::SessionManager,
 };
 use tokio::sync::{broadcast, oneshot};
-use tracing::{info, debug, error, warn};
+use tracing::{debug, error, info, warn};
 
 // Protocol
 use monoterminal_protocol::Envelope;
@@ -52,7 +53,7 @@ use ws_client::TestWsClient;
 /// Benchmark configuration
 const SAMPLE_SIZE: usize = 10_000; // Per verification plan Ãƒâ€šÃ‚Â§3.5
 const WARMUP_TIME_SECS: u64 = 3;
-const MEASUREMENT_TIME_SECS: u64 = 30;  // 5 minutes / 10 = 30s per iteration
+const MEASUREMENT_TIME_SECS: u64 = 30; // 5 minutes / 10 = 30s per iteration
 
 // Defensive timeout configuration (prevents infinite hang during warmup)
 // Added 2026-08-17: Defense against warmup hang observed in short-test-retry-20260817-020224.log
@@ -67,7 +68,7 @@ fn get_sample_size() -> usize {
             eprintln!("⚠️  SHORT TEST MODE: Using 100 samples (set by LATENCY_SHORT_TEST=1)");
             100
         }
-        _ => SAMPLE_SIZE
+        _ => SAMPLE_SIZE,
     }
 }
 
@@ -95,8 +96,10 @@ fn bench_e2e_websocket_rtt(c: &mut Criterion) {
     group.warm_up_time(Duration::from_secs(WARMUP_TIME_SECS));
     group.measurement_time(Duration::from_secs(MEASUREMENT_TIME_SECS));
 
-    info!("📊 Benchmark configuration: {} samples, {}s warmup, {}s measurement",
-          sample_size, WARMUP_TIME_SECS, MEASUREMENT_TIME_SECS);
+    info!(
+        "📊 Benchmark configuration: {} samples, {}s warmup, {}s measurement",
+        sample_size, WARMUP_TIME_SECS, MEASUREMENT_TIME_SECS
+    );
 
     // Bind to actual network interface (not just 127.0.0.1)
     // For true LAN testing, use 0.0.0.0 and connect from another machine
@@ -116,10 +119,8 @@ fn bench_e2e_websocket_rtt(c: &mut Criterion) {
         let keypair = monoterminal_master::auth::Ed25519KeyPair::from_bytes(&[0x42; 32]);
 
         // 2. Create auth service
-        let auth_service = Arc::new(
-            Ed25519AuthService::new(&keypair)
-                .expect("Failed to create auth service")
-        );
+        let auth_service =
+            Arc::new(Ed25519AuthService::new(&keypair).expect("Failed to create auth service"));
 
         // 3. Create rate limiter
         let rate_limiter = Arc::new(RateLimiter::new());
@@ -158,12 +159,11 @@ fn bench_e2e_websocket_rtt(c: &mut Criterion) {
             auth_service.clone(),
             health_tx,
             startup_tx,
-        ).expect("Failed to create server");
+        )
+        .expect("Failed to create server");
 
         // 9. Spawn server in background
-        let server_handle = tokio::spawn(async move {
-            server.run().await
-        });
+        let server_handle = tokio::spawn(async move { server.run().await });
 
         // 10. Wait for server to successfully bind (with timeout)
         let bound_addr = match tokio::time::timeout(Duration::from_secs(5), startup_rx).await {
@@ -403,7 +403,7 @@ fn bench_e2e_concurrent_sessions(c: &mut Criterion) {
                         start.elapsed()
                     })
                 });
-            }
+            },
         );
     }
 
@@ -582,9 +582,9 @@ fn bench_latency_budget_breakdown(c: &mut Criterion) {
 
 /// Mock WebSocket echo server for baseline latency measurement
 async fn mock_websocket_echo_server(addr: SocketAddr) {
+    use futures_util::{SinkExt, StreamExt};
     use tokio::net::TcpListener;
     use tokio_tungstenite::accept_async;
-    use futures_util::{StreamExt, SinkExt};
 
     let listener = TcpListener::bind(addr).await.unwrap();
 
@@ -613,7 +613,10 @@ impl MockWebSocketClient {
         Ok(Self {})
     }
 
-    async fn measure_rtt_with_echo(&self, _data: Vec<u8>) -> Result<Duration, Box<dyn std::error::Error>> {
+    async fn measure_rtt_with_echo(
+        &self,
+        _data: Vec<u8>,
+    ) -> Result<Duration, Box<dyn std::error::Error>> {
         // TODO: Implement real RTT measurement
         // For now, return simulated latency
         Ok(Duration::from_micros(500)) // Simulated 0.5ms

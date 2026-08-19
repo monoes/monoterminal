@@ -29,8 +29,7 @@ use windows::Win32::System::Pipes::{CreatePipe, PeekNamedPipe};
 use windows::Win32::System::Threading::{
     CreateProcessW, InitializeProcThreadAttributeList, TerminateProcess, UpdateProcThreadAttribute,
     CREATE_UNICODE_ENVIRONMENT, EXTENDED_STARTUPINFO_PRESENT, LPPROC_THREAD_ATTRIBUTE_LIST,
-    PROCESS_INFORMATION, PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE, STARTF_USESTDHANDLES,
-    STARTUPINFOEXW,
+    PROCESS_INFORMATION, PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE, STARTF_USESTDHANDLES, STARTUPINFOEXW,
 };
 
 /// 4KB buffer size per SRS §3.1.4
@@ -132,32 +131,53 @@ impl tokio::io::AsyncRead for AsyncPipeReader {
         let peek_result = unsafe {
             PeekNamedPipe(
                 handle,
-                None,  // Don't read data, just check availability
-                0,     // No buffer
-                None,  // Don't need bytes read
-                Some(&mut bytes_available),  // Get bytes available
-                None,  // Don't need bytes left in message
+                None,                       // Don't read data, just check availability
+                0,                          // No buffer
+                None,                       // Don't need bytes read
+                Some(&mut bytes_available), // Get bytes available
+                None,                       // Don't need bytes left in message
             )
         };
+
+        // DIAGNOSTIC: Log PeekNamedPipe result
+        tracing::debug!(
+            "🔍 PeekNamedPipe: handle={:?}, result={:?}, bytes_available={}",
+            handle.0,
+            peek_result.is_ok(),
+            bytes_available
+        );
 
         match peek_result {
             Err(e) => {
                 let err_code = e.code().0;
+                tracing::warn!(
+                    "🔍 PeekNamedPipe ERROR: code={}, handle={:?}",
+                    err_code,
+                    handle.0
+                );
                 // ERROR_NO_DATA (232) or ERROR_PIPE_NOT_CONNECTED (233) = pipe closing
                 if err_code == 232 || err_code == 233 {
+                    tracing::debug!("🔍 Pipe closing (error {}), returning EOF", err_code);
                     return std::task::Poll::Ready(Ok(())); // EOF
                 } else {
-                    return std::task::Poll::Ready(Err(std::io::Error::from_raw_os_error(err_code)));
+                    return std::task::Poll::Ready(Err(std::io::Error::from_raw_os_error(
+                        err_code,
+                    )));
                 }
             }
             Ok(_) if bytes_available == 0 => {
                 // No data available yet - return Pending without blocking
                 // Register waker so tokio runtime polls this future again
+                tracing::trace!("🔍 No data available, returning Pending");
                 cx.waker().wake_by_ref();
                 return std::task::Poll::Pending;
             }
             Ok(_) => {
                 // Data available! Safe to call ReadFile (won't block)
+                tracing::info!(
+                    "🔍 DATA AVAILABLE: {} bytes ready to read!",
+                    bytes_available
+                );
             }
         }
 
@@ -172,12 +192,21 @@ impl tokio::io::AsyncRead for AsyncPipeReader {
         // Data is available - call ReadFile (won't block because we peeked first)
         let mut bytes_read: u32 = 0;
 
+        tracing::debug!("🔍 Calling ReadFile: buffer_size={}", buf_slice.len());
+
         // SAFETY: ReadFile is safe to call with valid handle and buffer
         // We know data is available from PeekNamedPipe, so this won't block
         let result = unsafe { ReadFile(handle, Some(buf_slice), Some(&mut bytes_read), None) };
 
+        tracing::info!(
+            "🔍 ReadFile RESULT: {:?}, bytes_read={}",
+            result.is_ok(),
+            bytes_read
+        );
+
         match result {
             Ok(_) if bytes_read > 0 => {
+                tracing::info!("🎉 READ SUCCESS: {} bytes read from ConPTY!", bytes_read);
                 unsafe { buf.assume_init(bytes_read as usize) };
                 buf.advance(bytes_read as usize);
                 std::task::Poll::Ready(Ok(()))
@@ -223,7 +252,7 @@ impl tokio::io::AsyncWrite for AsyncPipeWriter {
                 if err_code == 232 || err_code == 233 {
                     std::task::Poll::Ready(Err(std::io::Error::new(
                         std::io::ErrorKind::BrokenPipe,
-                        "PTY pipe closed"
+                        "PTY pipe closed",
                     )))
                 } else {
                     std::task::Poll::Ready(Err(std::io::Error::from_raw_os_error(err_code)))
@@ -274,6 +303,18 @@ impl PtyBackend for ConPtyBackend {
         let (input_read, input_write) = create_pipe()?;
         let (output_read, output_write) = create_pipe()?;
 
+        tracing::info!("🔍 PIPE HANDLES CREATED:");
+        tracing::info!(
+            "🔍   input_read={:?}, input_write={:?}",
+            input_read.0,
+            input_write.0
+        );
+        tracing::info!(
+            "🔍   output_read={:?}, output_write={:?}",
+            output_read.0,
+            output_write.0
+        );
+
         // Create pseudo-console
         let coord = COORD {
             X: config.cols as i16,
@@ -283,26 +324,94 @@ impl PtyBackend for ConPtyBackend {
         // SAFETY: CreatePseudoConsole is safe to call with valid handles and size.
         // The handles are owned by us and will be properly managed.
         // Note: API changed in windows crate 0.58+ - now returns HPCON directly
+        tracing::info!("🔍 Calling CreatePseudoConsole:");
+        tracing::info!(
+            "🔍   size={}x{}, input_read={:?}, output_write={:?}",
+            coord.X,
+            coord.Y,
+            input_read.0,
+            output_write.0
+        );
+
         let hpc = unsafe {
-            CreatePseudoConsole(coord, input_read, output_write, 0).map_err(|e| {
-                PtyError::CreateFailed(format!("CreatePseudoConsole failed: {}", e))
-            })?
+            CreatePseudoConsole(coord, input_read, output_write, 0)
+                .map_err(|e| PtyError::CreateFailed(format!("CreatePseudoConsole failed: {}", e)))?
         };
+
+        tracing::info!("🔍 CreatePseudoConsole SUCCESS, hpc={:?}", hpc.0);
+
+        // CRITICAL: Close the PTY-end handles after CreatePseudoConsole
+        // Per Microsoft ConPTY sample: CreatePseudoConsole duplicates the handles internally
+        // We must close our copies or ConPTY won't activate the pipes!
+        // See: https://github.com/microsoft/terminal/blob/main/samples/ConPTY/EchoCon/EchoCon/EchoCon.cpp#L123-125
+        unsafe {
+            tracing::info!(
+                "🔍 Closing PTY-end handles: input_read={:?}, output_write={:?}",
+                input_read.0,
+                output_write.0
+            );
+            let _ = CloseHandle(input_read);
+            let _ = CloseHandle(output_write);
+            tracing::info!("🔍 PTY-end handles closed - ConPTY now owns duplicates");
+        }
 
         // Spawn child process attached to ConPTY
         let (process_handle, shell_pid) = spawn_process(&hpc, &config)?;
 
-        // NOTE: Do NOT manually close input_read/output_write!
-        // CreatePseudoConsole takes ownership of these handles.
-        // They will be automatically closed when ClosePseudoConsole is called in Drop.
-        // Manually closing them here causes double-close → heap corruption.
-
         // Wrap pipe handles in async readers/writers
         // SAFETY: We're wrapping valid pipe handles for async I/O
-        let output_reader = BufReader::with_capacity(
-            PTY_BUFFER_SIZE,
-            unsafe { AsyncPipeReader::from_handle(output_read) },
+        tracing::info!("🔍 Wrapping pipe handles:");
+        tracing::info!("🔍   output_reader <- output_read={:?}", output_read.0);
+        tracing::info!("🔍   input_writer <- input_write={:?}", input_write.0);
+
+        // DIAGNOSTIC: Verify handle is valid before wrapping
+        tracing::info!(
+            "🔍 VALIDATION: output_read handle = {:?} (should read ConPTY output)",
+            output_read.0
         );
+        tracing::info!("🔍 VALIDATION: This is the CLIENT-END handle (we read, ConPTY writes)");
+
+        // CRITICAL DIAGNOSTIC: Try RAW synchronous ReadFile to see if data exists
+        // This tests if the pipe actually has data, bypassing all async machinery
+        use windows::Win32::Storage::FileSystem::ReadFile;
+        tracing::info!("🔍 RAW READ TEST: Attempting synchronous ReadFile for 100ms...");
+
+        // Give ping a moment to start and output
+        std::thread::sleep(std::time::Duration::from_millis(100));
+
+        let mut test_buffer = [0u8; 1024];
+        let mut bytes_read: u32 = 0;
+        let raw_read_result = unsafe {
+            ReadFile(
+                output_read,
+                Some(&mut test_buffer),
+                Some(&mut bytes_read),
+                None,
+            )
+        };
+
+        match raw_read_result {
+            Ok(_) if bytes_read > 0 => {
+                tracing::error!(
+                    "🎉🎉🎉 RAW READ SUCCESS: {} bytes! Data EXISTS! AsyncPipeReader is the bug!",
+                    bytes_read
+                );
+                tracing::error!(
+                    "🎉 First 100 bytes: {:?}",
+                    &test_buffer[..std::cmp::min(100, bytes_read as usize)]
+                );
+            }
+            Ok(_) => {
+                tracing::error!("🔍 RAW READ: 0 bytes (no data yet, but read succeeded)");
+            }
+            Err(e) => {
+                tracing::error!("🔍 RAW READ ERROR: {:?}", e);
+            }
+        }
+
+        let output_reader = BufReader::with_capacity(PTY_BUFFER_SIZE, unsafe {
+            AsyncPipeReader::from_handle(output_read)
+        });
 
         // Direct writer without buffering - immediate writes to ConPTY
         // BufWriter was causing flush() to block, preventing data delivery
@@ -323,7 +432,13 @@ impl PtyBackend for ConPtyBackend {
         tracing::info!("PTY backend: read() ENTRY, buffer size={}", buf.len());
         tracing::info!("PTY backend: About to call output_reader.read()");
         let result = self.output_reader.read(buf).await;
-        tracing::info!("PTY backend: output_reader.read() returned: {:?}", result.as_ref().map(|n| format!("{} bytes", n)).unwrap_or_else(|e| format!("Error: {}", e)));
+        tracing::info!(
+            "PTY backend: output_reader.read() returned: {:?}",
+            result
+                .as_ref()
+                .map(|n| format!("{} bytes", n))
+                .unwrap_or_else(|e| format!("Error: {}", e))
+        );
         result
     }
 
@@ -343,14 +458,13 @@ impl PtyBackend for ConPtyBackend {
         };
 
         // Get hpc handle, error if already consumed by terminate()
-        let hpc = self.hpc.ok_or_else(|| {
-            PtyError::ResizeFailed("PTY already terminated".to_string())
-        })?;
+        let hpc = self
+            .hpc
+            .ok_or_else(|| PtyError::ResizeFailed("PTY already terminated".to_string()))?;
 
         // SAFETY: ResizePseudoConsole is safe to call on a valid HPCON
         unsafe {
-            ResizePseudoConsole(hpc, coord)
-                .map_err(|e| PtyError::ResizeFailed(e.to_string()))?;
+            ResizePseudoConsole(hpc, coord).map_err(|e| PtyError::ResizeFailed(e.to_string()))?;
         }
 
         tracing::debug!("Resized ConPTY to {}x{}", cols, rows);
@@ -404,7 +518,10 @@ impl Drop for ConPtyBackend {
                 let _ = CloseHandle(process_handle);
             }
         } else {
-            tracing::debug!("Drop: ConPTY handles already cleaned up (terminate() called): pid={}", self.shell_pid);
+            tracing::debug!(
+                "Drop: ConPTY handles already cleaned up (terminate() called): pid={}",
+                self.shell_pid
+            );
         }
     }
 }
@@ -434,9 +551,8 @@ fn create_pipe() -> PtyResult<(HANDLE, HANDLE)> {
     // SAFETY: CreatePipe is safe to call with valid out-pointers.
     // We pass None for security attributes (default) and 0 for buffer size (default).
     unsafe {
-        CreatePipe(&mut read_handle, &mut write_handle, None, 0).map_err(|e| {
-            PtyError::CreateFailed(format!("CreatePipe failed: {}", e))
-        })?;
+        CreatePipe(&mut read_handle, &mut write_handle, None, 0)
+            .map_err(|e| PtyError::CreateFailed(format!("CreatePipe failed: {}", e)))?;
     }
 
     Ok((read_handle, write_handle))

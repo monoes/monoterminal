@@ -18,8 +18,8 @@
 // - User data: %LOCALAPPDATA%\MONOTERMINAL
 // - Logs: %LOCALAPPDATA%\MONOTERMINAL\logs
 
-use std::path::PathBuf;
 use std::env;
+use std::path::PathBuf;
 
 /// Get system-wide data directory
 ///
@@ -283,7 +283,10 @@ mod tests {
         assert_eq!(dir, PathBuf::from("/var/lib/monoterminal"));
 
         #[cfg(target_os = "macos")]
-        assert_eq!(dir, PathBuf::from("/Library/Application Support/MONOTERMINAL"));
+        assert_eq!(
+            dir,
+            PathBuf::from("/Library/Application Support/MONOTERMINAL")
+        );
 
         #[cfg(windows)]
         assert!(
@@ -295,7 +298,10 @@ mod tests {
     #[test]
     fn test_user_data_dir_returns_valid_path() {
         let dir = user_data_dir();
-        assert!(!dir.as_os_str().is_empty(), "user_data_dir should not be empty");
+        assert!(
+            !dir.as_os_str().is_empty(),
+            "user_data_dir should not be empty"
+        );
 
         #[cfg(target_os = "linux")]
         {
@@ -360,7 +366,10 @@ mod tests {
     #[test]
     fn test_session_db_path_returns_valid_path() {
         let path = session_db_path();
-        assert!(!path.as_os_str().is_empty(), "session_db_path should not be empty");
+        assert!(
+            !path.as_os_str().is_empty(),
+            "session_db_path should not be empty"
+        );
         assert!(
             path.ends_with("sessions.db"),
             "session_db_path should end with sessions.db"
@@ -376,7 +385,10 @@ mod tests {
 
         // Should create directory
         ensure_dir_exists(&temp_dir).expect("Failed to create directory");
-        assert!(temp_dir.exists(), "Directory should exist after ensure_dir_exists");
+        assert!(
+            temp_dir.exists(),
+            "Directory should exist after ensure_dir_exists"
+        );
 
         // Should not error if directory already exists
         ensure_dir_exists(&temp_dir).expect("Failed on existing directory");

@@ -1,0 +1,156 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu',
+    'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: #1e1e1e;
+  color: #d4d4d4;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+/* Header */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #2d2d2d;
+  border-bottom: 1px solid #3e3e3e;
+  height: 48px;
+  flex-shrink: 0;
+  padding: 0 16px;
+  position: relative;
+  z-index: 1000; /* Above panel (999) to prevent close button overlap */
+}
+
+.header-left h1 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+.header-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.header-right {
+  display: flex;
+  gap: 8px;
+}
+
+.panel-toggle-btn {
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: 1px solid #3e3e3e;
+  border-radius: 4px;
+  color: #d4d4d4;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.panel-toggle-btn:hover {
+  background: #3e3e3e;
+  color: #ffffff;
+}
+
+.panel-toggle-btn:active {
+  transform: scale(0.95);
+}
+
+/* Main content area */
+.app-main {
+  flex: 1;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+}
+
+.terminal-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: margin-right 0.3s ease;
+}
+
+.app-main.panel-open .terminal-container {
+  margin-right: 360px;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .header-left h1 {
+    font-size: 14px;
+  }
+
+  .app-main.panel-open .terminal-container {
+    margin-right: 0;
+  }
+
+  /* Account for mobile keyboard */
+  .app-main {
+    padding-bottom: 60px;
+  }
+}
+
+/* Tablet */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .app-main.panel-open .terminal-container {
+    margin-right: 320px;
+  }
+}
+
+/* Hide header on very small screens when keyboard is open */
+@media (max-height: 400px) {
+  .app-header {
+    display: none;
+  }
+}
+
+/* iOS Safari fixes */
+@supports (-webkit-touch-callout: none) {
+  .app {
+    height: -webkit-fill-available;
+  }
+}
+
+/* Prevent text selection on UI elements */
+button,
+.connection-status {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Ensure terminal text is selectable */
+.terminal-container {
+  user-select: text;
+  -webkit-user-select: text;
+}

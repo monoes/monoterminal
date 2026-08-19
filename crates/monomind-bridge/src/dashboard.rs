@@ -170,10 +170,12 @@ impl MemoryStats {
 /// use monoterminal_monomind_bridge::get_dashboard_data;
 /// use std::path::Path;
 ///
+/// # async fn example() -> anyhow::Result<()> {
 /// let data = get_dashboard_data(Path::new("/project")).await?;
 /// println!("Org running: {}", data.org_status.running);
 /// println!("Active agents: {}", data.agents.len());
-/// # Ok::<(), anyhow::Error>(())
+/// # Ok(())
+/// # }
 /// ```
 pub async fn get_dashboard_data(project_dir: &Path) -> Result<DashboardData> {
     tracing::debug!(
@@ -261,7 +263,11 @@ async fn get_org_status(project_dir: &Path) -> Result<OrgStatus> {
             },
         }),
         Err(e) => {
-            tracing::debug!("Failed to parse org status JSON: {}. Raw output: {}", e, stdout);
+            tracing::debug!(
+                "Failed to parse org status JSON: {}. Raw output: {}",
+                e,
+                stdout
+            );
             Ok(OrgStatus::not_configured())
         }
     }
@@ -316,7 +322,11 @@ async fn get_agent_list(project_dir: &Path) -> Result<Vec<AgentInfo>> {
             })
             .collect()),
         Err(e) => {
-            tracing::debug!("Failed to parse agent list JSON: {}. Raw output: {}", e, stdout);
+            tracing::debug!(
+                "Failed to parse agent list JSON: {}. Raw output: {}",
+                e,
+                stdout
+            );
             Ok(vec![])
         }
     }
@@ -374,7 +384,11 @@ async fn get_run_history(project_dir: &Path) -> Result<Vec<RunInfo>> {
             })
             .collect()),
         Err(e) => {
-            tracing::debug!("Failed to parse run history JSON: {}. Raw output: {}", e, stdout);
+            tracing::debug!(
+                "Failed to parse run history JSON: {}. Raw output: {}",
+                e,
+                stdout
+            );
             Ok(vec![])
         }
     }
@@ -423,7 +437,11 @@ async fn get_memory_stats(project_dir: &Path) -> Result<MemoryStats> {
             db_size_bytes: stats.db_size_bytes.unwrap_or(0),
         }),
         Err(e) => {
-            tracing::debug!("Failed to parse memory stats JSON: {}. Raw output: {}", e, stdout);
+            tracing::debug!(
+                "Failed to parse memory stats JSON: {}. Raw output: {}",
+                e,
+                stdout
+            );
             Ok(MemoryStats::empty())
         }
     }
@@ -443,12 +461,7 @@ mod tests {
 
     #[test]
     fn test_org_status_running() {
-        let status = OrgStatus::running(
-            "test-org".to_string(),
-            "run-123".to_string(),
-            5,
-            10,
-        );
+        let status = OrgStatus::running("test-org".to_string(), "run-123".to_string(), 5, 10);
         assert!(status.running);
         assert_eq!(status.name, Some("test-org".to_string()));
         assert_eq!(status.run_id, Some("run-123".to_string()));

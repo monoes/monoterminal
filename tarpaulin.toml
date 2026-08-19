@@ -1,0 +1,56 @@
+# Cargo Tarpaulin Configuration for MONOTERMINAL
+# Phase 1: Windows + Web MVP
+# Coverage Target: 70% minimum (SRS §7.1)
+
+[run]
+timeout = "300s"
+follow-exec = true
+# post-test-delay removed - incompatible format
+engine = "Llvm"  # Better Windows support than ptrace
+
+[html]
+output-dir = "coverage/html"
+
+[xml]
+output-dir = "coverage"
+
+[json]
+output-dir = "coverage"
+
+[coverage]
+exclude = [
+    # Generated Protocol Buffers code
+    "crates/protocol/src/generated/*",
+
+    # Test code
+    "crates/*/tests/*",
+    "crates/*/benches/*",
+
+    # Build scripts
+    "crates/*/build.rs",
+
+    # Examples
+    "crates/*/examples/*",
+
+    # Main entry points (thin wrappers)
+    "crates/master/src/main.rs",
+]
+
+exclude-files = [
+    "*/tests/*",
+    "*/benches/*",
+    "**/generated/*",
+]
+
+[report]
+# Generate multiple formats for different consumers
+out = ["Html", "Xml", "Json", "Lcov"]
+
+# Workspace-aware coverage
+all-features = true
+workspace = true
+
+[thresholds]
+# Enforce 70% minimum coverage
+line = 70.0
+branch = 65.0  # Slightly lower for branch coverage

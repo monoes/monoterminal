@@ -10,7 +10,7 @@
 
 #![cfg(unix)]
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId, Throughput};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use monoterminal_master::pty::{PtyBackend, PtyConfig, UnixPtyBackend};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -99,24 +99,18 @@ fn bench_write_throughput(c: &mut Criterion) {
         environment: HashMap::new(),
     };
 
-    let mut pty = runtime.block_on(async {
-        UnixPtyBackend::create(config).await.unwrap()
-    });
+    let mut pty = runtime.block_on(async { UnixPtyBackend::create(config).await.unwrap() });
 
     // Test different write sizes
     for size in [64, 256, 1024, 4096].iter() {
         let data = vec![b'A'; *size];
 
         group.throughput(Throughput::Bytes(*size as u64));
-        group.bench_with_input(
-            BenchmarkId::from_parameter(size),
-            &data,
-            |b, data| {
-                b.to_async(&runtime).iter(|| async {
-                    pty.write(black_box(data)).await.unwrap();
-                })
-            },
-        );
+        group.bench_with_input(BenchmarkId::from_parameter(size), &data, |b, data| {
+            b.to_async(&runtime).iter(|| async {
+                pty.write(black_box(data)).await.unwrap();
+            })
+        });
     }
 
     group.finish();
@@ -138,9 +132,7 @@ fn bench_resize_latency(c: &mut Criterion) {
         environment: HashMap::new(),
     };
 
-    let mut pty = runtime.block_on(async {
-        UnixPtyBackend::create(config).await.unwrap()
-    });
+    let mut pty = runtime.block_on(async { UnixPtyBackend::create(config).await.unwrap() });
 
     group.bench_function("resize", |b| {
         let mut rows = 24u16;
@@ -173,9 +165,7 @@ fn bench_concurrent_operations(c: &mut Criterion) {
         environment: HashMap::new(),
     };
 
-    let mut pty = runtime.block_on(async {
-        UnixPtyBackend::create(config).await.unwrap()
-    });
+    let mut pty = runtime.block_on(async { UnixPtyBackend::create(config).await.unwrap() });
 
     group.bench_function("write_and_resize", |b| {
         let mut rows = 24u16;
@@ -208,26 +198,22 @@ fn bench_shell_spawn_overhead(c: &mut Criterion) {
             continue;
         }
 
-        group.bench_with_input(
-            BenchmarkId::from_parameter(shell),
-            shell,
-            |b, shell| {
-                b.to_async(&runtime).iter(|| async {
-                    let config = PtyConfig {
-                        rows: 24,
-                        cols: 80,
-                        shell: shell.to_string(),
-                        working_dir: PathBuf::from("/tmp"),
-                        environment: HashMap::new(),
-                    };
+        group.bench_with_input(BenchmarkId::from_parameter(shell), shell, |b, shell| {
+            b.to_async(&runtime).iter(|| async {
+                let config = PtyConfig {
+                    rows: 24,
+                    cols: 80,
+                    shell: shell.to_string(),
+                    working_dir: PathBuf::from("/tmp"),
+                    environment: HashMap::new(),
+                };
 
-                    let pty = UnixPtyBackend::create(config).await.unwrap();
+                let pty = UnixPtyBackend::create(config).await.unwrap();
 
-                    // Immediately terminate to measure spawn overhead only
-                    Box::new(pty).terminate().await.unwrap();
-                })
-            },
-        );
+                // Immediately terminate to measure spawn overhead only
+                Box::new(pty).terminate().await.unwrap();
+            })
+        });
     }
 
     group.finish();

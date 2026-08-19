@@ -24,7 +24,7 @@ pub enum AuditEvent {
     },
     Input {
         session_id: Uuid,
-        data_length: usize,  // NOT raw input (privacy)
+        data_length: usize, // NOT raw input (privacy)
     },
     SessionTerminate {
         session_id: Uuid,
@@ -98,21 +98,23 @@ pub fn query_session_audit_logs(
          FROM audit_logs
          WHERE session_id = ?1
          ORDER BY timestamp DESC
-         LIMIT ?2"
+         LIMIT ?2",
     )?;
 
-    let logs = stmt.query_map(params![session_id.to_string(), limit], |row| {
-        Ok(AuditLogEntry {
-            id: row.get(0)?,
-            timestamp: row.get(1)?,
-            event_type: row.get(2)?,
-            session_id: Uuid::parse_str(&row.get::<_, String>(3)?).unwrap(),
-            user_id: row.get(4)?,
-            client_id: row.get(5)?,
-            ip_address: row.get(6)?,
-            payload: row.get(7)?,
-        })
-    })?.collect::<Result<Vec<_>, _>>()?;
+    let logs = stmt
+        .query_map(params![session_id.to_string(), limit], |row| {
+            Ok(AuditLogEntry {
+                id: row.get(0)?,
+                timestamp: row.get(1)?,
+                event_type: row.get(2)?,
+                session_id: Uuid::parse_str(&row.get::<_, String>(3)?).unwrap(),
+                user_id: row.get(4)?,
+                client_id: row.get(5)?,
+                ip_address: row.get(6)?,
+                payload: row.get(7)?,
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(logs)
 }
@@ -128,21 +130,23 @@ pub fn query_user_audit_logs(
          FROM audit_logs
          WHERE user_id = ?1
          ORDER BY timestamp DESC
-         LIMIT ?2"
+         LIMIT ?2",
     )?;
 
-    let logs = stmt.query_map(params![user_id, limit], |row| {
-        Ok(AuditLogEntry {
-            id: row.get(0)?,
-            timestamp: row.get(1)?,
-            event_type: row.get(2)?,
-            session_id: Uuid::parse_str(&row.get::<_, String>(3)?).unwrap(),
-            user_id: row.get(4)?,
-            client_id: row.get(5)?,
-            ip_address: row.get(6)?,
-            payload: row.get(7)?,
-        })
-    })?.collect::<Result<Vec<_>, _>>()?;
+    let logs = stmt
+        .query_map(params![user_id, limit], |row| {
+            Ok(AuditLogEntry {
+                id: row.get(0)?,
+                timestamp: row.get(1)?,
+                event_type: row.get(2)?,
+                session_id: Uuid::parse_str(&row.get::<_, String>(3)?).unwrap(),
+                user_id: row.get(4)?,
+                client_id: row.get(5)?,
+                ip_address: row.get(6)?,
+                payload: row.get(7)?,
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(logs)
 }
@@ -156,17 +160,17 @@ pub fn delete_old_audit_logs(conn: &Connection, retention_days: i64) -> Result<u
         params![format!("-{} days", retention_days)],
     )?;
 
-    tracing::info!("Deleted {} old audit log entries (retention: {} days)", deleted, retention_days);
+    tracing::info!(
+        "Deleted {} old audit log entries (retention: {} days)",
+        deleted,
+        retention_days
+    );
     Ok(deleted as u64)
 }
 
 /// Get audit log count
 pub fn count_audit_logs(conn: &Connection) -> Result<u64> {
-    let count: i64 = conn.query_row(
-        "SELECT COUNT(*) FROM audit_logs",
-        [],
-        |row| row.get(0),
-    )?;
+    let count: i64 = conn.query_row("SELECT COUNT(*) FROM audit_logs", [], |row| row.get(0))?;
     Ok(count as u64)
 }
 
@@ -252,7 +256,7 @@ mod tests {
         let session_id = Uuid::new_v4();
         let event = AuditEvent::Input {
             session_id,
-            data_length: 100,  // Only length, not data
+            data_length: 100, // Only length, not data
         };
 
         let json = serde_json::to_string(&event).unwrap();

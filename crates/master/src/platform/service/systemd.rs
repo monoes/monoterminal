@@ -48,7 +48,10 @@ pub fn install_service() -> Result<()> {
 
     // 1. Check if already installed
     if Path::new(UNIT_FILE_PATH).exists() {
-        bail!("Service already installed at {}. Uninstall first or use --force.", UNIT_FILE_PATH);
+        bail!(
+            "Service already installed at {}. Uninstall first or use --force.",
+            UNIT_FILE_PATH
+        );
     }
 
     // 2. Copy binary to system location
@@ -109,8 +112,7 @@ pub fn uninstall_service() -> Result<()> {
 
     // 3. Remove unit file
     if Path::new(UNIT_FILE_PATH).exists() {
-        fs::remove_file(UNIT_FILE_PATH)
-            .context("Failed to remove unit file")?;
+        fs::remove_file(UNIT_FILE_PATH).context("Failed to remove unit file")?;
         tracing::info!("Removed unit file: {}", UNIT_FILE_PATH);
     }
 
@@ -119,8 +121,7 @@ pub fn uninstall_service() -> Result<()> {
 
     // 5. Remove binary
     if Path::new(BINARY_PATH).exists() {
-        fs::remove_file(BINARY_PATH)
-            .context("Failed to remove binary")?;
+        fs::remove_file(BINARY_PATH).context("Failed to remove binary")?;
         tracing::info!("Removed binary: {}", BINARY_PATH);
     }
 
@@ -172,7 +173,11 @@ pub fn service_status() -> Result<ServiceStatus> {
     };
 
     let message = if running {
-        format!("Service is running (PID: {})", pid.map(|p| p.to_string()).unwrap_or_else(|| "unknown".to_string()))
+        format!(
+            "Service is running (PID: {})",
+            pid.map(|p| p.to_string())
+                .unwrap_or_else(|| "unknown".to_string())
+        )
     } else if installed {
         "Service is installed but not running".to_string()
     } else {
@@ -191,14 +196,16 @@ pub fn service_status() -> Result<ServiceStatus> {
 /// Install binary to system location
 fn install_binary() -> Result<()> {
     // Get current executable path
-    let current_exe = std::env::current_exe()
-        .context("Failed to get current executable path")?;
+    let current_exe = std::env::current_exe().context("Failed to get current executable path")?;
 
-    tracing::info!("Copying binary: {} -> {}", current_exe.display(), BINARY_PATH);
+    tracing::info!(
+        "Copying binary: {} -> {}",
+        current_exe.display(),
+        BINARY_PATH
+    );
 
     // Copy binary
-    fs::copy(&current_exe, BINARY_PATH)
-        .context("Failed to copy binary to /usr/local/bin")?;
+    fs::copy(&current_exe, BINARY_PATH).context("Failed to copy binary to /usr/local/bin")?;
 
     // Set executable permissions
     #[cfg(unix)]
@@ -218,9 +225,7 @@ fn create_service_user() -> Result<()> {
     tracing::info!("Creating service user: {}", SERVICE_USER);
 
     // Check if user already exists
-    let check = Command::new("id")
-        .arg(SERVICE_USER)
-        .output();
+    let check = Command::new("id").arg(SERVICE_USER).output();
 
     if check.is_ok() && check.unwrap().status.success() {
         tracing::info!("Service user already exists: {}", SERVICE_USER);
@@ -230,10 +235,12 @@ fn create_service_user() -> Result<()> {
     // Create system user with useradd
     let status = Command::new("useradd")
         .args(&[
-            "--system",           // System user (UID < 1000)
-            "--no-create-home",   // No home directory
-            "--shell", "/usr/sbin/nologin",  // No login shell
-            "--comment", "MONOTERMINAL master daemon",
+            "--system",         // System user (UID < 1000)
+            "--no-create-home", // No home directory
+            "--shell",
+            "/usr/sbin/nologin", // No login shell
+            "--comment",
+            "MONOTERMINAL master daemon",
             SERVICE_USER,
         ])
         .status()
@@ -256,10 +263,8 @@ fn create_directories() -> Result<()> {
     tracing::info!("Creating log directory: {}", log_dir_path.display());
 
     // Create directories
-    fs::create_dir_all(&data_dir_path)
-        .context("Failed to create data directory")?;
-    fs::create_dir_all(&log_dir_path)
-        .context("Failed to create log directory")?;
+    fs::create_dir_all(&data_dir_path).context("Failed to create data directory")?;
+    fs::create_dir_all(&log_dir_path).context("Failed to create log directory")?;
 
     // Set ownership to service user
     set_directory_owner(&data_dir_path, SERVICE_USER, SERVICE_GROUP)?;
@@ -304,8 +309,7 @@ fn install_unit_file() -> Result<()> {
     let unit_content = generate_unit_file();
 
     // Write unit file
-    let mut file = fs::File::create(UNIT_FILE_PATH)
-        .context("Failed to create unit file")?;
+    let mut file = fs::File::create(UNIT_FILE_PATH).context("Failed to create unit file")?;
     file.write_all(unit_content.as_bytes())
         .context("Failed to write unit file")?;
 
@@ -332,7 +336,8 @@ fn generate_unit_file() -> String {
     let data_dir_path = data_dir();
     let log_dir_path = log_dir();
 
-    format!(r#"[Unit]
+    format!(
+        r#"[Unit]
 Description=MONOTERMINAL Master Daemon
 Documentation=https://github.com/monoterminal/monoterminal
 After=network.target
@@ -484,9 +489,7 @@ fn get_service_pid() -> Result<u32> {
         .strip_prefix("MainPID=")
         .ok_or_else(|| anyhow::anyhow!("Failed to parse MainPID"))?;
 
-    let pid: u32 = pid_str
-        .parse()
-        .context("Failed to parse PID as number")?;
+    let pid: u32 = pid_str.parse().context("Failed to parse PID as number")?;
 
     Ok(pid)
 }

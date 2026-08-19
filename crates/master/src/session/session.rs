@@ -1,13 +1,13 @@
 // Core Session types
 // SRS §2.1.3: Session lifecycle, state machine, in-memory scrollback
 
+use super::scrollback::RingBuffer;
 use std::path::PathBuf;
-use std::time::Instant;
 use std::sync::Arc;
-use uuid::Uuid;
+use std::time::Instant;
 use tokio::sync::{mpsc, Mutex, RwLock};
 use tokio_util::task::AbortOnDrop;
-use super::scrollback::RingBuffer;
+use uuid::Uuid;
 
 /// Session identifier (UUID v4)
 pub type SessionId = Uuid;
@@ -122,7 +122,6 @@ pub struct Session {
 
     /// Monomind detection flag (SRS §2.4.1)
     pub monomind_detected: bool,
-
     // NOTE: AbortOnDrop pattern moved to SessionContainer (Aug 2026)
     // Task JoinHandles stored in SessionContainer (output_task, monomind_task)
     // SessionContainer::Drop aborts tasks to prevent memory leaks
@@ -200,12 +199,17 @@ impl Drop for Session {
 impl Drop for SessionContainer {
     fn drop(&mut self) {
         // Get session id for logging (may fail if session lock is poisoned)
-        let session_id = self.session.try_read()
+        let session_id = self
+            .session
+            .try_read()
             .ok()
             .map(|s| s.id.to_string())
             .unwrap_or_else(|| "unknown".to_string());
 
-        tracing::info!("🔴 DROP: SessionContainer dropping for session {} - ABORTING TASKS", session_id);
+        tracing::info!(
+            "🔴 DROP: SessionContainer dropping for session {} - ABORTING TASKS",
+            session_id
+        );
 
         // CRITICAL: Abort background tasks to release Arc references immediately
         // Without this, tasks hold Arc<Session> and Arc<Pty> until natural EOF,
@@ -224,7 +228,10 @@ impl Drop for SessionContainer {
             }
         }
 
-        tracing::info!("🔴 DROP: SessionContainer dropped for session {} - tasks aborted", session_id);
+        tracing::info!(
+            "🔴 DROP: SessionContainer dropped for session {} - tasks aborted",
+            session_id
+        );
     }
 }
 
@@ -272,7 +279,10 @@ impl SessionContainer {
                 s.id
             };
 
-            tracing::info!("SessionContainer terminating PTY for session {}", session_id);
+            tracing::info!(
+                "SessionContainer terminating PTY for session {}",
+                session_id
+            );
 
             // Mark session as terminated
             {
@@ -284,11 +294,14 @@ impl SessionContainer {
             drop(pty_guard);
 
             // Call PTY terminate - consumes the Box<dyn PtyBackend>
-            pty.terminate().await.map_err(|e| {
-                std::io::Error::new(std::io::ErrorKind::Other, e.to_string())
-            })?;
+            pty.terminate()
+                .await
+                .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?;
 
-            tracing::info!("SessionContainer PTY terminated successfully for session {}", session_id);
+            tracing::info!(
+                "SessionContainer PTY terminated successfully for session {}",
+                session_id
+            );
         } else {
             tracing::warn!("SessionContainer terminate_pty called but PTY already None");
         }

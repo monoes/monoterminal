@@ -1,4 +1,4 @@
-﻿// JWT management with Ed25519 signing
+// JWT management with Ed25519 signing
 // SRS §3.2.2: Access (15min) + Refresh (30d) with rotation
 // ADR-007: EdDSA Algorithm for Phase 1 Authentication
 
@@ -12,8 +12,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Clone)]
 pub struct TokenPair {
-    pub access: String,  
-    pub refresh: String, 
+    pub access: String,
+    pub refresh: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -59,7 +59,7 @@ impl JwtService {
             exp: now + 900,
             iat: now,
             scope: "session:attach session:create input:write".into(),
-            jti: Some(gen_jti()),  // Each access token unique for revocation
+            jti: Some(gen_jti()), // Each access token unique for revocation
         };
         let refresh = Claims {
             sub: user_id.0.clone(),

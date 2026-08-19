@@ -1,0 +1,1726 @@
+﻿cargo : warning: unused import: `std::sync::Arc`
+At line:1 char:355
++ ... $env:PATH"; cargo test --workspace --all-features --no-run 2>&1 | Out ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (warning: unused import: `std::sync::Arc`:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+ --> crates\master\src\server\connection.rs:4:5
+  |
+4 | use std::sync::Arc;
+  |     ^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `rustls::server::AllowAnyAuthenticatedClient`
+ --> crates\master\src\server\tls.rs:5:5
+  |
+5 | use rustls::server::AllowAnyAuthenticatedClient;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::path::PathBuf`
+ --> crates\master\src\server\handler.rs:8:5
+  |
+8 | use std::path::PathBuf;
+  |     ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `anyhow`
+ --> crates\master\src\auth\rate_limit.rs:4:14
+  |
+4 | use anyhow::{anyhow, Result};
+  |              ^^^^^^
+
+warning: unused import: `std::time::Instant`
+  --> crates\master\src\auth\mod.rs:10:5
+   |
+10 | use std::time::Instant;
+   |     ^^^^^^^^^^^^^^^^^^
+
+warning: unused variable: `session_id`
+   --> crates\master\src\session\manager.rs:412:35
+    |
+412 |     pub fn get_session_cwd(&self, session_id: SessionId) -> Option<PathBuf> {
+    |                                   ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: 
+`_session_id`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `buf_ptr`
+   --> crates\master\src\pty\conpty.rs:108:14
+    |
+108 |         let (buf_ptr, buf_len, buf_slice) = unsafe {
+    |              ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_buf_ptr`
+
+warning: unused variable: `buf_len`
+   --> crates\master\src\pty\conpty.rs:108:23
+    |
+108 |         let (buf_ptr, buf_len, buf_slice) = unsafe {
+    |                       ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_buf_len`
+
+warning: unused variable: `now`
+   --> crates\master\src\auth\rate_limit.rs:204:13
+    |
+204 |         let now = Instant::now();
+    |             ^^^ help: if this is intentional, prefix it with an underscore: `_now`
+
+warning: field `health_tx` is never read
+  --> crates\master\src\server\mod.rs:59:5
+   |
+53 | pub struct Server {
+   |            ------ field in this struct
+...
+59 |     health_tx: broadcast::Sender<HealthStatus>,
+   |     ^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `monoterminal-master` (lib) generated 10 warnings (run `cargo fix --lib -p monoterminal-master` to apply 9 
+suggestions)
+warning: unused import: `anyhow`
+ --> crates\master\src\auth\rate_limit.rs:4:14
+  |
+4 | use anyhow::{anyhow, Result};
+  |              ^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `manager::SessionManager`
+  --> crates\master\src\session\mod.rs:10:9
+   |
+10 | pub use manager::SessionManager;
+   |         ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::sync::Arc`
+ --> crates\master\src\server\connection.rs:4:5
+  |
+4 | use std::sync::Arc;
+  |     ^^^^^^^^^^^^^^
+
+warning: unused imports: `GlyphCache`, `GlyphInfo`, and `GlyphKey`
+  --> crates\master\src\ui\fonts.rs:52:30
+   |
+52 | pub use super::glyph_cache::{GlyphCache, GlyphInfo, GlyphKey};
+   |                              ^^^^^^^^^^  ^^^^^^^^^  ^^^^^^^^
+
+warning: unused import: `Color`
+ --> crates\master\src\ui\glyph_cache.rs:7:35
+  |
+7 | use super::vt_parser::{CellStyle, Color};
+  |                                   ^^^^^
+
+warning: unused import: `Duration`
+  --> crates\master\src\ui\performance.rs:12:17
+   |
+12 | use std::time::{Duration, Instant};
+   |                 ^^^^^^^^
+
+warning: unused import: `Color`
+ --> crates\master\src\ui\terminal_grid.rs:6:35
+  |
+6 | use super::vt_parser::{CellStyle, Color, GridChange};
+  |                                   ^^^^^
+
+warning: unused import: `bytes::Bytes`
+ --> crates\master\src\ui\vt_parser.rs:7:5
+  |
+7 | use bytes::Bytes;
+  |     ^^^^^^^^^^^^
+
+warning: unused import: `ControlFlow`
+  --> crates\master\src\ui\window.rs:10:35
+   |
+10 |     event_loop::{ActiveEventLoop, ControlFlow, EventLoop},
+   |                                   ^^^^^^^^^^^
+
+warning: unused import: `std::sync::Arc`
+  --> crates\master\src\ui\mod.rs:30:5
+   |
+30 | use std::sync::Arc;
+   |     ^^^^^^^^^^^^^^
+
+warning: unused variable: `now`
+   --> crates\master\src\auth\rate_limit.rs:204:13
+    |
+204 |         let now = Instant::now();
+    |             ^^^ help: if this is intentional, prefix it with an underscore: `_now`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `session_id`
+   --> crates\master\src\session\manager.rs:412:35
+    |
+412 |     pub fn get_session_cwd(&self, session_id: SessionId) -> Option<PathBuf> {
+    |                                   ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: 
+`_session_id`
+
+warning: struct `UserId` is never constructed
+  --> crates\master\src\auth\mod.rs:21:12
+   |
+21 | pub struct UserId(pub String);
+   |            ^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: type alias `PublicKey` is never used
+  --> crates\master\src\auth\mod.rs:42:10
+   |
+42 | pub type PublicKey = [u8; 32];
+   |          ^^^^^^^^^
+
+warning: type alias `Signature` is never used
+  --> crates\master\src\auth\mod.rs:45:10
+   |
+45 | pub type Signature = [u8; 64];
+   |          ^^^^^^^^^
+
+warning: methods `create_challenge`, `verify_challenge_response`, `issue_tokens`, and `refresh_access` are never used
+  --> crates\master\src\auth\mod.rs:53:8
+   |
+51 | pub trait AuthService: Send + Sync {
+   |           ----------- methods in this trait
+52 |     /// Generate challenge for client
+53 |     fn create_challenge(&self) -> Challenge;
+   |        ^^^^^^^^^^^^^^^^
+...
+56 |     fn verify_challenge_response(
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+64 |     fn issue_tokens(&self, user_id: &UserId) -> Result<TokenPair>;
+   |        ^^^^^^^^^^^^
+...
+70 |     fn refresh_access(&self, refresh: &str) -> Result<TokenPair>;
+   |        ^^^^^^^^^^^^^^
+
+warning: field `challenge_handler` is never read
+  --> crates\master\src\auth\mod.rs:77:5
+   |
+76 | pub struct Ed25519AuthService {
+   |            ------------------ field in this struct
+77 |     challenge_handler: Ed25519ChallengeHandler,
+   |     ^^^^^^^^^^^^^^^^^
+
+warning: struct `Challenge` is never constructed
+  --> crates\master\src\auth\challenge.rs:12:12
+   |
+12 | pub struct Challenge {
+   |            ^^^^^^^^^
+
+warning: methods `is_expired` and `time_remaining` are never used
+  --> crates\master\src\auth\challenge.rs:19:12
+   |
+17 | impl Challenge {
+   | -------------- methods in this implementation
+18 |     /// Check if challenge has expired
+19 |     pub fn is_expired(&self) -> bool {
+   |            ^^^^^^^^^^
+...
+24 |     pub fn time_remaining(&self) -> Option<Duration> {
+   |            ^^^^^^^^^^^^^^
+
+warning: field `challenge_ttl` is never read
+  --> crates\master\src\auth\challenge.rs:31:5
+   |
+30 | pub struct Ed25519ChallengeHandler {
+   |            ----------------------- field in this struct
+31 |     challenge_ttl: Duration,
+   |     ^^^^^^^^^^^^^
+
+warning: associated items `with_ttl`, `create_challenge`, and `verify_challenge_response` are never used
+  --> crates\master\src\auth\challenge.rs:43:12
+   |
+34 | impl Ed25519ChallengeHandler {
+   | ---------------------------- associated items in this implementation
+...
+43 |     pub fn with_ttl(ttl: Duration) -> Self {
+   |            ^^^^^^^^
+...
+48 |     pub fn create_challenge(&self) -> Challenge {
+   |            ^^^^^^^^^^^^^^^^
+...
+68 |     pub fn verify_challenge_response(
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `derive_user_id_from_pubkey` is never used
+   --> crates\master\src\auth\challenge.rs:109:4
+    |
+109 | fn derive_user_id_from_pubkey(public_key: &PublicKey) -> UserId {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `TokenPair` is never constructed
+  --> crates\master\src\auth\jwt.rs:13:12
+   |
+13 | pub struct TokenPair {
+   |            ^^^^^^^^^
+
+warning: fields `enc` and `used` are never read
+  --> crates\master\src\auth\jwt.rs:30:5
+   |
+29 | pub struct JwtService {
+   |            ---------- fields in this struct
+30 |     enc: EncodingKey,
+   |     ^^^
+...
+33 |     used: Arc<Mutex<HashSet<String>>>,
+   |     ^^^^
+
+warning: methods `issue_tokens`, `refresh_access_token`, and `build` are never used
+   --> crates\master\src\auth\jwt.rs:51:12
+    |
+ 36 | impl JwtService {
+    | --------------- methods in this implementation
+...
+ 51 |     pub fn issue_tokens(&self, user_id: &UserId) -> Result<TokenPair> {
+    |            ^^^^^^^^^^^^
+...
+ 86 |     pub fn refresh_access_token(&self, tok: &str) -> Result<TokenPair> {
+    |            ^^^^^^^^^^^^^^^^^^^^
+...
+102 |     fn build(&self, c: &Claims) -> Result<String> {
+    |        ^^^^^
+
+warning: function `timestamp` is never used
+   --> crates\master\src\auth\jwt.rs:121:4
+    |
+121 | fn timestamp() -> i64 {
+    |    ^^^^^^^^^
+
+warning: function `gen_jti` is never used
+   --> crates\master\src\auth\jwt.rs:128:4
+    |
+128 | fn gen_jti() -> String {
+    |    ^^^^^^^
+
+warning: variant `Banned` is never constructed
+  --> crates\master\src\auth\rate_limit.rs:17:5
+   |
+12 | pub enum RateLimitError {
+   |          -------------- variant in this enum
+...
+17 |     Banned(Instant),
+   |     ^^^^^^
+   |
+   = note: `RateLimitError` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead 
+code analysis
+
+warning: fields `failures` and `ban_until` are never read
+  --> crates\master\src\auth\rate_limit.rs:70:5
+   |
+69 | struct AuthFailureTracker {
+   |        ------------------ fields in this struct
+70 |     failures: Vec<Instant>,
+   |     ^^^^^^^^
+71 |     ban_until: Option<Instant>,
+   |     ^^^^^^^^^
+   |
+   = note: `AuthFailureTracker` has a derived impl for the trait `Debug`, but this is intentionally ignored during 
+dead code analysis
+
+warning: associated items `new`, `record_failure`, `is_banned`, and `ban_expires_at` are never used
+   --> crates\master\src\auth\rate_limit.rs:75:8
+    |
+ 74 | impl AuthFailureTracker {
+    | ----------------------- associated items in this implementation
+ 75 |     fn new() -> Self {
+    |        ^^^
+...
+ 83 |     fn record_failure(&mut self) {
+    |        ^^^^^^^^^^^^^^
+...
+ 99 |     fn is_banned(&self) -> bool {
+    |        ^^^^^^^^^
+...
+108 |     fn ban_expires_at(&self) -> Option<Instant> {
+    |        ^^^^^^^^^^^^^^
+
+warning: fields `auth_trackers`, `session_buckets`, and `max_sessions_per_minute` are never read
+   --> crates\master\src\auth\rate_limit.rs:120:5
+    |
+118 | pub struct RateLimiter {
+    |            ----------- fields in this struct
+119 |     connection_buckets: Arc<Mutex<HashMap<SocketAddr, TokenBucket>>>,
+120 |     auth_trackers: Arc<Mutex<HashMap<SocketAddr, AuthFailureTracker>>>,
+    |     ^^^^^^^^^^^^^
+121 |     session_buckets: Arc<Mutex<HashMap<String, TokenBucket>>>,
+    |     ^^^^^^^^^^^^^^^
+...
+125 |     max_sessions_per_minute: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: methods `check_auth_attempt`, `record_auth_failure`, `check_session_create`, and `cleanup` are never used
+   --> crates\master\src\auth\rate_limit.rs:162:12
+    |
+128 | impl RateLimiter {
+    | ---------------- methods in this implementation
+...
+162 |     pub fn check_auth_attempt(&self, peer_addr: &SocketAddr) -> Result<(), RateLimitError> {
+    |            ^^^^^^^^^^^^^^^^^^
+...
+175 |     pub fn record_auth_failure(&self, peer_addr: &SocketAddr) {
+    |            ^^^^^^^^^^^^^^^^^^^
+...
+182 |     pub fn check_session_create(&self, user_id: &str) -> Result<(), RateLimitError> {
+    |            ^^^^^^^^^^^^^^^^^^^^
+...
+203 |     pub fn cleanup(&self) {
+    |            ^^^^^^^
+
+warning: struct `PtyConfig` is never constructed
+  --> crates\master\src\pty\mod.rs:32:12
+   |
+32 | pub struct PtyConfig {
+   |            ^^^^^^^^^
+
+warning: associated function `default_shell` is never used
+  --> crates\master\src\pty\mod.rs:60:8
+   |
+57 | impl PtyConfig {
+   | -------------- associated function in this implementation
+...
+60 |     fn default_shell() -> String {
+   |        ^^^^^^^^^^^^^
+
+warning: associated items `create`, `read`, `shell_pid`, and `terminate` are never used
+   --> crates\master\src\pty\mod.rs:78:14
+    |
+ 76 | pub trait PtyBackend: Send + Sync {
+    |           ---------- associated items in this trait
+ 77 |     /// Create a new PTY session with the given configuration
+ 78 |     async fn create(config: PtyConfig) -> PtyResult<Self>
+    |              ^^^^^^
+...
+ 86 |     async fn read(&mut self, buf: &mut [u8]) -> io::Result<usize>;
+    |              ^^^^
+...
+ 97 |     fn shell_pid(&self) -> u32;
+    |        ^^^^^^^^^
+...
+100 |     async fn terminate(self) -> PtyResult<()>;
+    |              ^^^^^^^^^
+
+warning: multiple variants are never constructed
+  --> crates\master\src\pty\error.rs:12:5
+   |
+ 9 | pub enum PtyError {
+   |          -------- variants in this enum
+...
+12 |     CreateFailed(String),
+   |     ^^^^^^^^^^^^
+...
+16 |     SpawnFailed(String),
+   |     ^^^^^^^^^^^
+...
+20 |     ResizeFailed(String),
+   |     ^^^^^^^^^^^^
+...
+28 |     ProcessExited,
+   |     ^^^^^^^^^^^^^
+...
+32 |     AlreadyClosed,
+   |     ^^^^^^^^^^^^^
+...
+36 |     InvalidConfig(String),
+   |     ^^^^^^^^^^^^^
+...
+45 |     Timeout(String),
+   |     ^^^^^^^
+...
+49 |     Disconnected,
+   |     ^^^^^^^^^^^^
+   |
+   = note: `PtyError` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code 
+analysis
+
+warning: constant `PTY_BUFFER_SIZE` is never used
+  --> crates\master\src\pty\conpty.rs:37:7
+   |
+37 | const PTY_BUFFER_SIZE: usize = 4096;
+   |       ^^^^^^^^^^^^^^^
+
+warning: struct `ConPtyBackend` is never constructed
+  --> crates\master\src\pty\conpty.rs:43:12
+   |
+43 | pub struct ConPtyBackend {
+   |            ^^^^^^^^^^^^^
+
+warning: struct `AsyncPipeReader` is never constructed
+  --> crates\master\src\pty\conpty.rs:67:8
+   |
+67 | struct AsyncPipeReader {
+   |        ^^^^^^^^^^^^^^^
+
+warning: struct `AsyncPipeWriter` is never constructed
+  --> crates\master\src\pty\conpty.rs:71:8
+   |
+71 | struct AsyncPipeWriter {
+   |        ^^^^^^^^^^^^^^^
+
+warning: associated function `from_handle` is never used
+  --> crates\master\src\pty\conpty.rs:82:15
+   |
+81 | impl AsyncPipeReader {
+   | -------------------- associated function in this implementation
+82 |     unsafe fn from_handle(handle: HANDLE) -> Self {
+   |               ^^^^^^^^^^^
+
+warning: associated function `from_handle` is never used
+  --> crates\master\src\pty\conpty.rs:88:15
+   |
+87 | impl AsyncPipeWriter {
+   | -------------------- associated function in this implementation
+88 |     unsafe fn from_handle(handle: HANDLE) -> Self {
+   |               ^^^^^^^^^^^
+
+warning: function `create_pipe` is never used
+   --> crates\master\src\pty\conpty.rs:334:4
+    |
+334 | fn create_pipe() -> PtyResult<(HANDLE, HANDLE)> {
+    |    ^^^^^^^^^^^
+
+warning: function `to_wide_string` is never used
+   --> crates\master\src\pty\conpty.rs:350:4
+    |
+350 | fn to_wide_string(s: &str) -> Vec<u16> {
+    |    ^^^^^^^^^^^^^^
+
+warning: function `spawn_process` is never used
+   --> crates\master\src\pty\conpty.rs:362:4
+    |
+362 | fn spawn_process(hpc: &HPCON, config: &PtyConfig) -> PtyResult<(HANDLE, u32)> {
+    |    ^^^^^^^^^^^^^
+
+warning: variants `PtyCreateFailed` and `AuthFailed` are never constructed
+  --> crates\master\src\session\mod.rs:24:5
+   |
+19 | pub enum SessionError {
+   |          ------------ variants in this enum
+...
+24 |     PtyCreateFailed(String),
+   |     ^^^^^^^^^^^^^^^
+...
+27 |     AuthFailed(String),
+   |     ^^^^^^^^^^
+   |
+   = note: `SessionError` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code 
+analysis
+
+warning: variants `Running` and `Terminated` are never constructed
+  --> crates\master\src\session\session.rs:22:5
+   |
+20 | pub enum SessionState {
+   |          ------------ variants in this enum
+21 |     /// Session created, PTY spawned, ready for clients
+22 |     Running,
+   |     ^^^^^^^
+...
+25 |     Terminated,
+   |     ^^^^^^^^^^
+   |
+   = note: `SessionState` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored 
+during dead code analysis
+
+warning: field `line_number` is never read
+  --> crates\master\src\session\session.rs:42:9
+   |
+37 | pub struct Line {
+   |            ---- field in this struct
+...
+42 |     pub line_number: u64,
+   |         ^^^^^^^^^^^
+   |
+   = note: `Line` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during 
+dead code analysis
+
+warning: associated function `from_bytes` is never used
+  --> crates\master\src\session\session.rs:46:12
+   |
+45 | impl Line {
+   | --------- associated function in this implementation
+46 |     pub fn from_bytes(data: &[u8]) -> Self {
+   |            ^^^^^^^^^^
+
+warning: field `id` is never read
+  --> crates\master\src\session\session.rs:57:9
+   |
+56 | pub struct SessionSnapshot {
+   |            --------------- field in this struct
+57 |     pub id: SessionId,
+   |         ^^
+   |
+   = note: `SessionSnapshot` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored 
+during dead code analysis
+
+warning: fields `state`, `shell_pid`, `created_at`, and `monomind_detected` are never read
+   --> crates\master\src\session\session.rs:72:9
+    |
+ 67 | pub struct Session {
+    |            ------- fields in this struct
+...
+ 72 |     pub state: SessionState,
+    |         ^^^^^
+...
+ 79 |     pub shell_pid: u32,
+    |         ^^^^^^^^^
+...
+ 99 |     pub created_at: Instant,
+    |         ^^^^^^^^^^
+...
+103 |     pub monomind_detected: bool,
+    |         ^^^^^^^^^^^^^^^^^
+
+warning: associated items `new`, `client_ids`, and `terminate_pty` are never used
+   --> crates\master\src\session\session.rs:108:12
+    |
+106 | impl Session {
+    | ------------ associated items in this implementation
+107 |     /// Create new session with PTY backend
+108 |     pub fn new(
+    |            ^^^
+...
+160 |     pub fn client_ids(&self) -> Vec<ClientId> {
+    |            ^^^^^^^^^^
+...
+171 |     pub async fn terminate_pty(&mut self) -> Result<(), std::io::Error> {
+    |                  ^^^^^^^^^^^^^
+
+warning: field `next_line_number` is never read
+  --> crates\master\src\session\scrollback.rs:13:5
+   |
+ 8 | pub struct RingBuffer<T> {
+   |            ---------- field in this struct
+...
+13 |     next_line_number: u64,
+   |     ^^^^^^^^^^^^^^^^
+
+warning: associated items `new`, `push`, `len`, `is_empty`, `is_full`, and `clear` are never used
+  --> crates\master\src\session\scrollback.rs:18:12
+   |
+16 | impl<T: Clone> RingBuffer<T> {
+   | ---------------------------- associated items in this implementation
+17 |     /// Create new ring buffer with given capacity
+18 |     pub fn new(capacity: usize) -> Self {
+   |            ^^^
+...
+32 |     pub fn push(&mut self, mut item: T) where T: AsMut<Line> {
+   |            ^^^^
+...
+50 |     pub fn len(&self) -> usize {
+   |            ^^^
+...
+55 |     pub fn is_empty(&self) -> bool {
+   |            ^^^^^^^^
+...
+60 |     pub fn is_full(&self) -> bool {
+   |            ^^^^^^^
+...
+77 |     pub fn clear(&mut self) {
+   |            ^^^^^
+
+warning: method `push_line` is never used
+  --> crates\master\src\session\scrollback.rs:88:12
+   |
+86 | impl RingBuffer<Line> {
+   | --------------------- method in this implementation
+87 |     /// Specialized push for Line type
+88 |     pub fn push_line(&mut self, data: Vec<u8>) {
+   |            ^^^^^^^^^
+
+warning: field `default_shell` is never read
+  --> crates\master\src\session\manager.rs:23:5
+   |
+18 | pub struct SessionManager {
+   |            -------------- field in this struct
+...
+23 |     default_shell: String,
+   |     ^^^^^^^^^^^^^
+
+warning: associated items `create_session`, `kill_session`, `pty_output_loop`, `broadcast_output`, `list_sessions`, 
+and `session_count` are never used
+   --> crates\master\src\session\manager.rs:50:18
+    |
+ 26 | impl SessionManager {
+    | ------------------- associated items in this implementation
+...
+ 50 |     pub async fn create_session(
+    |                  ^^^^^^^^^^^^^^
+...
+227 |     pub async fn kill_session(&self, session_id: SessionId) -> Result<()> {
+    |                  ^^^^^^^^^^^^
+...
+252 |     async fn pty_output_loop(session: Arc<RwLock<Session>>) {
+    |              ^^^^^^^^^^^^^^^
+...
+343 |     async fn broadcast_output(session: &mut Session, data: &[u8], sequence_number: u64) {
+    |              ^^^^^^^^^^^^^^^^
+...
+397 |     pub async fn list_sessions(&self) -> Vec<SessionId> {
+    |                  ^^^^^^^^^^^^^
+...
+402 |     pub async fn session_count(&self) -> usize {
+    |                  ^^^^^^^^^^^^^
+
+warning: field `rate_limit_per_minute` is never read
+  --> crates\master\src\server\mod.rs:37:9
+   |
+26 | pub struct ServerConfig {
+   |            ------------ field in this struct
+...
+37 |     pub rate_limit_per_minute: u32,
+   |         ^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `ServerConfig` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored 
+during dead code analysis
+
+warning: field `health_tx` is never read
+  --> crates\master\src\server\mod.rs:59:5
+   |
+53 | pub struct Server {
+   |            ------ field in this struct
+...
+59 |     health_tx: broadcast::Sender<HealthStatus>,
+   |     ^^^^^^^^^
+
+warning: struct `Connection` is never constructed
+  --> crates\master\src\server\connection.rs:11:12
+   |
+11 | pub struct Connection {
+   |            ^^^^^^^^^^
+
+warning: associated items `new`, `send`, `is_lagging`, `should_disconnect`, and `buffer_fill_percentage` are never used
+  --> crates\master\src\server\connection.rs:31:12
+   |
+29 | impl Connection {
+   | --------------- associated items in this implementation
+30 |     /// Create a new connection
+31 |     pub fn new(client_id: String, supports_compression: bool) -> (Self, mpsc::Receiver<Vec<u8>>) {
+   |            ^^^
+...
+49 |     pub async fn send(&mut self, data: Vec<u8>) -> Result<(), ()> {
+   |                  ^^^^
+...
+76 |     pub fn is_lagging(&self) -> bool {
+   |            ^^^^^^^^^^
+...
+81 |     pub fn should_disconnect(&self) -> bool {
+   |            ^^^^^^^^^^^^^^^^^
+...
+91 |     pub fn buffer_fill_percentage(&self) -> u8 {
+   |            ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: variant `PermissionDenied` is never constructed
+  --> crates\master\src\server\error.rs:37:5
+   |
+ 8 | pub enum ServerError {
+   |          ----------- variant in this enum
+...
+37 |     PermissionDenied,
+   |     ^^^^^^^^^^^^^^^^
+   |
+   = note: `ServerError` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code 
+analysis
+
+warning: associated function `new` is never used
+  --> crates\master\src\server\tls.rs:36:12
+   |
+34 | impl TlsConfig {
+   | -------------- associated function in this implementation
+35 |     /// Create TLS configuration with custom paths
+36 |     pub fn new(cert_path: impl Into<PathBuf>, key_path: impl Into<PathBuf>) -> Self {
+   |            ^^^
+
+warning: struct `TerminalUI` is never constructed
+  --> crates\master\src\ui\mod.rs:34:12
+   |
+34 | pub struct TerminalUI {
+   |            ^^^^^^^^^^
+
+warning: associated items `new` and `run` are never used
+  --> crates\master\src\ui\mod.rs:42:18
+   |
+39 | impl TerminalUI {
+   | --------------- associated items in this implementation
+...
+42 |     pub async fn new() -> Result<Self> {
+   |                  ^^^
+...
+53 |     pub fn run(self) -> Result<()> {
+   |            ^^^
+
+warning: struct `FontManager` is never constructed
+  --> crates\master\src\ui\fonts.rs:10:12
+   |
+10 | pub struct FontManager {
+   |            ^^^^^^^^^^^
+
+warning: associated items `new`, `load_embedded_font`, `load_from_file`, and `default_font` are never used
+  --> crates\master\src\ui\fonts.rs:17:12
+   |
+15 | impl FontManager {
+   | ---------------- associated items in this implementation
+16 |     /// Load fonts from system or embedded
+17 |     pub fn new() -> Result<Self> {
+   |            ^^^
+...
+26 |     fn load_embedded_font() -> Result<Vec<u8>> {
+   |        ^^^^^^^^^^^^^^^^^^
+...
+34 |     pub fn load_from_file<P: AsRef<Path>>(path: P) -> Result<Vec<u8>> {
+   |            ^^^^^^^^^^^^^^
+...
+40 |     pub fn default_font(&self) -> &[u8] {
+   |            ^^^^^^^^^^^^
+
+warning: struct `GlyphKey` is never constructed
+  --> crates\master\src\ui\glyph_cache.rs:11:12
+   |
+11 | pub struct GlyphKey {
+   |            ^^^^^^^^
+
+warning: associated function `new` is never used
+  --> crates\master\src\ui\glyph_cache.rs:18:12
+   |
+17 | impl GlyphKey {
+   | ------------- associated function in this implementation
+18 |     pub fn new(ch: char, style: &CellStyle) -> Self {
+   |            ^^^
+
+warning: struct `GlyphInfo` is never constructed
+  --> crates\master\src\ui\glyph_cache.rs:29:12
+   |
+29 | pub struct GlyphInfo {
+   |            ^^^^^^^^^
+
+warning: struct `GlyphCache` is never constructed
+  --> crates\master\src\ui\glyph_cache.rs:43:12
+   |
+43 | pub struct GlyphCache {
+   |            ^^^^^^^^^^
+
+warning: associated items `new`, `lookup`, `insert`, `clear`, `atlas_size`, and `stats` are never used
+   --> crates\master\src\ui\glyph_cache.rs:63:12
+    |
+ 61 | impl GlyphCache {
+    | --------------- associated items in this implementation
+ 62 |     /// Create new glyph cache with 4096×4096 atlas
+ 63 |     pub fn new() -> Self {
+    |            ^^^
+...
+ 76 |     pub fn lookup(&mut self, key: GlyphKey) -> Option<GlyphInfo> {
+    |            ^^^^^^
+...
+ 87 |     pub fn insert(&mut self, key: GlyphKey, width: u32, height: u32) -> Option<GlyphInfo> {
+    |            ^^^^^^
+...
+119 |     pub fn clear(&mut self) {
+    |            ^^^^^
+...
+126 |     pub fn atlas_size(&self) -> (u32, u32) {
+    |            ^^^^^^^^^^
+...
+131 |     pub fn stats(&self) -> CacheStats {
+    |            ^^^^^
+
+warning: struct `CacheStats` is never constructed
+   --> crates\master\src\ui\glyph_cache.rs:146:12
+    |
+146 | pub struct CacheStats {
+    |            ^^^^^^^^^^
+
+warning: struct `GuillotineAllocator` is never constructed
+   --> crates\master\src\ui\glyph_cache.rs:153:8
+    |
+153 | struct GuillotineAllocator {
+    |        ^^^^^^^^^^^^^^^^^^^
+
+warning: associated items `new`, `allocate`, and `utilization` are never used
+   --> crates\master\src\ui\glyph_cache.rs:161:8
+    |
+160 | impl GuillotineAllocator {
+    | ------------------------ associated items in this implementation
+161 |     fn new(width: u32, height: u32) -> Self {
+    |        ^^^
+...
+170 |     fn allocate(&mut self, width: u32, height: u32) -> Option<Rect> {
+    |        ^^^^^^^^
+...
+223 |     fn utilization(&self) -> f32 {
+    |        ^^^^^^^^^^^
+
+warning: struct `Rect` is never constructed
+   --> crates\master\src\ui\glyph_cache.rs:231:8
+    |
+231 | struct Rect {
+    |        ^^^^
+
+warning: struct `Layout` is never constructed
+  --> crates\master\src\ui\layout.rs:17:12
+   |
+17 | pub struct Layout {
+   |            ^^^^^^
+
+warning: associated items `new`, `terminal_area`, `sidebar_area`, `menu_area`, and `status_area` are never used
+  --> crates\master\src\ui\layout.rs:29:12
+   |
+28 | impl Layout {
+   | ----------- associated items in this implementation
+29 |     pub fn new() -> Self {
+   |            ^^^
+...
+38 |     pub fn terminal_area(&self, window_width: f32, window_height: f32) -> Rect {
+   |            ^^^^^^^^^^^^^
+...
+48 |     pub fn sidebar_area(&self, window_height: f32) -> Rect {
+   |            ^^^^^^^^^^^^
+...
+58 |     pub fn menu_area(&self, window_width: f32) -> Rect {
+   |            ^^^^^^^^^
+...
+68 |     pub fn status_area(&self, window_width: f32, window_height: f32) -> Rect {
+   |            ^^^^^^^^^^^
+
+warning: struct `Rect` is never constructed
+  --> crates\master\src\ui\layout.rs:86:12
+   |
+86 | pub struct Rect {
+   |            ^^^^
+
+warning: struct `SessionList` is never constructed
+  --> crates\master\src\ui\layout.rs:94:12
+   |
+94 | pub struct SessionList {
+   |            ^^^^^^^^^^^
+
+warning: associated items `new`, `add_session`, `sessions`, `selected`, and `set_selected` are never used
+   --> crates\master\src\ui\layout.rs:100:12
+    |
+ 99 | impl SessionList {
+    | ---------------- associated items in this implementation
+100 |     pub fn new() -> Self {
+    |            ^^^
+...
+108 |     pub fn add_session(&mut self, name: String) {
+    |            ^^^^^^^^^^^
+...
+113 |     pub fn sessions(&self) -> &[SessionItem] {
+    |            ^^^^^^^^
+...
+118 |     pub fn selected(&self) -> Option<usize> {
+    |            ^^^^^^^^
+...
+123 |     pub fn set_selected(&mut self, index: Option<usize>) {
+    |            ^^^^^^^^^^^^
+
+warning: struct `SessionItem` is never constructed
+   --> crates\master\src\ui\layout.rs:136:12
+    |
+136 | pub struct SessionItem {
+    |            ^^^^^^^^^^^
+
+warning: struct `StatusBar` is never constructed
+   --> crates\master\src\ui\layout.rs:141:12
+    |
+141 | pub struct StatusBar {
+    |            ^^^^^^^^^
+
+warning: associated items `new`, `update_from_perf`, `fps_string`, and `latency_string` are never used
+   --> crates\master\src\ui\layout.rs:147:12
+    |
+146 | impl StatusBar {
+    | -------------- associated items in this implementation
+147 |     pub fn new() -> Self {
+    |            ^^^
+...
+155 |     pub fn update_from_perf(&mut self, perf: &PerformanceMonitor) {
+    |            ^^^^^^^^^^^^^^^^
+...
+161 |     pub fn fps_string(&self) -> String {
+    |            ^^^^^^^^^^
+...
+166 |     pub fn latency_string(&self) -> String {
+    |            ^^^^^^^^^^^^^^
+
+warning: constant `FPS_HISTORY_SIZE` is never used
+  --> crates\master\src\ui\performance.rs:14:7
+   |
+14 | const FPS_HISTORY_SIZE: usize = 60;
+   |       ^^^^^^^^^^^^^^^^
+
+warning: struct `PerformanceMonitor` is never constructed
+  --> crates\master\src\ui\performance.rs:17:12
+   |
+17 | pub struct PerformanceMonitor {
+   |            ^^^^^^^^^^^^^^^^^^
+
+warning: multiple associated items are never used
+   --> crates\master\src\ui\performance.rs:25:12
+    |
+ 24 | impl PerformanceMonitor {
+    | ----------------------- associated items in this implementation
+ 25 |     pub fn new() -> Self {
+    |            ^^^
+...
+ 35 |     pub fn start_frame(&mut self) {
+    |            ^^^^^^^^^^^
+...
+ 42 |     pub fn mark(&mut self, label: &str) {
+    |            ^^^^
+...
+ 71 |     pub fn end_frame(&mut self) -> f32 {
+    |            ^^^^^^^^^
+...
+ 94 |     pub fn fps(&self) -> f32 {
+    |            ^^^
+...
+ 99 |     pub fn avg_frame_time(&self) -> f32 {
+    |            ^^^^^^^^^^^^^^
+...
+108 |     pub fn meeting_target(&self) -> bool {
+    |            ^^^^^^^^^^^^^^
+
+warning: struct `Renderer` is never constructed
+  --> crates\master\src\ui\renderer.rs:19:12
+   |
+19 | pub struct Renderer {
+   |            ^^^^^^^^
+
+warning: multiple associated items are never used
+   --> crates\master\src\ui\renderer.rs:49:18
+    |
+ 46 | impl Renderer {
+    | ------------- associated items in this implementation
+...
+ 49 |     pub async fn new(_event_loop: &winit::event_loop::EventLoop<()>) -> Result<Self> {
+    |                  ^^^
+...
+ 87 |     pub fn set_mock_pty_channel(&mut self, rx: mpsc::Receiver<Bytes>) {
+    |            ^^^^^^^^^^^^^^^^^^^^
+...
+ 93 |     pub async fn init_surface(&mut self, window: Arc<Window>) -> Result<()> {
+    |                  ^^^^^^^^^^^^
+...
+170 |     pub fn init_text_pipeline(&mut self) -> Result<()> {
+    |            ^^^^^^^^^^^^^^^^^^
+...
+343 |     pub fn resize(&mut self, width: u32, height: u32) -> Result<()> {
+    |            ^^^^^^
+...
+365 |     pub fn render(&mut self, _window: &Window, perf: &mut PerformanceMonitor) -> Result<()> {
+    |            ^^^^^^
+...
+437 |     fn process_pty_output(
+    |        ^^^^^^^^^^^^^^^^^^
+
+warning: struct `TerminalGrid` is never constructed
+ --> crates\master\src\ui\terminal_grid.rs:9:12
+  |
+9 | pub struct TerminalGrid {
+  |            ^^^^^^^^^^^^
+
+warning: multiple associated items are never used
+   --> crates\master\src\ui\terminal_grid.rs:27:12
+    |
+ 25 | impl TerminalGrid {
+    | ----------------- associated items in this implementation
+ 26 |     /// Create new terminal grid
+ 27 |     pub fn new(rows: u16, cols: u16) -> Self {
+    |            ^^^
+...
+ 44 |     pub fn apply_changes(&mut self, changes: Vec<GridChange>) {
+    |            ^^^^^^^^^^^^^
+...
+ 90 |     fn print_char(&mut self, ch: char) {
+    |        ^^^^^^^^^^
+...
+111 |     fn newline(&mut self) {
+    |        ^^^^^^^
+...
+125 |     fn scroll_up(&mut self) {
+    |        ^^^^^^^^^
+...
+139 |     fn scroll_down(&mut self) {
+    |        ^^^^^^^^^^^
+...
+153 |     pub fn clear(&mut self) {
+    |            ^^^^^
+...
+163 |     pub fn get_cell(&self, row: u16, col: u16) -> Option<&Cell> {
+    |            ^^^^^^^^
+...
+172 |     pub fn dirty_region(&self) -> &DirtyRegion {
+    |            ^^^^^^^^^^^^
+...
+177 |     pub fn clear_dirty(&mut self) {
+    |            ^^^^^^^^^^^
+...
+182 |     pub fn dimensions(&self) -> (u16, u16) {
+    |            ^^^^^^^^^^
+...
+187 |     pub fn cursor_position(&self) -> (u16, u16) {
+    |            ^^^^^^^^^^^^^^^
+...
+192 |     pub fn resize(&mut self, rows: u16, cols: u16) {
+    |            ^^^^^^
+
+warning: struct `Cell` is never constructed
+   --> crates\master\src\ui\terminal_grid.rs:218:12
+    |
+218 | pub struct Cell {
+    |            ^^^^
+
+warning: struct `DirtyRegion` is never constructed
+   --> crates\master\src\ui\terminal_grid.rs:234:12
+    |
+234 | pub struct DirtyRegion {
+    |            ^^^^^^^^^^^
+
+warning: multiple associated items are never used
+   --> crates\master\src\ui\terminal_grid.rs:244:12
+    |
+243 | impl DirtyRegion {
+    | ---------------- associated items in this implementation
+244 |     pub fn new(rows: u16, cols: u16) -> Self {
+    |            ^^^
+...
+255 |     pub fn mark_cell(&mut self, row: u16, col: u16) {
+    |            ^^^^^^^^^
+...
+264 |     pub fn mark_row(&mut self, row: u16) {
+    |            ^^^^^^^^
+...
+276 |     pub fn mark_all(&mut self) {
+    |            ^^^^^^^^
+...
+281 |     pub fn is_dirty(&self, row: u16, col: u16) -> bool {
+    |            ^^^^^^^^
+...
+293 |     pub fn clear(&mut self) {
+    |            ^^^^^
+...
+301 |     pub fn iter_dirty(&self) -> impl Iterator<Item = (u16, u16)> + '_ {
+    |            ^^^^^^^^^^
+
+warning: struct `VtParser` is never constructed
+  --> crates\master\src\ui\vt_parser.rs:10:12
+   |
+10 | pub struct VtParser {
+   |            ^^^^^^^^
+
+warning: enum `ParserState` is never used
+  --> crates\master\src\ui\vt_parser.rs:18:6
+   |
+18 | enum ParserState {
+   |      ^^^^^^^^^^^
+
+warning: associated items `new`, `feed`, `drain_changes`, and `reset` are never used
+   --> crates\master\src\ui\vt_parser.rs:26:12
+    |
+ 25 | impl VtParser {
+    | ------------- associated items in this implementation
+ 26 |     pub fn new() -> Self {
+    |            ^^^
+...
+ 35 |     pub fn feed(&mut self, data: &[u8]) {
+    |            ^^^^
+...
+123 |     pub fn drain_changes(&mut self) -> Vec<GridChange> {
+    |            ^^^^^^^^^^^^^
+...
+128 |     pub fn reset(&mut self) {
+    |            ^^^^^
+
+warning: enum `GridChange` is never used
+   --> crates\master\src\ui\vt_parser.rs:142:10
+    |
+142 | pub enum GridChange {
+    |          ^^^^^^^^^^
+
+warning: struct `CellStyle` is never constructed
+   --> crates\master\src\ui\vt_parser.rs:157:12
+    |
+157 | pub struct CellStyle {
+    |            ^^^^^^^^^
+
+warning: struct `Color` is never constructed
+   --> crates\master\src\ui\vt_parser.rs:184:12
+    |
+184 | pub struct Color {
+    |            ^^^^^
+
+warning: associated function `rgb` is never used
+   --> crates\master\src\ui\vt_parser.rs:191:18
+    |
+190 | impl Color {
+    | ---------- associated function in this implementation
+191 |     pub const fn rgb(r: u8, g: u8, b: u8) -> Self {
+    |                  ^^^
+
+warning: struct `Window` is never constructed
+  --> crates\master\src\ui\window.rs:19:12
+   |
+19 | pub struct Window {
+   |            ^^^^^^
+
+warning: associated items `new`, `inner`, and `run` are never used
+  --> crates\master\src\ui\window.rs:26:12
+   |
+24 | impl Window {
+   | ----------- associated items in this implementation
+25 |     /// Create new window with default size
+26 |     pub fn new() -> Result<Self> {
+   |            ^^^
+...
+42 |     pub fn inner(&self) -> &EventLoop<()> {
+   |            ^^^^^
+...
+47 |     pub fn run(self, renderer: Renderer) -> Result<()> {
+   |            ^^^
+
+warning: struct `App` is never constructed
+  --> crates\master\src\ui\window.rs:57:8
+   |
+57 | struct App {
+   |        ^^^
+
+warning: associated function `new` is never used
+  --> crates\master\src\ui\window.rs:65:8
+   |
+64 | impl App {
+   | -------- associated function in this implementation
+65 |     fn new(window_attributes: WindowAttributes, renderer: Renderer) -> Self {
+   |        ^^^
+
+warning: `monoterminal-master` (bin "monoterminal") generated 110 warnings (5 duplicates) (run `cargo fix --bin 
+"monoterminal" -p monoterminal-master` to apply 12 suggestions)
+   Compiling monoterminal-master v0.1.0 (C:\Users\nokho\Desktop\projects\monoterminal\crates\master)
+warning: unused import: `std::sync::Arc`
+ --> crates\master\tests\auth_integration.rs:6:5
+  |
+6 | use std::sync::Arc;
+  |     ^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `monoterminal-master` (test "auth_integration") generated 1 warning (run `cargo fix --test "auth_integration" 
+-p monoterminal-master` to apply 1 suggestion)
+warning: unused import: `std::sync::Arc`
+  --> crates\master\tests\integration_websocket_fanout.rs:10:9
+   |
+10 |     use std::sync::Arc;
+   |         ^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `std::time::Duration`
+  --> crates\master\tests\integration_websocket_fanout.rs:11:9
+   |
+11 |     use std::time::Duration;
+   |         ^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `tokio::sync::mpsc`
+  --> crates\master\tests\integration_websocket_fanout.rs:12:9
+   |
+12 |     use tokio::sync::mpsc;
+   |         ^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `AttachRequest`, `DetachRequest`, `Envelope`, `InputData`, `ResizeRequest`, and `envelope`
+  --> crates\master\tests\integration_websocket_fanout.rs:13:33
+   |
+13 |     use monoterminal_protocol::{Envelope, envelope, AttachRequest, InputData, ResizeRequest, DetachRequest};
+   |                                 ^^^^^^^^  ^^^^^^^^  ^^^^^^^^^^^^^  ^^^^^^^^^  ^^^^^^^^^^^^^  ^^^^^^^^^^^^^
+
+warning: unused import: `uuid::Uuid`
+  --> crates\master\tests\integration_websocket_fanout.rs:14:9
+   |
+14 |     use uuid::Uuid;
+   |         ^^^^^^^^^^
+
+warning: `monoterminal-master` (test "integration_websocket_fanout") generated 5 warnings (run `cargo fix --test 
+"integration_websocket_fanout" -p monoterminal-master` to apply 5 suggestions)
+error[E0061]: this method takes 2 arguments but 1 argument was supplied
+   --> crates\master\tests\session_state_machine.rs:107:17
+    |
+107 |         session.attach_client(client_id);
+    |                 ^^^^^^^^^^^^^----------- argument #2 of type `tokio::sync::mpsc::bounded::Sender<Vec<u8>>` is 
+missing
+    |
+note: method defined here
+   --> crates\master\src\session\session.rs:147:12
+    |
+147 |     pub fn attach_client(&mut self, client_id: ClientId, output_tx: mpsc::Sender<Vec<u8>>) {
+    |            ^^^^^^^^^^^^^
+help: provide the argument
+    |
+107 |         session.attach_client(client_id, /* tokio::sync::mpsc::bounded::Sender<Vec<u8>> */);
+    |                                        +++++++++++++++++++++++++++++++++++++++++++++++++++
+
+error[E0277]: can't compare `tokio::sync::mpsc::bounded::Sender<Vec<u8>>` with 
+`tokio::sync::mpsc::bounded::Sender<Vec<u8>>`
+   --> crates\master\tests\session_state_machine.rs:110:33
+    |
+110 |         assert!(session.clients.contains(&client_id));
+    |                                 ^^^^^^^^ no implementation for `tokio::sync::mpsc::bounded::Sender<Vec<u8>> == 
+tokio::sync::mpsc::bounded::Sender<Vec<u8>>`
+    |
+    = help: the trait `PartialEq` is not implemented for `tokio::sync::mpsc::bounded::Sender<Vec<u8>>`
+    = note: required for `(uuid::Uuid, tokio::sync::mpsc::bounded::Sender<Vec<u8>>)` to implement `PartialEq`
+note: required by a bound in `core::slice::<impl [T]>::contains`
+   --> /rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library\core\src\slice\mod.rs:2590:4
+
+error[E0308]: mismatched types
+   --> crates\master\tests\session_state_machine.rs:110:42
+    |
+110 |         assert!(session.clients.contains(&client_id));
+    |                                 -------- ^^^^^^^^^^ expected `&(Uuid, Sender<Vec<u8>>)`, found `&Uuid`
+    |                                 |
+    |                                 arguments to this method are incorrect
+    |
+    = note: expected reference `&(uuid::Uuid, tokio::sync::mpsc::bounded::Sender<Vec<u8>>)`
+               found reference `&uuid::Uuid`
+note: method defined here
+   --> /rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library\core\src\slice\mod.rs:2590:11
+
+error[E0061]: this method takes 2 arguments but 1 argument was supplied
+   --> crates\master\tests\session_state_machine.rs:127:17
+    |
+127 |         session.attach_client(client_id);
+    |                 ^^^^^^^^^^^^^----------- argument #2 of type `tokio::sync::mpsc::bounded::Sender<Vec<u8>>` is 
+missing
+    |
+note: method defined here
+   --> crates\master\src\session\session.rs:147:12
+    |
+147 |     pub fn attach_client(&mut self, client_id: ClientId, output_tx: mpsc::Sender<Vec<u8>>) {
+    |            ^^^^^^^^^^^^^
+help: provide the argument
+    |
+127 |         session.attach_client(client_id, /* tokio::sync::mpsc::bounded::Sender<Vec<u8>> */);
+    |                                        +++++++++++++++++++++++++++++++++++++++++++++++++++
+
+error[E0061]: this method takes 2 arguments but 1 argument was supplied
+   --> crates\master\tests\session_state_machine.rs:128:17
+    |
+128 |         session.attach_client(client_id); // Attach same client twice
+    |                 ^^^^^^^^^^^^^----------- argument #2 of type `tokio::sync::mpsc::bounded::Sender<Vec<u8>>` is 
+missing
+    |
+note: method defined here
+   --> crates\master\src\session\session.rs:147:12
+    |
+147 |     pub fn attach_client(&mut self, client_id: ClientId, output_tx: mpsc::Sender<Vec<u8>>) {
+    |            ^^^^^^^^^^^^^
+help: provide the argument
+    |
+128 |         session.attach_client(client_id, /* tokio::sync::mpsc::bounded::Sender<Vec<u8>> */); // Attach same 
+client twice
+    |                                        +++++++++++++++++++++++++++++++++++++++++++++++++++
+
+error[E0061]: this method takes 2 arguments but 1 argument was supplied
+   --> crates\master\tests\session_state_machine.rs:151:17
+    |
+151 |         session.attach_client(client1);
+    |                 ^^^^^^^^^^^^^--------- argument #2 of type `tokio::sync::mpsc::bounded::Sender<Vec<u8>>` is 
+missing
+    |
+note: method defined here
+   --> crates\master\src\session\session.rs:147:12
+    |
+147 |     pub fn attach_client(&mut self, client_id: ClientId, output_tx: mpsc::Sender<Vec<u8>>) {
+    |            ^^^^^^^^^^^^^
+help: provide the argument
+    |
+151 |         session.attach_client(client1, /* tokio::sync::mpsc::bounded::Sender<Vec<u8>> */);
+    |                                      +++++++++++++++++++++++++++++++++++++++++++++++++++
+
+error[E0061]: this method takes 2 arguments but 1 argument was supplied
+   --> crates\master\tests\session_state_machine.rs:152:17
+    |
+152 |         session.attach_client(client2);
+    |                 ^^^^^^^^^^^^^--------- argument #2 of type `tokio::sync::mpsc::bounded::Sender<Vec<u8>>` is 
+missing
+    |
+note: method defined here
+   --> crates\master\src\session\session.rs:147:12
+    |
+147 |     pub fn attach_client(&mut self, client_id: ClientId, output_tx: mpsc::Sender<Vec<u8>>) {
+    |            ^^^^^^^^^^^^^
+help: provide the argument
+    |
+152 |         session.attach_client(client2, /* tokio::sync::mpsc::bounded::Sender<Vec<u8>> */);
+    |                                      +++++++++++++++++++++++++++++++++++++++++++++++++++
+
+error[E0061]: this method takes 2 arguments but 1 argument was supplied
+   --> crates\master\tests\session_state_machine.rs:153:17
+    |
+153 |         session.attach_client(client3);
+    |                 ^^^^^^^^^^^^^--------- argument #2 of type `tokio::sync::mpsc::bounded::Sender<Vec<u8>>` is 
+missing
+    |
+note: method defined here
+   --> crates\master\src\session\session.rs:147:12
+    |
+147 |     pub fn attach_client(&mut self, client_id: ClientId, output_tx: mpsc::Sender<Vec<u8>>) {
+    |            ^^^^^^^^^^^^^
+help: provide the argument
+    |
+153 |         session.attach_client(client3, /* tokio::sync::mpsc::bounded::Sender<Vec<u8>> */);
+    |                                      +++++++++++++++++++++++++++++++++++++++++++++++++++
+
+error[E0277]: can't compare `tokio::sync::mpsc::bounded::Sender<Vec<u8>>` with 
+`tokio::sync::mpsc::bounded::Sender<Vec<u8>>`
+   --> crates\master\tests\session_state_machine.rs:156:33
+    |
+156 |         assert!(session.clients.contains(&client1));
+    |                                 ^^^^^^^^ no implementation for `tokio::sync::mpsc::bounded::Sender<Vec<u8>> == 
+tokio::sync::mpsc::bounded::Sender<Vec<u8>>`
+    |
+    = help: the trait `PartialEq` is not implemented for `tokio::sync::mpsc::bounded::Sender<Vec<u8>>`
+    = note: required for `(uuid::Uuid, tokio::sync::mpsc::bounded::Sender<Vec<u8>>)` to implement `PartialEq`
+note: required by a bound in `core::slice::<impl [T]>::contains`
+   --> /rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library\core\src\slice\mod.rs:2590:4
+
+error[E0308]: mismatched types
+   --> crates\master\tests\session_state_machine.rs:156:42
+    |
+156 |         assert!(session.clients.contains(&client1));
+    |                                 -------- ^^^^^^^^ expected `&(Uuid, Sender<Vec<u8>>)`, found `&Uuid`
+    |                                 |
+    |                                 arguments to this method are incorrect
+    |
+    = note: expected reference `&(uuid::Uuid, tokio::sync::mpsc::bounded::Sender<Vec<u8>>)`
+               found reference `&uuid::Uuid`
+note: method defined here
+   --> /rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library\core\src\slice\mod.rs:2590:11
+
+error[E0277]: can't compare `tokio::sync::mpsc::bounded::Sender<Vec<u8>>` with 
+`tokio::sync::mpsc::bounded::Sender<Vec<u8>>`
+   --> crates\master\tests\session_state_machine.rs:157:33
+    |
+157 |         assert!(session.clients.contains(&client2));
+    |                                 ^^^^^^^^ no implementation for `tokio::sync::mpsc::bounded::Sender<Vec<u8>> == 
+tokio::sync::mpsc::bounded::Sender<Vec<u8>>`
+    |
+    = help: the trait `PartialEq` is not implemented for `tokio::sync::mpsc::bounded::Sender<Vec<u8>>`
+    = note: required for `(uuid::Uuid, tokio::sync::mpsc::bounded::Sender<Vec<u8>>)` to implement `PartialEq`
+note: required by a bound in `core::slice::<impl [T]>::contains`
+   --> /rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library\core\src\slice\mod.rs:2590:4
+
+error[E0308]: mismatched types
+   --> crates\master\tests\session_state_machine.rs:157:42
+    |
+157 |         assert!(session.clients.contains(&client2));
+    |                                 -------- ^^^^^^^^ expected `&(Uuid, Sender<Vec<u8>>)`, found `&Uuid`
+    |                                 |
+    |                                 arguments to this method are incorrect
+    |
+    = note: expected reference `&(uuid::Uuid, tokio::sync::mpsc::bounded::Sender<Vec<u8>>)`
+               found reference `&uuid::Uuid`
+note: method defined here
+   --> /rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library\core\src\slice\mod.rs:2590:11
+
+error[E0277]: can't compare `tokio::sync::mpsc::bounded::Sender<Vec<u8>>` with 
+`tokio::sync::mpsc::bounded::Sender<Vec<u8>>`
+   --> crates\master\tests\session_state_machine.rs:158:33
+    |
+158 |         assert!(session.clients.contains(&client3));
+    |                                 ^^^^^^^^ no implementation for `tokio::sync::mpsc::bounded::Sender<Vec<u8>> == 
+tokio::sync::mpsc::bounded::Sender<Vec<u8>>`
+    |
+    = help: the trait `PartialEq` is not implemented for `tokio::sync::mpsc::bounded::Sender<Vec<u8>>`
+    = note: required for `(uuid::Uuid, tokio::sync::mpsc::bounded::Sender<Vec<u8>>)` to implement `PartialEq`
+note: required by a bound in `core::slice::<impl [T]>::contains`
+   --> /rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library\core\src\slice\mod.rs:2590:4
+
+error[E0308]: mismatched types
+   --> crates\master\tests\session_state_machine.rs:158:42
+    |
+158 |         assert!(session.clients.contains(&client3));
+    |                                 -------- ^^^^^^^^ expected `&(Uuid, Sender<Vec<u8>>)`, found `&Uuid`
+    |                                 |
+    |                                 arguments to this method are incorrect
+    |
+    = note: expected reference `&(uuid::Uuid, tokio::sync::mpsc::bounded::Sender<Vec<u8>>)`
+               found reference `&uuid::Uuid`
+note: method defined here
+   --> /rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library\core\src\slice\mod.rs:2590:11
+
+error[E0061]: this method takes 2 arguments but 1 argument was supplied
+   --> crates\master\tests\session_state_machine.rs:175:17
+    |
+175 |         session.attach_client(client_id);
+    |                 ^^^^^^^^^^^^^----------- argument #2 of type `tokio::sync::mpsc::bounded::Sender<Vec<u8>>` is 
+missing
+    |
+note: method defined here
+   --> crates\master\src\session\session.rs:147:12
+    |
+147 |     pub fn attach_client(&mut self, client_id: ClientId, output_tx: mpsc::Sender<Vec<u8>>) {
+    |            ^^^^^^^^^^^^^
+help: provide the argument
+    |
+175 |         session.attach_client(client_id, /* tokio::sync::mpsc::bounded::Sender<Vec<u8>> */);
+    |                                        +++++++++++++++++++++++++++++++++++++++++++++++++++
+
+error[E0061]: this method takes 2 arguments but 1 argument was supplied
+   --> crates\master\tests\session_state_machine.rs:220:17
+    |
+220 |         session.attach_client(client1);
+    |                 ^^^^^^^^^^^^^--------- argument #2 of type `tokio::sync::mpsc::bounded::Sender<Vec<u8>>` is 
+missing
+    |
+note: method defined here
+   --> crates\master\src\session\session.rs:147:12
+    |
+147 |     pub fn attach_client(&mut self, client_id: ClientId, output_tx: mpsc::Sender<Vec<u8>>) {
+    |            ^^^^^^^^^^^^^
+help: provide the argument
+    |
+220 |         session.attach_client(client1, /* tokio::sync::mpsc::bounded::Sender<Vec<u8>> */);
+    |                                      +++++++++++++++++++++++++++++++++++++++++++++++++++
+
+error[E0061]: this method takes 2 arguments but 1 argument was supplied
+   --> crates\master\tests\session_state_machine.rs:221:17
+    |
+221 |         session.attach_client(client2);
+    |                 ^^^^^^^^^^^^^--------- argument #2 of type `tokio::sync::mpsc::bounded::Sender<Vec<u8>>` is 
+missing
+    |
+note: method defined here
+   --> crates\master\src\session\session.rs:147:12
+    |
+147 |     pub fn attach_client(&mut self, client_id: ClientId, output_tx: mpsc::Sender<Vec<u8>>) {
+    |            ^^^^^^^^^^^^^
+help: provide the argument
+    |
+221 |         session.attach_client(client2, /* tokio::sync::mpsc::bounded::Sender<Vec<u8>> */);
+    |                                      +++++++++++++++++++++++++++++++++++++++++++++++++++
+
+error[E0061]: this method takes 2 arguments but 1 argument was supplied
+   --> crates\master\tests\session_state_machine.rs:222:17
+    |
+222 |         session.attach_client(client3);
+    |                 ^^^^^^^^^^^^^--------- argument #2 of type `tokio::sync::mpsc::bounded::Sender<Vec<u8>>` is 
+missing
+    |
+note: method defined here
+   --> crates\master\src\session\session.rs:147:12
+    |
+147 |     pub fn attach_client(&mut self, client_id: ClientId, output_tx: mpsc::Sender<Vec<u8>>) {
+    |            ^^^^^^^^^^^^^
+help: provide the argument
+    |
+222 |         session.attach_client(client3, /* tokio::sync::mpsc::bounded::Sender<Vec<u8>> */);
+    |                                      +++++++++++++++++++++++++++++++++++++++++++++++++++
+
+error[E0277]: can't compare `tokio::sync::mpsc::bounded::Sender<Vec<u8>>` with 
+`tokio::sync::mpsc::bounded::Sender<Vec<u8>>`
+   --> crates\master\tests\session_state_machine.rs:228:33
+    |
+228 |         assert!(session.clients.contains(&client1));
+    |                                 ^^^^^^^^ no implementation for `tokio::sync::mpsc::bounded::Sender<Vec<u8>> == 
+tokio::sync::mpsc::bounded::Sender<Vec<u8>>`
+    |
+    = help: the trait `PartialEq` is not implemented for `tokio::sync::mpsc::bounded::Sender<Vec<u8>>`
+    = note: required for `(uuid::Uuid, tokio::sync::mpsc::bounded::Sender<Vec<u8>>)` to implement `PartialEq`
+note: required by a bound in `core::slice::<impl [T]>::contains`
+   --> /rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library\core\src\slice\mod.rs:2590:4
+
+error[E0308]: mismatched types
+   --> crates\master\tests\session_state_machine.rs:228:42
+    |
+228 |         assert!(session.clients.contains(&client1));
+    |                                 -------- ^^^^^^^^ expected `&(Uuid, Sender<Vec<u8>>)`, found `&Uuid`
+    |                                 |
+    |                                 arguments to this method are incorrect
+    |
+    = note: expected reference `&(uuid::Uuid, tokio::sync::mpsc::bounded::Sender<Vec<u8>>)`
+               found reference `&uuid::Uuid`
+note: method defined here
+   --> /rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library\core\src\slice\mod.rs:2590:11
+
+error[E0277]: can't compare `tokio::sync::mpsc::bounded::Sender<Vec<u8>>` with 
+`tokio::sync::mpsc::bounded::Sender<Vec<u8>>`
+   --> crates\master\tests\session_state_machine.rs:229:34
+    |
+229 |         assert!(!session.clients.contains(&client2));
+    |                                  ^^^^^^^^ no implementation for `tokio::sync::mpsc::bounded::Sender<Vec<u8>> == 
+tokio::sync::mpsc::bounded::Sender<Vec<u8>>`
+    |
+    = help: the trait `PartialEq` is not implemented for `tokio::sync::mpsc::bounded::Sender<Vec<u8>>`
+    = note: required for `(uuid::Uuid, tokio::sync::mpsc::bounded::Sender<Vec<u8>>)` to implement `PartialEq`
+note: required by a bound in `core::slice::<impl [T]>::contains`
+   --> /rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library\core\src\slice\mod.rs:2590:4
+
+error[E0308]: mismatched types
+   --> crates\master\tests\session_state_machine.rs:229:43
+    |
+229 |         assert!(!session.clients.contains(&client2));
+    |                                  -------- ^^^^^^^^ expected `&(Uuid, Sender<Vec<u8>>)`, found `&Uuid`
+    |                                  |
+    |                                  arguments to this method are incorrect
+    |
+    = note: expected reference `&(uuid::Uuid, tokio::sync::mpsc::bounded::Sender<Vec<u8>>)`
+               found reference `&uuid::Uuid`
+note: method defined here
+   --> /rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library\core\src\slice\mod.rs:2590:11
+
+error[E0277]: can't compare `tokio::sync::mpsc::bounded::Sender<Vec<u8>>` with 
+`tokio::sync::mpsc::bounded::Sender<Vec<u8>>`
+   --> crates\master\tests\session_state_machine.rs:230:33
+    |
+230 |         assert!(session.clients.contains(&client3));
+    |                                 ^^^^^^^^ no implementation for `tokio::sync::mpsc::bounded::Sender<Vec<u8>> == 
+tokio::sync::mpsc::bounded::Sender<Vec<u8>>`
+    |
+    = help: the trait `PartialEq` is not implemented for `tokio::sync::mpsc::bounded::Sender<Vec<u8>>`
+    = note: required for `(uuid::Uuid, tokio::sync::mpsc::bounded::Sender<Vec<u8>>)` to implement `PartialEq`
+note: required by a bound in `core::slice::<impl [T]>::contains`
+   --> /rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library\core\src\slice\mod.rs:2590:4
+
+error[E0308]: mismatched types
+   --> crates\master\tests\session_state_machine.rs:230:42
+    |
+230 |         assert!(session.clients.contains(&client3));
+    |                                 -------- ^^^^^^^^ expected `&(Uuid, Sender<Vec<u8>>)`, found `&Uuid`
+    |                                 |
+    |                                 arguments to this method are incorrect
+    |
+    = note: expected reference `&(uuid::Uuid, tokio::sync::mpsc::bounded::Sender<Vec<u8>>)`
+               found reference `&uuid::Uuid`
+note: method defined here
+   --> /rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library\core\src\slice\mod.rs:2590:11
+
+error[E0061]: this method takes 2 arguments but 1 argument was supplied
+   --> crates\master\tests\session_state_machine.rs:367:25
+    |
+367 |                 session.attach_client(id);
+    |                         ^^^^^^^^^^^^^---- argument #2 of type `tokio::sync::mpsc::bounded::Sender<Vec<u8>>` is 
+missing
+    |
+note: method defined here
+   --> crates\master\src\session\session.rs:147:12
+    |
+147 |     pub fn attach_client(&mut self, client_id: ClientId, output_tx: mpsc::Sender<Vec<u8>>) {
+    |            ^^^^^^^^^^^^^
+help: provide the argument
+    |
+367 |                 session.attach_client(id, /* tokio::sync::mpsc::bounded::Sender<Vec<u8>> */);
+    |                                         +++++++++++++++++++++++++++++++++++++++++++++++++++
+
+error[E0061]: this method takes 2 arguments but 1 argument was supplied
+   --> crates\master\tests\session_state_machine.rs:423:29
+    |
+423 |                     session.attach_client(client_id);
+    |                             ^^^^^^^^^^^^^----------- argument #2 of type 
+`tokio::sync::mpsc::bounded::Sender<Vec<u8>>` is missing
+    |
+note: method defined here
+   --> crates\master\src\session\session.rs:147:12
+    |
+147 |     pub fn attach_client(&mut self, client_id: ClientId, output_tx: mpsc::Sender<Vec<u8>>) {
+    |            ^^^^^^^^^^^^^
+help: provide the argument
+    |
+423 |                     session.attach_client(client_id, /* tokio::sync::mpsc::bounded::Sender<Vec<u8>> */);
+    |                                                    +++++++++++++++++++++++++++++++++++++++++++++++++++
+
+warning: unused variable: `data`
+  --> crates\master\tests\session_state_machine.rs:32:31
+   |
+32 |     async fn write(&mut self, data: &[u8]) -> std::io::Result<()> {
+   |                               ^^^^ help: if this is intentional, prefix it with an underscore: `_data`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+Some errors have detailed explanations: E0061, E0277, E0308.
+For more information about an error, try `rustc --explain E0061`.
+warning: unused import: `CellStyle`
+  --> crates\master\src\ui\tests.rs:10:43
+   |
+10 |     use vt_parser::{VtParser, GridChange, CellStyle};
+   |                                           ^^^^^^^^^
+
+warning: `monoterminal-master` (test "session_state_machine") generated 1 warning
+error: could not compile `monoterminal-master` (test "session_state_machine") due to 26 previous errors; 1 warning 
+emitted
+warning: build failed, waiting for other jobs to finish...
+error[E0308]: mismatched types
+  --> crates\master\src\session\tests.rs:34:31
+   |
+34 |               rt.block_on(async {
+   |  _______________________________^
+35 | |                 let manager = SessionManager::new(Some("cmd.exe".to_string()));
+...  |
+65 | |                 manager.kill_session(session_id).await.ok();
+66 | |             });
+   | |_____________^ expected `Result<_, TestCaseError>`, found `()`
+   |
+   = note:   expected enum `std::result::Result<_, TestCaseError>`
+           found unit type `()`
+
+error[E0308]: mismatched types
+   --> crates\master\src\session\tests.rs:130:13
+    |
+130 |             b"dir\r\n",
+    |             ^^^^^^^^^^ expected an array with a size of 12, found one with a size of 5
+
+error[E0308]: mismatched types
+  --> crates\master\src\pty\tests.rs:46:41
+   |
+46 |                   if let Ok(pty) = result {
+   |  _________________________________________^
+47 | |                     prop_assert!(pty.shell_pid() > 0);
+48 | |                     pty.terminate().await.ok();
+49 | |                 }
+   | |_________________^ expected `Result<_, TestCaseError>`, found `()`
+   |
+   = note:   expected enum `std::result::Result<_, TestCaseError>`
+           found unit type `()`
+
+error[E0308]: mismatched types
+  --> crates\master\src\pty\tests.rs:59:31
+   |
+59 |               rt.block_on(async {
+   |  _______________________________^
+60 | |                 let config = PtyConfig {
+61 | |                     shell: "cmd.exe".to_string(),
+62 | |                     working_dir: PathBuf::from("C:\\"),
+...  |
+79 | |                 pty.terminate().await.ok();
+80 | |             });
+   | |_____________^ expected `Result<_, TestCaseError>`, found `()`
+   |
+   = note:   expected enum `std::result::Result<_, TestCaseError>`
+           found unit type `()`
+
+warning: variable does not need to be mutable
+   --> crates\master\src\session\scrollback.rs:121:13
+    |
+121 |         let mut buf = RingBuffer::<i32>::new(3);
+    |             ----^^^
+    |             |
+    |             help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `write_result`
+   --> crates\master\src\pty\tests.rs:150:13
+    |
+150 |         let write_result = pty.write(b"this should not crash\r\n").await;
+    |             ^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_write_result`
+
+warning: unused variable: `shell_pid`
+   --> crates\master\src\pty\tests.rs:173:13
+    |
+173 |         let shell_pid = pty.shell_pid();
+    |             ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_shell_pid`
+
+warning: unused variable: `cmd`
+   --> crates\master\src\pty\tests.rs:233:25
+    |
+233 |                     let cmd = format!("echo write_{}\r\n", i);
+    |                         ^^^ help: if this is intentional, prefix it with an underscore: `_cmd`
+
+For more information about this error, try `rustc --explain E0308`.
+warning: `monoterminal-master` (lib test) generated 13 warnings (9 duplicates)
+error: could not compile `monoterminal-master` (lib test) due to 4 previous errors; 13 warnings emitted
+warning: `monoterminal-master` (bin "monoterminal" test) generated 21 warnings (20 duplicates)
+error: could not compile `monoterminal-master` (bin "monoterminal" test) due to 4 previous errors; 21 warnings emitted

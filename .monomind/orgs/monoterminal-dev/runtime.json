@@ -1,0 +1,50 @@
+{
+  "status": "running",
+  "run": "run-20260817210535-mv78",
+  "pid": 27092,
+  "updated": "2026-08-17T21:05:35.658Z",
+  "checkpoint": {
+    "version": 1,
+    "status": "running",
+    "run": "run-20260817210535-mv78",
+    "pid": 27092,
+    "updated": "2026-08-17T21:05:35.658Z",
+    "roleState": {
+      "eng-director": {
+        "mailboxQueue": [
+          "Org \"monoterminal-dev\" started (run run-20260817210535-mv78).\nGoal: Build, test, and ship MONOTERMINAL per docs/monoterminal-srs.md v1.2: a Rust master terminal daemon (Windows-first, ConPTY + wgpu/egui rendering, P2P WebRTC networking, WebSocket+Protobuf+TLS1.3 wire protocol, Ed25519/JWT auth + RBAC, SQLite persistence) paired with a single React+xterm.js PWA web client, deeply integrated with monomind (per-session detection, embedded dashboard, health/upgrade). Deliver through the phased roadmap: Phase 1 Windows+Web MVP, Phase 2 P2P+persistence+collaboration, Phase 3 Linux/macOS expansion, Phase 4 enterprise readiness — hitting the SRS's 80% coverage, 60 FPS, <30ms LAN p95, and 1000-concurrent-session targets at each gate.\nCoordinate your team via org_send. Only when the FULL goal above is achieved (or clearly can't be) — not merely \"this batch of dispatched tasks finished\" — record it with org_complete, then end your turn. If a batch finishes but the goal has more scope left, dispatch the next batch instead of ending the run.\n\nPrevious run (run-20260817204115-q24o, 2026-08-17T20:51:13.590Z): outcome \"partial\" — Phase 1 coordination complete, positioned for Monday gate passage. STATUS: 4/7 criteria verified (FPS, mobile, monomind, dashboard), 1/7 pending Monday 09:00 execution (Criterion #5 latency - SOLE path to 5/7 gate), 2/7 deferred to Phase 2 (coverage 41%/70%, soak test blocked by memory leak). MONDAY PLAN: performance-engineer executes latency benchmark at 09:00 with rust-backend-lead standby support. Defensive timeout added to prevent warmup hang. If p95 < 10ms → 5/7 → PHASE 1 GATE PASSAGE per ADR-006. Both builds clean (Rust: warnings only, Web: 2.64s build success). Team coordinated, infrastructure ready, port 18080 available. NEXT RUN: Execute Criterion #5 Monday morning, qa-lead gate review, Phase 1→Phase 2 transition if passed.\nBuild on that work — do not redo what is already done."
+        ],
+        "mailboxClosed": false,
+        "tokensUsed": 0,
+        "costUsd": 0,
+        "status": "running",
+        "scrollback": []
+      }
+    },
+    "pendingRoles": [
+      "product-owner",
+      "devrel-community",
+      "principal-architect",
+      "rust-backend-lead",
+      "rust-engineer-pty",
+      "rust-engineer-protocol",
+      "rust-engineer-storage",
+      "gpu-rendering-engineer",
+      "networking-engineer",
+      "security-engineer",
+      "enterprise-compliance-engineer",
+      "frontend-lead",
+      "frontend-engineer",
+      "monomind-integration-engineer",
+      "qa-lead",
+      "test-engineer-unit",
+      "test-engineer-e2e",
+      "performance-engineer",
+      "devops-lead",
+      "sre-observability-engineer",
+      "technical-writer"
+    ],
+    "abandonedRoles": [],
+    "checksum": "00a7650b20a2bb1b"
+  }
+}

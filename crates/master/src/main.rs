@@ -6,20 +6,20 @@ mod auth;
 mod persistence;
 mod platform;
 mod pty;
-mod session;
 mod server;
+mod session;
 mod ui;
 mod webrtc;
 
-use anyhow::{Result, Context};
-use std::sync::Arc;
-use std::path::PathBuf;
-use tokio::sync::broadcast;
-use tracing_subscriber;
-use tracing_appender;
+use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
+use std::path::PathBuf;
+use std::sync::Arc;
+use tokio::sync::broadcast;
+use tracing_appender;
+use tracing_subscriber;
 
-use auth::{Ed25519AuthService, RateLimiter, keys::load_or_generate_keypair};
+use auth::{keys::load_or_generate_keypair, Ed25519AuthService, RateLimiter};
 use monoterminal_monomind_bridge::HealthStatus;
 
 /// MONOTERMINAL master daemon
@@ -96,7 +96,7 @@ fn read_confirmation() -> bool {
 
 /// Handle service management commands
 async fn handle_service_command(command: Command) -> Result<()> {
-    use platform::service::{install_service, uninstall_service, service_status, require_root};
+    use platform::service::{install_service, require_root, service_status, uninstall_service};
 
     match command {
         Command::InstallService { force } => {
@@ -121,15 +121,20 @@ async fn handle_service_command(command: Command) -> Result<()> {
             install_service()?;
         }
 
-        Command::UninstallService { remove_data, remove_user } => {
+        Command::UninstallService {
+            remove_data,
+            remove_user,
+        } => {
             require_root()?;
 
             // Interactive prompts for data/user removal (if not already specified)
             let confirm_remove_data = if remove_data {
                 true
             } else {
-                print!("\nData directory: {}\nRemove data directory? [y/N]: ",
-                    platform::paths::data_dir().display());
+                print!(
+                    "\nData directory: {}\nRemove data directory? [y/N]: ",
+                    platform::paths::data_dir().display()
+                );
                 read_confirmation()
             };
 
@@ -147,12 +152,17 @@ async fn handle_service_command(command: Command) -> Result<()> {
                 println!("\nRemoving data directory...");
                 let data_dir = platform::paths::data_dir();
                 if data_dir.exists() {
-                    std::fs::remove_dir_all(&data_dir)
-                        .context(format!("Failed to remove data directory: {}", data_dir.display()))?;
+                    std::fs::remove_dir_all(&data_dir).context(format!(
+                        "Failed to remove data directory: {}",
+                        data_dir.display()
+                    ))?;
                     println!("✓ Data directory removed: {}", data_dir.display());
                 }
             } else {
-                println!("\nData directory preserved: {}", platform::paths::data_dir().display());
+                println!(
+                    "\nData directory preserved: {}",
+                    platform::paths::data_dir().display()
+                );
             }
 
             if confirm_remove_user {
@@ -165,7 +175,9 @@ async fn handle_service_command(command: Command) -> Result<()> {
 
                     match status {
                         Ok(s) if s.success() => println!("✓ Service user removed: monoterminal"),
-                        _ => eprintln!("Warning: Failed to remove service user (may need manual cleanup)"),
+                        _ => eprintln!(
+                            "Warning: Failed to remove service user (may need manual cleanup)"
+                        ),
                     }
                 }
                 #[cfg(not(target_os = "linux"))]
@@ -184,9 +196,26 @@ async fn handle_service_command(command: Command) -> Result<()> {
             println!("MONOTERMINAL Service Status");
             println!("============================");
             println!("");
-            println!("Installed: {}", if status.installed { "✓ Yes" } else { "✗ No" });
-            println!("Running:   {}", if status.running { "✓ Yes" } else { "✗ No" });
-            println!("Enabled:   {}", if status.enabled { "✓ Yes (auto-start on boot)" } else { "✗ No" });
+            println!(
+                "Installed: {}",
+                if status.installed {
+                    "✓ Yes"
+                } else {
+                    "✗ No"
+                }
+            );
+            println!(
+                "Running:   {}",
+                if status.running { "✓ Yes" } else { "✗ No" }
+            );
+            println!(
+                "Enabled:   {}",
+                if status.enabled {
+                    "✓ Yes (auto-start on boot)"
+                } else {
+                    "✗ No"
+                }
+            );
 
             if let Some(pid) = status.pid {
                 println!("PID:       {}", pid);
@@ -233,7 +262,7 @@ async fn main() -> Result<()> {
         let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
 
         tracing_subscriber::fmt()
-            .json()  // Structured JSON for post-test parsing
+            .json() // Structured JSON for post-test parsing
             .with_current_span(false)
             .with_span_list(false)
             .with_writer(non_blocking)
@@ -242,7 +271,9 @@ async fn main() -> Result<()> {
         // Guard must live for program lifetime - box it and leak (acceptable for daemon)
         Box::leak(Box::new(_guard));
 
-        tracing::info!("MONOTERMINAL master daemon starting (SOAK TEST MODE - JSON logging enabled)");
+        tracing::info!(
+            "MONOTERMINAL master daemon starting (SOAK TEST MODE - JSON logging enabled)"
+        );
     } else {
         // Normal mode: compact console output
         tracing_subscriber::fmt()
@@ -293,8 +324,7 @@ async fn main() -> Result<()> {
         platform::service::sd_notify::notify_status("Loading Ed25519 keypair...")?;
     }
 
-    let keypair = load_or_generate_keypair()
-        .context("Failed to load Ed25519 keypair")?;
+    let keypair = load_or_generate_keypair().context("Failed to load Ed25519 keypair")?;
     tracing::info!("Ed25519 keypair loaded");
 
     // 2. Create authentication service (Ed25519 + JWT)
@@ -324,8 +354,7 @@ async fn main() -> Result<()> {
 
     // 7. Create server configuration
     let mut server_config = server::ServerConfig::default();
-    server_config.bind_addr = args.bind_addr.parse()
-        .context("Invalid bind address")?;
+    server_config.bind_addr = args.bind_addr.parse().context("Invalid bind address")?;
     server_config.dev_mode = args.dev_mode;
 
     tracing::info!(
@@ -383,8 +412,8 @@ fn load_or_generate_jwt_key() -> Result<[u8; 32]> {
 
     // 1. Try environment variable first
     if let Ok(key_hex) = env::var("MONOTERMINAL_JWT_KEY") {
-        let key_bytes = hex::decode(&key_hex)
-            .context("Invalid JWT key in MONOTERMINAL_JWT_KEY (not hex)")?;
+        let key_bytes =
+            hex::decode(&key_hex).context("Invalid JWT key in MONOTERMINAL_JWT_KEY (not hex)")?;
         if key_bytes.len() != 32 {
             anyhow::bail!("JWT key must be exactly 32 bytes (got {})", key_bytes.len());
         }
@@ -412,10 +441,12 @@ fn load_or_generate_jwt_key() -> Result<[u8; 32]> {
 
     // Try to load existing key
     if key_path.exists() {
-        let key_bytes = fs::read(&key_path)
-            .context("Failed to read JWT key file")?;
+        let key_bytes = fs::read(&key_path).context("Failed to read JWT key file")?;
         if key_bytes.len() != 32 {
-            anyhow::bail!("JWT key file corrupt (expected 32 bytes, got {})", key_bytes.len());
+            anyhow::bail!(
+                "JWT key file corrupt (expected 32 bytes, got {})",
+                key_bytes.len()
+            );
         }
         let mut key = [0u8; 32];
         key.copy_from_slice(&key_bytes);
@@ -428,12 +459,10 @@ fn load_or_generate_jwt_key() -> Result<[u8; 32]> {
 
     // Create parent directory if it doesn't exist
     if let Some(parent) = key_path.parent() {
-        fs::create_dir_all(parent)
-            .context("Failed to create JWT key directory")?;
+        fs::create_dir_all(parent).context("Failed to create JWT key directory")?;
     }
 
-    fs::write(&key_path, &key)
-        .context("Failed to save JWT key")?;
+    fs::write(&key_path, &key).context("Failed to save JWT key")?;
     tracing::info!("Generated new JWT key and saved to {}", key_path.display());
 
     Ok(key)
@@ -448,10 +477,7 @@ fn generate_random_key() -> [u8; 32] {
 }
 
 /// Start daily health check scheduler as background task
-fn start_health_scheduler(
-    project_dir: PathBuf,
-    health_tx: broadcast::Sender<HealthStatus>,
-) {
+fn start_health_scheduler(project_dir: PathBuf, health_tx: broadcast::Sender<HealthStatus>) {
     tokio::spawn(async move {
         use monoterminal_monomind_bridge::HealthScheduler;
 

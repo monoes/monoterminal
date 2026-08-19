@@ -76,13 +76,15 @@ mod session_tests {
 
         assert_eq!(manager.session_count().await, 0);
 
-        let session1 = manager.create_session(None, 24, 80)
+        let session1 = manager
+            .create_session(None, 24, 80)
             .await
             .expect("Failed to create session 1");
 
         assert_eq!(manager.session_count().await, 1);
 
-        let session2 = manager.create_session(None, 30, 100)
+        let session2 = manager
+            .create_session(None, 30, 100)
             .await
             .expect("Failed to create session 2");
 
@@ -101,7 +103,8 @@ mod session_tests {
     async fn test_session_resize() {
         let manager = SessionManager::new(None);
 
-        let session_id = manager.create_session(None, 24, 80)
+        let session_id = manager
+            .create_session(None, 24, 80)
             .await
             .expect("Failed to create session");
 
@@ -124,16 +127,13 @@ mod session_tests {
     async fn test_send_input() {
         let manager = SessionManager::new(None);
 
-        let session_id = manager.create_session(None, 24, 80)
+        let session_id = manager
+            .create_session(None, 24, 80)
             .await
             .expect("Failed to create session");
 
         // Send various inputs
-        let inputs: &[&[u8]] = &[
-            b"echo hello\r\n",
-            b"dir\r\n",
-            b"cd ..\r\n",
-        ];
+        let inputs: &[&[u8]] = &[b"echo hello\r\n", b"dir\r\n", b"cd ..\r\n"];
 
         for input in inputs {
             let result = manager.send_input(session_id, *input).await;
@@ -152,12 +152,14 @@ mod session_tests {
 
         let manager = SessionManager::new(None);
 
-        let session_id = manager.create_session(None, 24, 80)
+        let session_id = manager
+            .create_session(None, 24, 80)
             .await
             .expect("Failed to create session");
 
         // Send some commands to generate output
-        manager.send_input(session_id, b"echo test\r\n")
+        manager
+            .send_input(session_id, b"echo test\r\n")
             .await
             .expect("Failed to send input");
 
@@ -167,7 +169,8 @@ mod session_tests {
         // Attach a client and get snapshot
         let client_id = Uuid::new_v4();
         let (output_tx, _output_rx) = mpsc::channel(32);
-        let snapshot = manager.attach_client(session_id, client_id, output_tx)
+        let snapshot = manager
+            .attach_client(session_id, client_id, output_tx)
             .await
             .expect("Failed to attach client");
 
@@ -208,9 +211,7 @@ mod session_tests {
 
         for _ in 0..5 {
             let mgr = manager.clone();
-            let handle = tokio::spawn(async move {
-                mgr.create_session(None, 24, 80).await
-            });
+            let handle = tokio::spawn(async move { mgr.create_session(None, 24, 80).await });
             handles.push(handle);
         }
 
@@ -226,7 +227,10 @@ mod session_tests {
         assert_eq!(manager.session_count().await, 5);
 
         // All IDs should be unique
-        let unique_count = session_ids.iter().collect::<std::collections::HashSet<_>>().len();
+        let unique_count = session_ids
+            .iter()
+            .collect::<std::collections::HashSet<_>>()
+            .len();
         assert_eq!(unique_count, 5);
 
         // Cleanup
@@ -242,26 +246,32 @@ mod session_tests {
 
         let manager = SessionManager::new(None);
 
-        let session_id = manager.create_session(None, 24, 80)
+        let session_id = manager
+            .create_session(None, 24, 80)
             .await
             .expect("Failed to create session");
 
         // Initial activity timestamp set
         let client_id = Uuid::new_v4();
         let (output_tx, _output_rx) = mpsc::channel(32);
-        manager.attach_client(session_id, client_id, output_tx).await.ok();
+        manager
+            .attach_client(session_id, client_id, output_tx)
+            .await
+            .ok();
 
         tokio::time::sleep(Duration::from_millis(100)).await;
 
         // Send input should update timestamp
-        manager.send_input(session_id, b"echo test\r\n")
+        manager
+            .send_input(session_id, b"echo test\r\n")
             .await
             .expect("Failed to send input");
 
         tokio::time::sleep(Duration::from_millis(100)).await;
 
         // Resize should update timestamp
-        manager.resize_session(session_id, 30, 100)
+        manager
+            .resize_session(session_id, 30, 100)
             .await
             .expect("Failed to resize");
 
@@ -277,7 +287,8 @@ mod session_tests {
 
         let manager = SessionManager::new(None);
 
-        let session_id = manager.create_session(None, 24, 80)
+        let session_id = manager
+            .create_session(None, 24, 80)
             .await
             .expect("Failed to create session");
 
@@ -289,9 +300,18 @@ mod session_tests {
         let (output_tx1, _output_rx1) = mpsc::channel(32);
         let (output_tx2, _output_rx2) = mpsc::channel(32);
         let (output_tx3, _output_rx3) = mpsc::channel(32);
-        let snapshot1 = manager.attach_client(session_id, client1, output_tx1).await.expect("Failed to attach client 1");
-        let snapshot2 = manager.attach_client(session_id, client2, output_tx2).await.expect("Failed to attach client 2");
-        let snapshot3 = manager.attach_client(session_id, client3, output_tx3).await.expect("Failed to attach client 3");
+        let snapshot1 = manager
+            .attach_client(session_id, client1, output_tx1)
+            .await
+            .expect("Failed to attach client 1");
+        let snapshot2 = manager
+            .attach_client(session_id, client2, output_tx2)
+            .await
+            .expect("Failed to attach client 2");
+        let snapshot3 = manager
+            .attach_client(session_id, client3, output_tx3)
+            .await
+            .expect("Failed to attach client 3");
 
         // All snapshots should be for the same session
         assert_eq!(snapshot1.id, session_id);
@@ -310,11 +330,11 @@ mod session_tests {
     // Verify SessionContainer::drop() aborts background tasks to prevent memory leaks
     mod aborton_drop_tests {
         use super::*;
-        use std::sync::Arc;
-        use std::path::PathBuf;
-        use tokio::sync::{mpsc, Mutex, RwLock};
-        use std::sync::atomic::{AtomicBool, Ordering};
         use crate::session::session::{Session, SessionContainer};
+        use std::path::PathBuf;
+        use std::sync::atomic::{AtomicBool, Ordering};
+        use std::sync::Arc;
+        use tokio::sync::{mpsc, Mutex, RwLock};
 
         /// Test that dropping SessionContainer aborts the output_task
         #[tokio::test]
@@ -364,7 +384,10 @@ mod session_tests {
             let is_finished_before_drop = handle_ref.as_ref().unwrap().is_finished();
             drop(handle_ref);
 
-            assert!(!is_finished_before_drop, "Task should not be finished before drop");
+            assert!(
+                !is_finished_before_drop,
+                "Task should not be finished before drop"
+            );
 
             // Drop the container - should abort the task
             drop(container);
@@ -413,7 +436,10 @@ mod session_tests {
             let is_finished_before_drop = handle_ref.as_ref().unwrap().is_finished();
             drop(handle_ref);
 
-            assert!(!is_finished_before_drop, "Task should not be finished before drop");
+            assert!(
+                !is_finished_before_drop,
+                "Task should not be finished before drop"
+            );
 
             // Drop the container - should abort the task
             drop(container);
@@ -469,8 +495,14 @@ mod session_tests {
             let monomind_not_finished = !monomind_ref.as_ref().unwrap().is_finished();
             drop(monomind_ref);
 
-            assert!(output_not_finished, "Output task should not be finished before drop");
-            assert!(monomind_not_finished, "Monomind task should not be finished before drop");
+            assert!(
+                output_not_finished,
+                "Output task should not be finished before drop"
+            );
+            assert!(
+                monomind_not_finished,
+                "Monomind task should not be finished before drop"
+            );
 
             // Drop the container - should abort both tasks
             drop(container);
@@ -530,8 +562,11 @@ mod session_tests {
 
             // Arc count should be back to 1 (only original reference)
             // This proves the memory leak fix works!
-            assert_eq!(Arc::strong_count(&session), initial_count,
-                "Arc references should be released after task abort");
+            assert_eq!(
+                Arc::strong_count(&session),
+                initial_count,
+                "Arc references should be released after task abort"
+            );
         }
 
         /// Test that SessionContainer can be dropped safely even without tasks
@@ -550,7 +585,7 @@ mod session_tests {
             let container = SessionContainer {
                 session: session.clone(),
                 pty: Arc::new(Mutex::new(None)),
-                output_task: Arc::new(Mutex::new(None)),  // No task
+                output_task: Arc::new(Mutex::new(None)), // No task
                 monomind_task: Arc::new(Mutex::new(None)), // No task
             };
 

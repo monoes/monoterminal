@@ -17,6 +17,7 @@ serde_json = "1"
 
 [dev-dependencies]
 tempfile = "3.8"
+tokio-test = "0.4"
 
 [features]
 # Optional feature flag - allows building without monomind

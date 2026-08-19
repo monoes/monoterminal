@@ -11,27 +11,31 @@
 // - Embedded dashboard API (§2.4.2)
 // - Health check & upgrade (§2.4.3)
 
+use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
-use serde::{Serialize, Deserialize};
 
 // Module declarations
+mod dashboard;
 mod detection;
 mod health;
-mod dashboard;
+pub mod responses;
 
 // Re-export detection functions
-pub use detection::{walk_to_monomind, should_suggest_install, dismiss_suggestion};
+pub use detection::{dismiss_suggestion, should_suggest_install, walk_to_monomind};
 
 // Re-export health types and functions
 pub use health::{
-    run_doctor_check, upgrade_monomind, HealthScheduler, HealthStatus, HealthIssue,
-    Severity, UpgradeResult,
+    run_doctor_check, upgrade_monomind, HealthIssue, HealthScheduler, HealthStatus, Severity,
+    UpgradeResult,
 };
 
 // Re-export dashboard types and functions
 pub use dashboard::{
-    get_dashboard_data, DashboardData, OrgStatus, AgentInfo, RunInfo, MemoryStats,
+    get_dashboard_data, AgentInfo, DashboardData, MemoryStats, OrgStatus, RunInfo,
 };
+
+// Re-export response conversion functions
+pub use responses::{to_dashboard_response, to_health_check_response};
 
 /// Detection result from per-session monomind check
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

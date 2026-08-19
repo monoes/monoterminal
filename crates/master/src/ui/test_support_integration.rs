@@ -70,14 +70,23 @@ async fn test_clear_red() {
     let target = ctx.create_render_target(100, 100);
 
     // Clear to red
-    clear_texture(&ctx, &target, wgpu::Color { r: 1.0, g: 0.0, b: 0.0, a: 1.0 });
+    clear_texture(
+        &ctx,
+        &target,
+        wgpu::Color {
+            r: 1.0,
+            g: 0.0,
+            b: 0.0,
+            a: 1.0,
+        },
+    );
 
     let pixels = ctx.read_pixels(&target, 100, 100).await.unwrap();
 
     // Verify first pixel is red
     assert_eq!(pixels[0], 255); // R
-    assert_eq!(pixels[1], 0);   // G
-    assert_eq!(pixels[2], 0);   // B
+    assert_eq!(pixels[1], 0); // G
+    assert_eq!(pixels[2], 0); // B
     assert_eq!(pixels[3], 255); // A
 }
 
@@ -86,13 +95,22 @@ async fn test_clear_green() {
     let ctx = HeadlessGpuContext::new().await.unwrap();
     let target = ctx.create_render_target(100, 100);
 
-    clear_texture(&ctx, &target, wgpu::Color { r: 0.0, g: 1.0, b: 0.0, a: 1.0 });
+    clear_texture(
+        &ctx,
+        &target,
+        wgpu::Color {
+            r: 0.0,
+            g: 1.0,
+            b: 0.0,
+            a: 1.0,
+        },
+    );
 
     let pixels = ctx.read_pixels(&target, 100, 100).await.unwrap();
 
-    assert_eq!(pixels[0], 0);   // R
+    assert_eq!(pixels[0], 0); // R
     assert_eq!(pixels[1], 255); // G
-    assert_eq!(pixels[2], 0);   // B
+    assert_eq!(pixels[2], 0); // B
     assert_eq!(pixels[3], 255); // A
 }
 
@@ -101,12 +119,21 @@ async fn test_clear_blue() {
     let ctx = HeadlessGpuContext::new().await.unwrap();
     let target = ctx.create_render_target(100, 100);
 
-    clear_texture(&ctx, &target, wgpu::Color { r: 0.0, g: 0.0, b: 1.0, a: 1.0 });
+    clear_texture(
+        &ctx,
+        &target,
+        wgpu::Color {
+            r: 0.0,
+            g: 0.0,
+            b: 1.0,
+            a: 1.0,
+        },
+    );
 
     let pixels = ctx.read_pixels(&target, 100, 100).await.unwrap();
 
-    assert_eq!(pixels[0], 0);   // R
-    assert_eq!(pixels[1], 0);   // G
+    assert_eq!(pixels[0], 0); // R
+    assert_eq!(pixels[1], 0); // G
     assert_eq!(pixels[2], 255); // B
     assert_eq!(pixels[3], 255); // A
 }
@@ -122,10 +149,10 @@ async fn test_clear_black() {
 
     // All pixels should be black (0,0,0,255)
     for i in (0..pixels.len()).step_by(4) {
-        assert_eq!(pixels[i], 0);     // R
-        assert_eq!(pixels[i+1], 0);   // G
-        assert_eq!(pixels[i+2], 0);   // B
-        assert_eq!(pixels[i+3], 255); // A
+        assert_eq!(pixels[i], 0); // R
+        assert_eq!(pixels[i + 1], 0); // G
+        assert_eq!(pixels[i + 2], 0); // B
+        assert_eq!(pixels[i + 3], 255); // A
     }
 }
 
@@ -140,10 +167,10 @@ async fn test_clear_white() {
 
     // All pixels should be white (255,255,255,255)
     for i in (0..pixels.len()).step_by(4) {
-        assert_eq!(pixels[i], 255);   // R
-        assert_eq!(pixels[i+1], 255); // G
-        assert_eq!(pixels[i+2], 255); // B
-        assert_eq!(pixels[i+3], 255); // A
+        assert_eq!(pixels[i], 255); // R
+        assert_eq!(pixels[i + 1], 255); // G
+        assert_eq!(pixels[i + 2], 255); // B
+        assert_eq!(pixels[i + 3], 255); // A
     }
 }
 
@@ -160,8 +187,13 @@ async fn test_read_pixels_size() {
         let target = ctx.create_render_target(width, height);
         let pixels = ctx.read_pixels(&target, width, height).await.unwrap();
 
-        assert_eq!(pixels.len() as u32, width * height * 4,
-                   "Wrong pixel count for {}x{}", width, height);
+        assert_eq!(
+            pixels.len() as u32,
+            width * height * 4,
+            "Wrong pixel count for {}x{}",
+            width,
+            height
+        );
     }
 }
 
@@ -358,9 +390,11 @@ async fn test_platform_backend_selection() {
 
 /// Clear texture to specified color (helper for tests)
 fn clear_texture(ctx: &HeadlessGpuContext, texture: &wgpu::Texture, color: wgpu::Color) {
-    let mut encoder = ctx.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-        label: Some("clear_encoder"),
-    });
+    let mut encoder = ctx
+        .device
+        .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+            label: Some("clear_encoder"),
+        });
 
     {
         let view = texture.create_view(&wgpu::TextureViewDescriptor::default());

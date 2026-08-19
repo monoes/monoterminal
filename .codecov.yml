@@ -1,0 +1,66 @@
+# Codecov Configuration for MONOTERMINAL
+# Phase 1: Windows + Web MVP
+
+codecov:
+  require_ci_to_pass: yes
+  notify:
+    wait_for_ci: yes
+
+coverage:
+  precision: 2
+  round: down
+  range: "70...100"
+
+  status:
+    project:
+      default:
+        target: 70%              # Phase 1 minimum (SRS §7.1)
+        threshold: 1%            # Allow 1% deviation
+        informational: false     # Block PR if below target
+        only_pulls: false
+
+    patch:
+      default:
+        target: 80%              # New code should be well-tested
+        threshold: 5%
+        informational: false
+        only_pulls: true
+
+comment:
+  layout: "header, diff, flags, files, footer"
+  behavior: default
+  require_changes: true
+  require_base: yes
+  require_head: yes
+
+ignore:
+  # Generated code
+  - "crates/protocol/src/generated/**"
+
+  # Test code
+  - "**/tests/**"
+  - "**/benches/**"
+
+  # Build scripts
+  - "**/build.rs"
+
+  # Examples and demos
+  - "**/examples/**"
+
+flags:
+  phase1-windows:
+    carryforward: false
+    paths:
+      - crates/master/
+      - crates/protocol/
+      - crates/monomind-bridge/
+
+  phase1-web:
+    carryforward: false
+    paths:
+      - web/
+
+# Phase progression targets (update as phases complete)
+# Phase 1: 70% (Windows + Web)
+# Phase 2: 75% (P2P + Persistence)
+# Phase 3: 80% (Linux + macOS)

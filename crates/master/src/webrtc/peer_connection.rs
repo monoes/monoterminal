@@ -5,14 +5,14 @@
 use crate::webrtc::config::WebRtcConfig;
 use crate::webrtc::error::{Result, WebRtcError};
 use crate::webrtc::ice::{IceCandidate, IceCandidateGatherer};
+use bytes::Bytes;
 use std::sync::Arc;
 use tokio::sync::{mpsc, Mutex};
-use tracing::{debug, info, warn, error};
+use tracing::{debug, error, info, warn};
 use webrtc::api::interceptor_registry::register_default_interceptors;
 use webrtc::api::media_engine::MediaEngine;
 use webrtc::api::APIBuilder;
 use webrtc::data_channel::data_channel_message::DataChannelMessage as WebRtcDataChannelMessage;
-use bytes::Bytes;
 use webrtc::data_channel::RTCDataChannel;
 use webrtc::ice_transport::ice_connection_state::RTCIceConnectionState;
 use webrtc::ice_transport::ice_server::RTCIceServer;
@@ -85,7 +85,11 @@ impl PeerConnection {
     /// Create a new PeerConnection (as offerer - client side)
     pub async fn new_as_offerer(
         config: Arc<WebRtcConfig>,
-    ) -> Result<(Self, mpsc::Receiver<IceCandidate>, mpsc::Receiver<DataChannelMessage>)> {
+    ) -> Result<(
+        Self,
+        mpsc::Receiver<IceCandidate>,
+        mpsc::Receiver<DataChannelMessage>,
+    )> {
         debug!("Creating PeerConnection as offerer");
 
         // Build ICE servers from config
@@ -133,7 +137,11 @@ impl PeerConnection {
     /// Create a new PeerConnection (as answerer - master side)
     pub async fn new_as_answerer(
         config: Arc<WebRtcConfig>,
-    ) -> Result<(Self, mpsc::Receiver<IceCandidate>, mpsc::Receiver<DataChannelMessage>)> {
+    ) -> Result<(
+        Self,
+        mpsc::Receiver<IceCandidate>,
+        mpsc::Receiver<DataChannelMessage>,
+    )> {
         debug!("Creating PeerConnection as answerer");
 
         // Build ICE servers
@@ -186,10 +194,7 @@ impl PeerConnection {
     }
 
     /// Set up ICE candidate handler
-    fn setup_ice_candidate_handler(
-        pc: Arc<RTCPeerConnection>,
-        ice_tx: mpsc::Sender<IceCandidate>,
-    ) {
+    fn setup_ice_candidate_handler(pc: Arc<RTCPeerConnection>, ice_tx: mpsc::Sender<IceCandidate>) {
         pc.on_ice_candidate(Box::new(move |candidate| {
             let tx = ice_tx.clone();
             Box::pin(async move {
@@ -328,7 +333,8 @@ impl PeerConnection {
     pub async fn add_ice_candidate(&self, candidate: IceCandidate) -> Result<()> {
         debug!("Adding ICE candidate: {}", candidate.candidate);
 
-        let init: webrtc::ice_transport::ice_candidate::RTCIceCandidateInit = candidate.try_into()?;
+        let init: webrtc::ice_transport::ice_candidate::RTCIceCandidateInit =
+            candidate.try_into()?;
 
         self.peer_connection
             .add_ice_candidate(init)

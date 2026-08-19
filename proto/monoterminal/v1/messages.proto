@@ -24,6 +24,13 @@ message Envelope {
     DetectionRequest detection_request = 15;
     DetectionResponse detection_response = 16;
     MonitoringData monitoring_data = 17;
+
+    // Phase 2 P2P WebRTC Messages (fields 18-30 reserved for Phase 2)
+    // Fields 18-24 reserved for future Phase 2 messages
+    WebRTCOffer webrtc_offer = 25;
+    WebRTCAnswer webrtc_answer = 26;
+    ICECandidate ice_candidate = 27;
+    // Fields 28-30 reserved for P2PConnectionStatus, PeerHandshake, PeerHandshakeResponse
   }
 }
 
@@ -200,4 +207,38 @@ message RunSummary {
   int64 started_at = 3;   // Unix timestamp
   int64 completed_at = 4; // 0 if still running
   string status = 5;      // "running", "completed", "failed"
+}
+
+// ============================================================================
+// Phase 2: WebRTC P2P Signaling (ADR-011 §5.2)
+// From: docs/decisions/protocol-phase2-design.md §4.2
+// ============================================================================
+
+message WebRTCOffer {
+  string session_id = 1;       // Session to establish P2P for
+  string client_id = 2;        // From ClientInfo (for routing)
+  string sdp = 3;              // SDP offer string
+  string peer_id = 4;          // Ed25519 public key (hex)
+  uint64 nonce = 5;            // Challenge nonce from PeerHandshakeResponse
+}
+
+message WebRTCAnswer {
+  string sdp = 1;              // SDP answer string
+  optional TURNCredentials turn = 2;    // TURN credentials (Week 3-4, optional for Phase 2 Week 1-2)
+  uint64 offer_timestamp_ms = 3;     // Echo from offer (for latency tracking)
+}
+
+message TURNCredentials {
+  repeated string urls = 1;     // TURN server URLs (e.g., "turn:coturn.example.com:3478")
+  string username = 2;          // Time-limited username (format: "timestamp:peer_id")
+  string credential = 3;        // HMAC-SHA256 credential (coturn REST API)
+  uint64 expires_at_ms = 4;     // Credential expiry (Unix timestamp milliseconds, 15min TTL)
+}
+
+message ICECandidate {
+  string session_id = 1;       // Session for routing
+  string client_id = 2;        // Client sending this candidate
+  string candidate = 3;        // ICE candidate string
+  optional string sdp_mid = 4;       // SDP media ID
+  optional uint32 sdp_mline_index = 5;  // Media line index
 }

@@ -125,13 +125,15 @@ pub struct UpgradeResult {
 /// use monoterminal_monomind_bridge::run_doctor_check;
 /// use std::path::Path;
 ///
+/// # async fn example() -> anyhow::Result<()> {
 /// let health = run_doctor_check(Path::new("/project")).await?;
 /// if !health.is_healthy() {
 ///     for issue in &health.issues {
 ///         println!("{:?}: {}", issue.severity, issue.message);
 ///     }
 /// }
-/// # Ok::<(), anyhow::Error>(())
+/// # Ok(())
+/// # }
 /// ```
 pub async fn run_doctor_check(project_dir: &Path) -> Result<HealthStatus> {
     tracing::debug!(
@@ -301,6 +303,7 @@ fn parse_doctor_output(json: serde_json::Value) -> Result<HealthStatus> {
 /// use monoterminal_monomind_bridge::upgrade_monomind;
 /// use std::path::Path;
 ///
+/// # async fn example() -> anyhow::Result<()> {
 /// let result = upgrade_monomind(Path::new("/project")).await?;
 /// if result.success {
 ///     println!("Upgraded {} -> {}",
@@ -308,7 +311,8 @@ fn parse_doctor_output(json: serde_json::Value) -> Result<HealthStatus> {
 ///         result.new_version.unwrap_or_default()
 ///     );
 /// }
-/// # Ok::<(), anyhow::Error>(())
+/// # Ok(())
+/// # }
 /// ```
 pub async fn upgrade_monomind(project_dir: &Path) -> Result<UpgradeResult> {
     tracing::info!(
@@ -376,9 +380,7 @@ async fn get_current_version(project_dir: &Path) -> Result<String> {
     .context("Failed to get monomind version")?;
 
     if output.status.success() {
-        let version = String::from_utf8_lossy(&output.stdout)
-            .trim()
-            .to_string();
+        let version = String::from_utf8_lossy(&output.stdout).trim().to_string();
         Ok(version)
     } else {
         anyhow::bail!("Failed to get version")
@@ -420,6 +422,7 @@ impl HealthScheduler {
     /// use monoterminal_monomind_bridge::HealthScheduler;
     /// use std::path::Path;
     ///
+    /// # async fn example() -> anyhow::Result<()> {
     /// let scheduler = HealthScheduler::new();
     /// scheduler.start(
     ///     Path::new("/project"),
@@ -427,7 +430,8 @@ impl HealthScheduler {
     ///         println!("Health: {:?}", health);
     ///     }
     /// ).await?;
-    /// # Ok::<(), anyhow::Error>(())
+    /// # Ok(())
+    /// # }
     /// ```
     pub async fn start<F, Fut>(self, project_dir: &Path, callback: F) -> Result<()>
     where
@@ -441,6 +445,10 @@ impl HealthScheduler {
             interval_secs = self.interval.as_secs(),
             "Health check scheduler started"
         );
+
+        // Skip first immediate tick - we don't want to run health check on startup
+        // The first tick() fires immediately, subsequent ticks wait for the interval
+        ticker.tick().await;
 
         loop {
             ticker.tick().await;

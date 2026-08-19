@@ -1,0 +1,40 @@
+﻿
+error[E0061]: this method takes 2 arguments but 1 argument was supplied
+error[E0277]: can't compare `tokio::sync::mpsc::bounded::Sender<Vec<u8>>` with 
+`tokio::sync::mpsc::bounded::Sender<Vec<u8>>`
+error[E0308]: mismatched types
+error[E0061]: this method takes 2 arguments but 1 argument was supplied
+error[E0061]: this method takes 2 arguments but 1 argument was supplied
+error[E0061]: this method takes 2 arguments but 1 argument was supplied
+error[E0061]: this method takes 2 arguments but 1 argument was supplied
+error[E0061]: this method takes 2 arguments but 1 argument was supplied
+error[E0277]: can't compare `tokio::sync::mpsc::bounded::Sender<Vec<u8>>` with 
+`tokio::sync::mpsc::bounded::Sender<Vec<u8>>`
+error[E0308]: mismatched types
+error[E0277]: can't compare `tokio::sync::mpsc::bounded::Sender<Vec<u8>>` with 
+`tokio::sync::mpsc::bounded::Sender<Vec<u8>>`
+error[E0308]: mismatched types
+error[E0277]: can't compare `tokio::sync::mpsc::bounded::Sender<Vec<u8>>` with 
+`tokio::sync::mpsc::bounded::Sender<Vec<u8>>`
+error[E0308]: mismatched types
+error[E0061]: this method takes 2 arguments but 1 argument was supplied
+error[E0061]: this method takes 2 arguments but 1 argument was supplied
+error[E0061]: this method takes 2 arguments but 1 argument was supplied
+error[E0061]: this method takes 2 arguments but 1 argument was supplied
+error[E0277]: can't compare `tokio::sync::mpsc::bounded::Sender<Vec<u8>>` with 
+`tokio::sync::mpsc::bounded::Sender<Vec<u8>>`
+error[E0308]: mismatched types
+error[E0277]: can't compare `tokio::sync::mpsc::bounded::Sender<Vec<u8>>` with 
+`tokio::sync::mpsc::bounded::Sender<Vec<u8>>`
+error[E0308]: mismatched types
+error[E0277]: can't compare `tokio::sync::mpsc::bounded::Sender<Vec<u8>>` with 
+`tokio::sync::mpsc::bounded::Sender<Vec<u8>>`
+error[E0308]: mismatched types
+error[E0061]: this method takes 2 arguments but 1 argument was supplied
+error[E0061]: this method takes 2 arguments but 1 argument was supplied
+error[E0308]: mismatched types
+error[E0308]: mismatched types
+error[E0308]: mismatched types
+error[E0308]: mismatched types
+
+

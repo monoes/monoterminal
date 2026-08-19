@@ -1,0 +1,122 @@
+.monomind-suggestion {
+  position: fixed;
+  top: 60px; /* Below header */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  max-width: 600px;
+  width: 90%;
+  animation: slideDown 0.3s ease-out;
+}
+
+.suggestion-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--color-panel-bg, #2a2a2a);
+  border: 1px solid var(--color-border, #444);
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.suggestion-icon {
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.suggestion-text {
+  flex: 1;
+  min-width: 0; /* Enable text overflow */
+}
+
+.suggestion-message {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--color-text, #fff);
+}
+
+.suggestion-path {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-muted, #aaa);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.suggestion-path strong {
+  color: var(--color-text, #fff);
+}
+
+.suggestion-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.suggestion-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.suggestion-btn.primary {
+  background: var(--color-primary, #007acc);
+  color: white;
+}
+
+.suggestion-btn.primary:hover {
+  background: var(--color-primary-hover, #005a9e);
+}
+
+.suggestion-btn.secondary {
+  background: transparent;
+  color: var(--color-text-muted, #aaa);
+  border: 1px solid var(--color-border, #444);
+}
+
+.suggestion-btn.secondary:hover {
+  background: var(--color-panel-hover, #333);
+  color: var(--color-text, #fff);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .monomind-suggestion {
+    top: 50px;
+    width: 95%;
+  }
+
+  .suggestion-content {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 12px;
+  }
+
+  .suggestion-actions {
+    width: 100%;
+  }
+
+  .suggestion-btn {
+    flex: 1;
+    padding: 10px;
+  }
+}

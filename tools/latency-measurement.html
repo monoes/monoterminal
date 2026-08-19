@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MONOTERMINAL Latency Measurement Tool</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+        }
+        h1 {
+            color: #4ec9b0;
+        }
+        .controls {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #252526;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #007acc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        button:hover {
+            background-color: #005a9e;
+        }
+        button:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+        .results {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #252526;
+            border-radius: 5px;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .stat-box {
+            background-color: #2d2d30;
+            padding: 10px;
+            border-radius: 3px;
+            text-align: center;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #858585;
+            margin-bottom: 5px;
+        }
+        .stat-value {
+            font-size: 24px;
+            color: #4ec9b0;
+            font-weight: bold;
+        }
+        .histogram {
+            margin-top: 20px;
+            height: 200px;
+            background-color: #2d2d30;
+            border-radius: 3px;
+            position: relative;
+            padding: 10px;
+        }
+        .log {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #1e1e1e;
+            border: 1px solid #3c3c3c;
+            border-radius: 3px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 12px;
+        }
+        .log-entry {
+            margin: 2px 0;
+            padding: 3px 5px;
+        }
+        .log-entry.pass {
+            color: #4ec9b0;
+        }
+        .log-entry.fail {
+            color: #f48771;
+        }
+        input {
+            background-color: #3c3c3c;
+            color: #d4d4d4;
+            border: 1px solid #555;
+            padding: 8px;
+            border-radius: 3px;
+            width: 300px;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚀 MONOTERMINAL Latency Measurement</h1>
+    <p>Measures round-trip latency: keypress → master processing → OutputData received → rendered</p>
+    <p><strong>SRS §7.1 Target:</strong> p95 &lt; 10ms (localhost/LAN), p50 &lt; 5ms</p>
+
+    <div class="controls">
+        <h3>Configuration</h3>
+        <div>
+            <label>WebSocket URL:</label>
+            <input type="text" id="wsUrl" value="ws://127.0.0.1:5000/ws" />
+        </div>
+        <div style="margin-top: 10px;">
+            <button id="connectBtn">Connect</button>
+            <button id="runTestBtn" disabled>Run Latency Test (100 samples)</button>
+            <button id="clearBtn">Clear Results</button>
+        </div>
+        <div id="status" style="margin-top: 10px; color: #858585;">
+            Status: Disconnected
+        </div>
+    </div>
+
+    <div class="results">
+        <h3>Results</h3>
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-label">p50 Latency</div>
+                <div class="stat-value" id="p50">--</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">p95 Latency</div>
+                <div class="stat-value" id="p95">--</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">p99 Latency</div>
+                <div class="stat-value" id="p99">--</div>
+            </div>
+        </div>
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-label">Min</div>
+                <div class="stat-value" id="min">--</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Mean</div>
+                <div class="stat-value" id="mean">--</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Max</div>
+                <div class="stat-value" id="max">--</div>
+            </div>
+        </div>
+        <div id="passFailResult" style="margin-top: 15px; font-size: 18px; font-weight: bold; text-align: center;">
+        </div>
+    </div>
+
+    <div class="log" id="log"></div>
+
+    <script>
+        let ws = null;
+        let measurements = [];
+        let pendingMeasurements = new Map(); // sequence -> timestamp
+
+        const connectBtn = document.getElementById('connectBtn');
+        const runTestBtn = document.getElementById('runTestBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const status = document.getElementById('status');
+        const logDiv = document.getElementById('log');
+
+        function log(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toISOString().split('T')[1].split('.')[0]}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function updateStats() {
+            if (measurements.length === 0) return;
+
+            const sorted = [...measurements].sort((a, b) => a - b);
+            const n = sorted.length;
+
+            const p50 = sorted[Math.floor(n * 0.50)];
+            const p95 = sorted[Math.floor(n * 0.95)];
+            const p99 = sorted[Math.floor(n * 0.99)];
+            const min = sorted[0];
+            const max = sorted[n - 1];
+            const mean = sorted.reduce((a, b) => a + b, 0) / n;
+
+            document.getElementById('p50').textContent = `${p50.toFixed(2)}ms`;
+            document.getElementById('p95').textContent = `${p95.toFixed(2)}ms`;
+            document.getElementById('p99').textContent = `${p99.toFixed(2)}ms`;
+            document.getElementById('min').textContent = `${min.toFixed(2)}ms`;
+            document.getElementById('mean').textContent = `${mean.toFixed(2)}ms`;
+            document.getElementById('max').textContent = `${max.toFixed(2)}ms`;
+
+            // Check against SRS §7.1 acceptance criteria
+            const passFailDiv = document.getElementById('passFailResult');
+            const p50Pass = p50 < 5;
+            const p95Pass = p95 < 10;
+
+            if (p50Pass && p95Pass) {
+                passFailDiv.innerHTML = '✅ PASS - Meets SRS §7.1 targets (p50 &lt; 5ms, p95 &lt; 10ms)';
+                passFailDiv.style.color = '#4ec9b0';
+            } else {
+                const failures = [];
+                if (!p50Pass) failures.push(`p50=${p50.toFixed(2)}ms exceeds 5ms`);
+                if (!p95Pass) failures.push(`p95=${p95.toFixed(2)}ms exceeds 10ms`);
+                passFailDiv.innerHTML = `❌ FAIL - ${failures.join(', ')}`;
+                passFailDiv.style.color = '#f48771';
+            }
+
+            log(`Stats updated: p50=${p50.toFixed(2)}ms, p95=${p95.toFixed(2)}ms, p99=${p99.toFixed(2)}ms (n=${n})`,
+                p50Pass && p95Pass ? 'pass' : 'fail');
+        }
+
+        connectBtn.addEventListener('click', () => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.close();
+                return;
+            }
+
+            const url = document.getElementById('wsUrl').value;
+            log(`Connecting to ${url}...`);
+            status.textContent = 'Status: Connecting...';
+
+            ws = new WebSocket(url);
+
+            ws.onopen = () => {
+                log('Connected successfully', 'pass');
+                status.textContent = 'Status: Connected';
+                status.style.color = '#4ec9b0';
+                connectBtn.textContent = 'Disconnect';
+                runTestBtn.disabled = false;
+            };
+
+            ws.onclose = () => {
+                log('Disconnected');
+                status.textContent = 'Status: Disconnected';
+                status.style.color = '#858585';
+                connectBtn.textContent = 'Connect';
+                runTestBtn.disabled = true;
+            };
+
+            ws.onerror = (err) => {
+                log(`WebSocket error: ${err}`, 'fail');
+            };
+
+            ws.onmessage = (event) => {
+                const receiveTime = performance.now();
+
+                // Parse the message (would be Protobuf in reality, simplified here)
+                // Assuming the server echoes back with sequence number
+                try {
+                    // For testing: assume JSON with { sequence, data }
+                    const msg = JSON.parse(event.data);
+                    if (msg.sequence !== undefined && pendingMeasurements.has(msg.sequence)) {
+                        const sendTime = pendingMeasurements.get(msg.sequence);
+                        const latency = receiveTime - sendTime;
+                        measurements.push(latency);
+                        pendingMeasurements.delete(msg.sequence);
+
+                        if (measurements.length % 10 === 0) {
+                            log(`Collected ${measurements.length} samples...`);
+                        }
+
+                        updateStats();
+                    }
+                } catch (e) {
+                    // Protobuf binary - would need proper parsing
+                    log(`Received binary message (${event.data.size} bytes)`);
+                }
+            };
+        });
+
+        runTestBtn.addEventListener('click', async () => {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                log('Not connected!', 'fail');
+                return;
+            }
+
+            runTestBtn.disabled = true;
+            log('Starting latency test (100 samples)...');
+            measurements = [];
+            pendingMeasurements.clear();
+
+            for (let i = 0; i < 100; i++) {
+                const sendTime = performance.now();
+                const sequence = i;
+
+                // Send a test message
+                const msg = JSON.stringify({ sequence, data: 'test' });
+                ws.send(msg);
+                pendingMeasurements.set(sequence, sendTime);
+
+                // Wait a bit between sends to avoid flooding
+                await new Promise(resolve => setTimeout(resolve, 50));
+            }
+
+            log('Test complete, waiting for all responses...');
+
+            // Wait for all responses (timeout after 5 seconds)
+            setTimeout(() => {
+                if (pendingMeasurements.size > 0) {
+                    log(`Warning: ${pendingMeasurements.size} samples did not receive responses`, 'fail');
+                }
+                runTestBtn.disabled = false;
+            }, 5000);
+        });
+
+        clearBtn.addEventListener('click', () => {
+            measurements = [];
+            pendingMeasurements.clear();
+            document.getElementById('p50').textContent = '--';
+            document.getElementById('p95').textContent = '--';
+            document.getElementById('p99').textContent = '--';
+            document.getElementById('min').textContent = '--';
+            document.getElementById('mean').textContent = '--';
+            document.getElementById('max').textContent = '--';
+            document.getElementById('passFailResult').innerHTML = '';
+            logDiv.innerHTML = '';
+            log('Results cleared');
+        });
+
+        log('Latency measurement tool ready');
+        log('Using performance.now() for microsecond precision');
+    </script>
+</body>
+</html>

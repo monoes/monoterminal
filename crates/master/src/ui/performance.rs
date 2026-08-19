@@ -80,7 +80,8 @@ impl PerformanceMonitor {
 
             // Calculate FPS (average over history)
             if !self.frame_times.is_empty() {
-                let avg_frame_time: f32 = self.frame_times.iter().sum::<f32>() / self.frame_times.len() as f32;
+                let avg_frame_time: f32 =
+                    self.frame_times.iter().sum::<f32>() / self.frame_times.len() as f32;
                 self.fps = 1000.0 / avg_frame_time;
             }
 
@@ -185,8 +186,11 @@ mod tests {
         println!("Measured FPS: {:.1}", fps);
 
         // FPS should be around 50-65 (sleep is not precise)
-        assert!(fps > 40.0 && fps < 70.0,
-                "FPS out of expected range: {:.1}", fps);
+        assert!(
+            fps > 40.0 && fps < 70.0,
+            "FPS out of expected range: {:.1}",
+            fps
+        );
     }
 
     #[test]
@@ -204,8 +208,11 @@ mod tests {
         println!("Average frame time: {:.2}ms", avg);
 
         // Should be around 16ms (with some variance)
-        assert!(avg > 10.0 && avg < 25.0,
-                "Frame time out of expected range: {:.2}ms", avg);
+        assert!(
+            avg > 10.0 && avg < 25.0,
+            "Frame time out of expected range: {:.2}ms",
+            avg
+        );
     }
 
     #[test]
@@ -270,7 +277,6 @@ mod tests {
         let fps2 = monitor.fps();
 
         // FPS should improve as more fast frames are added
-        assert!(fps2 > fps1,
-                "FPS should improve: {} -> {}", fps1, fps2);
+        assert!(fps2 > fps1, "FPS should improve: {} -> {}", fps1, fps2);
     }
 }

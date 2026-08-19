@@ -198,7 +198,7 @@ mod tests {
         let area = layout.terminal_area(1920.0, 1080.0);
 
         assert_eq!(area.x, 200.0); // After sidebar
-        assert_eq!(area.y, 30.0);  // After menu
+        assert_eq!(area.y, 30.0); // After menu
         assert_eq!(area.width, 1720.0); // 1920 - 200
         assert_eq!(area.height, 1025.0); // 1080 - 30 - 25
     }

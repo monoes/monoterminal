@@ -1,0 +1,94 @@
+// Minimal ConPTY diagnostic - Creates ConPTY, runs ping, tries to read
+// This is the simplest possible test to see if ConPTY outputs data
+
+use windows::Win32::Foundation::{CloseHandle, HANDLE};
+use windows::Win32::System::Console::{CreatePseudoConsole, ClosePseudoConsole, COORD, HPCON};
+use windows::Win32::System::Pipes::CreatePipe;
+use windows::Win32::Storage::FileSystem::ReadFile;
+
+#[test]
+fn raw_conpty_read_test() {
+    println!("\n🔍 STARTING RAW CONPTY DIAGNOSTIC");
+    println!("================================\n");
+
+    // Create pipes
+    println!("📋 Step 1: Creating pipes...");
+    let mut input_read = HANDLE::default();
+    let mut input_write = HANDLE::default();
+    let mut output_read = HANDLE::default();
+    let mut output_write = HANDLE::default();
+
+    unsafe {
+        CreatePipe(&mut input_read, &mut input_write, None, 0).unwrap();
+        CreatePipe(&mut output_read, &mut output_write, None, 0).unwrap();
+    }
+    println!("✅ Pipes created: input={:?}/{:?}, output={:?}/{:?}",
+        input_read.0, input_write.0, output_read.0, output_write.0);
+
+    // Create ConPTY
+    println!("\n📋 Step 2: Creating ConPTY...");
+    let coord = COORD { X: 80, Y: 24 };
+    let hpc = unsafe {
+        CreatePseudoConsole(coord, input_read, output_write, 0).unwrap()
+    };
+    println!("✅ ConPTY created: hpc={:?}", hpc.0);
+
+    // Close PTY-end handles (per Microsoft sample)
+    println!("\n📋 Step 3: Closing PTY-end handles...");
+    unsafe {
+        let _ = CloseHandle(input_read);
+        let _ = CloseHandle(output_write);
+    }
+    println!("✅ PTY-end handles closed");
+
+    // Spawn ping (simplified - just for diagnostic)
+    println!("\n📋 Step 4: Spawning ping process...");
+    println!("⚠️  SKIPPING PROCESS SPAWN FOR NOW - Testing pipe directly");
+
+    // Sleep to let ping output (if it was spawned)
+    println!("\n📋 Step 5: Sleeping 1 second...");
+    std::thread::sleep(std::time::Duration::from_secs(1));
+    println!("✅ Sleep complete");
+
+    // Try to read
+    println!("\n📋 Step 6: Attempting RAW ReadFile...");
+    let mut buffer = [0u8; 4096];
+    let mut bytes_read: u32 = 0;
+
+    let result = unsafe {
+        ReadFile(
+            output_read,
+            Some(&mut buffer),
+            Some(&mut bytes_read),
+            None,
+        )
+    };
+
+    println!("\n🎯 RESULTS:");
+    println!("==========");
+    match result {
+        Ok(_) if bytes_read > 0 => {
+            println!("🎉🎉🎉 SUCCESS: Read {} bytes!", bytes_read);
+            println!("🎉 Data: {:?}", std::str::from_utf8(&buffer[..bytes_read as usize]));
+            println!("\n✅ CONCLUSION: Data EXISTS in pipe!");
+            println!("✅ AsyncPipeReader or async timing is the problem!");
+        }
+        Ok(_) => {
+            println!("📊 Read succeeded but got 0 bytes");
+            println!("\n❌ CONCLUSION: No data in pipe");
+            println!("❌ ConPTY not outputting (or ping not spawned)");
+        }
+        Err(e) => {
+            println!("❌ ReadFile failed: {:?}", e);
+            println!("\n❌ CONCLUSION: Pipe error or invalid handle");
+        }
+    }
+
+    // Cleanup
+    unsafe {
+        ClosePseudoConsole(hpc);
+        let _ = CloseHandle(input_write);
+        let _ = CloseHandle(output_read);
+    }
+    println!("\n✅ Cleanup complete");
+}

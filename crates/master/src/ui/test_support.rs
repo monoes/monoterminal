@@ -45,7 +45,10 @@ impl HeadlessGpuContext {
     /// - `wgpu::Backends::METAL` - Metal (macOS)
     /// - `wgpu::Backends::GL` - OpenGL (fallback)
     pub async fn new_with_backends(backends: wgpu::Backends) -> Result<Self> {
-        tracing::debug!("Creating headless GPU context with backends: {:?}", backends);
+        tracing::debug!(
+            "Creating headless GPU context with backends: {:?}",
+            backends
+        );
 
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
             backends,
@@ -125,7 +128,12 @@ impl HeadlessGpuContext {
     /// assert_eq!(pixels.len(), 800 * 600 * 4); // RGBA
     /// # }
     /// ```
-    pub async fn read_pixels(&self, texture: &wgpu::Texture, width: u32, height: u32) -> Result<Vec<u8>> {
+    pub async fn read_pixels(
+        &self,
+        texture: &wgpu::Texture,
+        width: u32,
+        height: u32,
+    ) -> Result<Vec<u8>> {
         let bytes_per_row = width * 4; // RGBA8
         let padded_bytes_per_row = Self::padded_bytes_per_row(bytes_per_row);
         let buffer_size = (padded_bytes_per_row * height) as u64;
@@ -139,9 +147,11 @@ impl HeadlessGpuContext {
         });
 
         // Copy texture to buffer
-        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: Some("read_pixels_encoder"),
-        });
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("read_pixels_encoder"),
+            });
 
         encoder.copy_texture_to_buffer(
             wgpu::ImageCopyTexture {
@@ -246,9 +256,11 @@ mod tests {
         let target = ctx.create_render_target(64, 64);
 
         // Clear texture to red
-        let mut encoder = ctx.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: Some("test_encoder"),
-        });
+        let mut encoder = ctx
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("test_encoder"),
+            });
 
         {
             let view = target.create_view(&wgpu::TextureViewDescriptor::default());
@@ -280,8 +292,8 @@ mod tests {
 
         // Check first pixel (should be red: 255, 0, 0, 255)
         assert_eq!(pixels[0], 255); // R
-        assert_eq!(pixels[1], 0);   // G
-        assert_eq!(pixels[2], 0);   // B
+        assert_eq!(pixels[1], 0); // G
+        assert_eq!(pixels[2], 0); // B
         assert_eq!(pixels[3], 255); // A
     }
 

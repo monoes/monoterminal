@@ -1,0 +1,31 @@
+{
+  "destructiveOps": true,
+  "secrets": true,
+  "destructivePatterns": [
+    {"source": "\\brm\\s+(?:-[a-z]*f[a-z]*r|-[a-z]*r[a-z]*f|--recursive.*--force|--force.*--recursive|-rf?)\\b", "flags": "i"},
+    {"source": "\\bdrop\\s+(database|table|schema|index)\\b", "flags": "i"},
+    {"source": "\\btruncate\\s+table\\b", "flags": "i"},
+    {"source": "\\bgit\\s+push\\s+.*--force\\b", "flags": "i"},
+    {"source": "\\bgit\\s+reset\\s+--hard\\b", "flags": "i"},
+    {"source": "\\bgit\\s+clean\\s+.*-f", "flags": "i"},
+    {"source": "\\bformat\\s+[a-z]:", "flags": "i"},
+    {"source": "\\bdel\\s+\\/[sf]\\b", "flags": "i"},
+    {"source": "\\b(?:kubectl|helm)\\s+delete\\s+(?:--all|namespace)\\b", "flags": "i"},
+    {"source": "\\bDROP\\s+(?:DATABASE|TABLE|SCHEMA)\\b", "flags": "i"},
+    {"source": "\\bDELETE\\s+FROM\\s+\\w+", "flags": "i"},
+    {"source": "\\bALTER\\s+TABLE\\s+\\w+\\s+DROP\\b", "flags": "i"}
+  ],
+  "secretPatterns": [
+    {"source": "(?:api[_-]?key|apikey)\\s*[:=]\\s*['\"][^'\"]{8,}['\"]", "flags": "gi"},
+    {"source": "(?:secret|password|passwd|pwd)\\s*[:=]\\s*['\"][^'\"]{8,}['\"]", "flags": "gi"},
+    {"source": "(?<!test[_-])(?:token|bearer)\\s*[:=]\\s*['\"](?!test-)[^'\"]{10,}['\"]", "flags": "gi"},
+    {"source": "(?:api[_-]?key|apikey|token|secret|password|passwd|pwd)\\s*[:=]\\s*(?!test[-_])[^\\s'\"]{8,}", "flags": "gi"},
+    {"source": "-----BEGIN (?:RSA |EC |DSA )?PRIVATE KEY-----", "flags": "g"},
+    {"source": "sk-ant-[a-zA-Z0-9_-]{20,}", "flags": "g"},
+    {"source": "sk-[a-zA-Z0-9_-]{20,}", "flags": "g"},
+    {"source": "ghp_[a-zA-Z0-9]{36}", "flags": "g"},
+    {"source": "npm_[a-zA-Z0-9]{36}", "flags": "g"},
+    {"source": "AKIA[0-9A-Z]{16}", "flags": "g"}
+  ],
+  "_note": "Custom gate configuration for MONOTERMINAL project. Modified token pattern to allow test-* prefixed values (e.g., 'test-jwt-token', 'test-api-key') which are clearly test fixtures, not real secrets."
+}

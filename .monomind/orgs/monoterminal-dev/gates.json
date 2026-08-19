@@ -1,0 +1,14 @@
+{
+  "gates": [
+    {
+      "id": "gate-1787094442543-t2rx",
+      "name": "24h-soak-test-approval",
+      "description": "Approve 24-hour soak test execution for Criterion #7 verification (final step to 5/7 gate passage)",
+      "roleId": "eng-director",
+      "status": "rejected",
+      "createdAt": 1787094442543,
+      "resolvedAt": 1787128254079,
+      "resolvedBy": "human"
+    }
+  ]
+}

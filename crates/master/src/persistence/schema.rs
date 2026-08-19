@@ -53,13 +53,24 @@ mod tests {
         init_schema(&conn).unwrap();
 
         // Verify all tables exist
-        let tables = ["schema_migrations", "sessions", "scrollback", "configuration", "audit_logs"];
+        let tables = [
+            "schema_migrations",
+            "sessions",
+            "scrollback",
+            "configuration",
+            "audit_logs",
+        ];
         for table in &tables {
-            let count: i64 = conn.query_row(
-                &format!("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='{}'", table),
-                [],
-                |row| row.get(0),
-            ).unwrap();
+            let count: i64 = conn
+                .query_row(
+                    &format!(
+                        "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='{}'",
+                        table
+                    ),
+                    [],
+                    |row| row.get(0),
+                )
+                .unwrap();
             assert_eq!(count, 1, "Table {} should exist", table);
         }
 
