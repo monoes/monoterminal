@@ -1,0 +1,102 @@
+[package]
+name = "monoterminal-master"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lib]
+name = "monoterminal_master"
+path = "src/lib.rs"
+
+[[bin]]
+name = "monoterminal"
+path = "src/main.rs"
+
+[dependencies]
+# Workspace dependencies
+tokio = { workspace = true }
+wgpu = { workspace = true }
+egui = { workspace = true }
+rustls = { workspace = true }
+prost = { workspace = true }
+ed25519-dalek = { workspace = true }
+jsonwebtoken = { workspace = true }
+rusqlite = { workspace = true }
+zstd = { workspace = true }
+tower = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+tracing-appender = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+
+# Additional dependencies
+async-trait = "0.1"
+sha2 = "0.10"
+hex = "0.4"
+rand = "0.8"
+base64 = "0.22"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1.0"
+bytes = "1.0"
+tokio-tungstenite = { version = "0.21", features = ["rustls-tls-webpki-roots", "native-tls"] }
+tokio-util = { version = "0.7", features = ["rt"] }
+native-tls = "0.2"
+futures-util = "0.3"
+tokio-rustls = "0.24"
+rustls-pemfile = "1.0"
+uuid = { version = "1.6", features = ["v4", "serde"] }
+which = "5.0"
+dirs = "5.0"
+clap = { version = "4.5", features = ["derive"] }
+
+# UI dependencies
+winit = "0.30"
+pollster = "0.3"
+bytemuck = { version = "1.14", features = ["derive"] }
+chrono = "0.4"
+
+# Font rendering (Phase 1: fontdue for Windows, Phase 3: HarfBuzz for Linux/macOS)
+fontdue = "0.9"
+
+# Windows-specific (ConPTY)
+[target.'cfg(windows)'.dependencies]
+windows = { workspace = true }
+
+# Internal workspace crates
+monoterminal-protocol = { path = "../protocol" }
+monoterminal-monomind-bridge = { path = "../monomind-bridge" }
+
+[features]
+test-support = []
+
+[dev-dependencies]
+proptest = { workspace = true }
+criterion = { workspace = true }
+tempfile = { workspace = true }
+mockall = { workspace = true }
+insta = { workspace = true }
+tokio-test = "0.4"
+
+[[bench]]
+name = "pty_throughput"
+harness = false
+
+[[bench]]
+name = "fps_rendering"
+harness = false
+
+[[bench]]
+name = "websocket_latency"
+harness = false
+
+[[bench]]
+name = "latency_e2e_lan"
+harness = false
+
+[[test]]
+name = "stability_24h"
+path = "tests/soak/stability_24h.rs"
