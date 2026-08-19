@@ -11,6 +11,7 @@
 //! - VSync: 5ms
 //! Total: 16.5ms ✅
 
+pub mod backend_selection;
 pub mod fonts;
 pub mod glyph_cache;
 pub mod layout;

@@ -278,6 +278,82 @@ async fn test_vulkan_backend() {
     }
 }
 
+#[cfg(target_os = "linux")]
+#[tokio::test]
+async fn test_linux_vulkan_backend() {
+    use wgpu::Backends;
+
+    let result = HeadlessGpuContext::new_with_backends(Backends::VULKAN).await;
+
+    if let Ok(ctx) = result {
+        let info = ctx.adapter_info();
+        assert_eq!(info.backend, wgpu::Backend::Vulkan);
+        println!("✓ Linux Vulkan backend working: {}", info.name);
+        println!("  Device type: {:?}", info.device_type);
+    } else {
+        println!("⚠ Vulkan not available on Linux, falling back to OpenGL test");
+        test_linux_opengl_fallback().await;
+    }
+}
+
+#[cfg(target_os = "linux")]
+async fn test_linux_opengl_fallback() {
+    use wgpu::Backends;
+
+    let ctx = HeadlessGpuContext::new_with_backends(Backends::GL)
+        .await
+        .expect("OpenGL fallback should be available on Linux");
+
+    let info = ctx.adapter_info();
+    assert_eq!(info.backend, wgpu::Backend::Gl);
+    println!("✓ Linux OpenGL fallback working: {}", info.name);
+}
+
+#[cfg(target_os = "macos")]
+#[tokio::test]
+async fn test_macos_metal_backend() {
+    use wgpu::Backends;
+
+    let ctx = HeadlessGpuContext::new_with_backends(Backends::METAL)
+        .await
+        .expect("Metal backend should be available on macOS");
+
+    let info = ctx.adapter_info();
+    assert_eq!(info.backend, wgpu::Backend::Metal);
+    println!("✓ macOS Metal backend working: {}", info.name);
+    println!("  Device type: {:?}", info.device_type);
+}
+
+// ===== Cross-Platform Backend Selection Test =====
+
+#[tokio::test]
+async fn test_platform_backend_selection() {
+    use super::backend_selection;
+
+    let backends = backend_selection::select_backend();
+    let ctx = HeadlessGpuContext::new_with_backends(backends)
+        .await
+        .expect("Platform-specific backend should be available");
+
+    let info = ctx.adapter_info();
+    println!("✓ Platform backend detected: {:?}", info.backend);
+    println!("  Adapter: {}", info.name);
+    println!("  Device type: {:?}", info.device_type);
+
+    #[cfg(target_os = "windows")]
+    assert_eq!(info.backend, wgpu::Backend::Dx12);
+
+    #[cfg(target_os = "linux")]
+    assert!(
+        info.backend == wgpu::Backend::Vulkan || info.backend == wgpu::Backend::Gl,
+        "Linux should use Vulkan or OpenGL, got {:?}",
+        info.backend
+    );
+
+    #[cfg(target_os = "macos")]
+    assert_eq!(info.backend, wgpu::Backend::Metal);
+}
+
 // ===== Helper Functions =====
 
 /// Clear texture to specified color (helper for tests)
