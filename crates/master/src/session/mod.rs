@@ -34,6 +34,9 @@ pub enum SessionError {
 
     #[error("I/O error: {0}")]
     IoError(#[from] std::io::Error),
+
+    #[error("Permission denied: {0}")]
+    PermissionDenied(String),
 }
 
 pub type Result<T> = std::result::Result<T, SessionError>;

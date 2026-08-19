@@ -12,6 +12,8 @@ use prost::Message;
 
 use super::{Session, SessionId, SessionState, SessionSnapshot, SessionError, Result, SessionContainer};
 use crate::pty::{PtyBackend, PtyConfig};
+use crate::persistence::{Database, session as db_session};
+use crate::auth::{Action, check_permission};
 
 /// Central session manager
 /// Phase 1: Single active session (simplified from SRS multi-session design)
@@ -21,11 +23,19 @@ pub struct SessionManager {
 
     /// Default shell (pwsh.exe if available, else cmd.exe per architecture)
     default_shell: String,
+
+    /// Persistence layer (Phase 2: SQLite session + scrollback storage)
+    db: Option<Arc<Database>>,
 }
 
 impl SessionManager {
     /// Create new session manager
     pub fn new(default_shell: Option<String>) -> Self {
+        Self::new_with_db(default_shell, None)
+    }
+
+    /// Create new session manager with optional persistence
+    pub fn new_with_db(default_shell: Option<String>, db: Option<Arc<Database>>) -> Self {
         let default_shell = default_shell.unwrap_or_else(|| {
             // DIAGNOSTIC TEST: Use ping instead of cmd.exe to match Microsoft ConPTY sample
             // This verifies our ConPTY implementation is correct
@@ -35,9 +45,32 @@ impl SessionManager {
 
         tracing::info!("SessionManager initialized with default shell: {}", default_shell);
 
+        // Phase 2: Cold-start recovery - clean up stale sessions
+        // Since PTY processes don't survive restarts, mark orphaned sessions as TERMINATED
+        if let Some(db) = &db {
+            if let Ok(conn) = db.get_conn() {
+                match db_session::list_active_sessions(&conn) {
+                    Ok(active_sessions) => {
+                        tracing::info!("Found {} orphaned sessions from previous run, marking as TERMINATED", active_sessions.len());
+                        for session in active_sessions {
+                            if let Err(e) = db_session::update_session_status(
+                                &conn,
+                                &session.session_id,
+                                db_session::SessionStatus::Terminated
+                            ) {
+                                tracing::warn!("Failed to terminate orphaned session {}: {}", session.session_id, e);
+                            }
+                        }
+                    }
+                    Err(e) => tracing::warn!("Failed to load active sessions for cleanup: {}", e),
+                }
+            }
+        }
+
         Self {
             sessions: Arc::new(RwLock::new(HashMap::new())),
             default_shell,
+            db,
         }
     }
 
@@ -45,8 +78,15 @@ impl SessionManager {
     ///
     /// Phase 1: Spawns ConPTY backend
     /// Phase 2+: Will support OpenPTY for Linux/macOS
+    ///
+    /// # Arguments
+    /// * `owner_user_id` - User creating the session (from JWT claims)
+    /// * `working_dir` - Working directory for shell
+    /// * `rows` - Terminal rows
+    /// * `cols` - Terminal columns
     pub async fn create_session(
         &self,
+        owner_user_id: Option<String>,
         working_dir: Option<PathBuf>,
         rows: u16,
         cols: u16,
@@ -133,17 +173,53 @@ impl SessionManager {
 
         tracing::info!("Session {} created successfully WITH AbortOnDrop tracking", id);
 
+        // Persist to database (Phase 2: graceful degradation if DB unavailable)
+        if let Some(db) = &self.db {
+            let now = chrono::Utc::now().to_rfc3339();
+            let record = db_session::SessionRecord {
+                session_id: id,
+                created_at: now.clone(),
+                last_accessed_at: now,
+                status: db_session::SessionStatus::Running,
+                shell_path: self.default_shell.clone(),
+                working_dir,
+                env_vars: Some(std::env::vars().collect()),
+                rows,
+                cols,
+                owner_user_id: owner_user_id.clone(),  // Phase 2: From JWT claims
+                acl: None,  // Initially empty, can be modified via share operations
+                metadata: None,
+            };
+
+            match db.get_conn().and_then(|conn| db_session::create_session(&conn, &record)) {
+                Ok(_) => tracing::info!("Session {} persisted to database", id),
+                Err(e) => tracing::warn!("Failed to persist session {} to database: {}", id, e),
+            }
+        }
+
         Ok(id)
     }
 
     /// Attach client to existing session
     /// Returns session snapshot with scrollback for late-joiner sync
+    ///
+    /// # Arguments
+    /// * `session_id` - Session to attach to
+    /// * `client_id` - Client identifier
+    /// * `output_tx` - Channel for sending output to client
+    /// * `user_id` - User requesting attach (for RBAC permission check)
     pub async fn attach_client(
         &self,
         session_id: SessionId,
         client_id: super::session::ClientId,
         output_tx: mpsc::Sender<Vec<u8>>,
+        user_id: Option<String>,
     ) -> Result<SessionSnapshot> {
+        // Phase 2: RBAC permission check (Action::Read)
+        if let Some(uid) = &user_id {
+            self.check_session_permission(&session_id, uid, Action::Read).await?;
+        }
+
         let sessions = self.sessions.read().await;
         let container = sessions
             .get(&session_id)
@@ -155,6 +231,16 @@ impl SessionManager {
         session.attach_client(client_id, output_tx);
 
         tracing::info!("Client {} attached to session {}", client_id, session_id);
+
+        // Persist attachment to database (Phase 2: update status to RUNNING + touch timestamp)
+        if let Some(db) = &self.db {
+            match db.get_conn().and_then(|conn| {
+                db_session::update_session_status(&conn, &session_id, db_session::SessionStatus::Running)
+            }) {
+                Ok(_) => tracing::debug!("Session {} status updated to RUNNING in database", session_id),
+                Err(e) => tracing::warn!("Failed to update session {} status in database: {}", session_id, e),
+            }
+        }
 
         // Return snapshot with scrollback
         Ok(session.snapshot())
@@ -174,17 +260,41 @@ impl SessionManager {
         let mut session = container.session.write().await;
         session.detach_client(client_id);
 
-        tracing::info!("Client {} detached from session {}", client_id, session_id);
+        let remaining_clients = session.client_ids().len();
+        tracing::info!("Client {} detached from session {} ({} clients remaining)", client_id, session_id, remaining_clients);
+
+        // Persist detachment to database (Phase 2: update status to DETACHED if no clients)
+        if remaining_clients == 0 {
+            if let Some(db) = &self.db {
+                match db.get_conn().and_then(|conn| {
+                    db_session::update_session_status(&conn, &session_id, db_session::SessionStatus::Detached)
+                }) {
+                    Ok(_) => tracing::info!("Session {} status updated to DETACHED in database", session_id),
+                    Err(e) => tracing::warn!("Failed to update session {} status in database: {}", session_id, e),
+                }
+            }
+        }
 
         Ok(())
     }
 
     /// Send input to session PTY
+    ///
+    /// # Arguments
+    /// * `session_id` - Target session
+    /// * `data` - Input data to send
+    /// * `user_id` - User sending input (for RBAC permission check)
     pub async fn send_input(
         &self,
         session_id: SessionId,
         data: &[u8],
+        user_id: Option<String>,
     ) -> Result<()> {
+        // Phase 2: RBAC permission check (Action::Write)
+        if let Some(uid) = &user_id {
+            self.check_session_permission(&session_id, uid, Action::Write).await?;
+        }
+
         tracing::info!("📝 WRITE: send_input ENTRY - session {}, {} bytes", session_id, data.len());
 
         let sessions = self.sessions.read().await;
@@ -215,14 +325,28 @@ impl SessionManager {
     }
 
     /// Resize session terminal
+    /// Resize terminal
+    ///
+    /// # Arguments
+    /// * `session_id` - Target session
+    /// * `rows` - New row count
+    /// * `cols` - New column count
+    /// * `user_id` - User requesting resize (for RBAC permission check)
     pub async fn resize_session(
         &self,
         session_id: SessionId,
         rows: u16,
         cols: u16,
+        user_id: Option<String>,
     ) -> Result<()> {
+        // Validate dimensions first
         if rows == 0 || cols == 0 || rows > 500 || cols > 500 {
             return Err(SessionError::InvalidDimensions(rows, cols));
+        }
+
+        // Phase 2: RBAC permission check (Action::Resize)
+        if let Some(uid) = &user_id {
+            self.check_session_permission(&session_id, uid, Action::Resize).await?;
         }
 
         let sessions = self.sessions.read().await;
@@ -250,7 +374,18 @@ impl SessionManager {
     }
 
     /// Kill session and underlying PTY
-    pub async fn kill_session(&self, session_id: SessionId) -> Result<()> {
+    /// Terminate a session
+    ///
+    /// # Arguments
+    /// * `session_id` - Session to terminate
+    /// * `user_id` - User requesting termination (for RBAC permission check)
+    pub async fn kill_session(&self, session_id: SessionId, user_id: Option<String>) -> Result<()> {
+        // Phase 2: RBAC permission check (Action::Kill - owner only)
+        if let Some(uid) = &user_id {
+            self.check_session_permission(&session_id, uid, Action::Kill).await?;
+        }
+
+        tracing::info!("Terminating session {}", session_id);
         let mut sessions = self.sessions.write().await;
         let container = sessions
             .remove(&session_id)
@@ -267,7 +402,55 @@ impl SessionManager {
 
         tracing::info!("Session {} terminated successfully", session_id);
 
+        // Persist termination to database (Phase 2: graceful degradation)
+        if let Some(db) = &self.db {
+            match db.get_conn().and_then(|conn|
+                db_session::update_session_status(&conn, &session_id, db_session::SessionStatus::Terminated)
+            ) {
+                Ok(_) => tracing::info!("Session {} marked as TERMINATED in database", session_id),
+                Err(e) => tracing::warn!("Failed to update session {} status in database: {}", session_id, e),
+            }
+        }
+
         Ok(())
+    }
+
+    /// Check if user has permission to perform action on session (Phase 2: RBAC)
+    ///
+    /// Loads session owner and ACL from database, then calls RBAC check_permission
+    async fn check_session_permission(
+        &self,
+        session_id: &SessionId,
+        user_id: &str,
+        action: Action,
+    ) -> Result<()> {
+        // Load session ACL from database
+        if let Some(db) = &self.db {
+            match db.get_conn().and_then(|conn| db_session::load_session(&conn, session_id)) {
+                Ok(record) => {
+                    // Call RBAC permission check
+                    check_permission(
+                        record.owner_user_id.as_deref(),
+                        record.acl.as_ref(),
+                        user_id,
+                        action,
+                    )
+                    .map_err(|e| SessionError::PermissionDenied(e.to_string()))?;
+
+                    tracing::debug!("User {} granted {:?} permission on session {}", user_id, action, session_id);
+                    Ok(())
+                }
+                Err(e) => {
+                    // Graceful degradation: If DB unavailable, allow operation (backward compat)
+                    tracing::warn!("Failed to load session {} ACL from DB, allowing operation: {}", session_id, e);
+                    Ok(())
+                }
+            }
+        } else {
+            // No database = no ACL enforcement (backward compatibility)
+            tracing::debug!("No database configured, skipping RBAC check for session {}", session_id);
+            Ok(())
+        }
     }
 
     /// PTY output fan-out loop with flush triggers
