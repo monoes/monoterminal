@@ -39,7 +39,7 @@ fn test_webrtc_offer_overhead() {
 
     // SRS §3.1.1 target: 10-20 bytes overhead
     assert!(
-        overhead >= 10 && overhead <= 30,
+        (10..=30).contains(&overhead),
         "Overhead {} bytes outside expected range 10-30 bytes (acceptable variance for Protobuf varint encoding)",
         overhead
     );
@@ -86,7 +86,7 @@ fn test_webrtc_answer_overhead() {
     );
 
     assert!(
-        overhead >= 10 && overhead <= 40,
+        (10..=40).contains(&overhead),
         "Overhead {} bytes outside expected range 10-40 bytes (nested message adds tags)",
         overhead
     );
@@ -127,7 +127,7 @@ fn test_ice_candidate_overhead() {
     );
 
     assert!(
-        overhead >= 10 && overhead <= 30,
+        (10..=30).contains(&overhead),
         "Overhead {} bytes outside expected range 10-30 bytes",
         overhead
     );
@@ -167,7 +167,7 @@ fn test_minimal_ice_candidate_overhead() {
 
     // For minimal messages, overhead should be closer to the 10-byte target
     assert!(
-        overhead >= 8 && overhead <= 25,
+        (8..=25).contains(&overhead),
         "Minimal overhead {} bytes outside expected range 8-25 bytes",
         overhead
     );

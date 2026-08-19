@@ -5,9 +5,11 @@
 // to the wire protocol types (HealthCheckResponse, DashboardResponse).
 
 use crate::{
-    AgentInfo as BridgeAgentInfo, DashboardData, HealthIssue, HealthStatus, MemoryStats, OrgStatus,
+    AgentInfo as BridgeAgentInfo, DashboardData, HealthIssue, HealthStatus, MemoryStats,
     Severity,
 };
+#[cfg(test)]
+use crate::OrgStatus;
 use std::time::SystemTime;
 
 // Re-export protocol types for convenience
