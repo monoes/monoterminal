@@ -1,0 +1,143 @@
+name: Cross-Platform CI
+
+on:
+  pull_request:
+    paths:
+      - 'crates/**'
+      - 'Cargo.*'
+      - '.github/workflows/ci.yml'
+  push:
+    branches: [main, 'phase-*']
+    paths:
+      - 'crates/**'
+      - 'Cargo.*'
+  workflow_dispatch:
+
+env:
+  RUST_BACKTRACE: 1
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, macos-13, windows-latest]
+        rust: [stable]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust ${{ matrix.rust }}
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+          components: rustfmt, clippy
+
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.os }}-${{ matrix.rust }}-build
+
+      # Protocol buffer compiler installation (platform-specific)
+      - name: Install protoc (Ubuntu)
+        if: matrix.os == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
+          protoc --version
+
+      - name: Install protoc (macOS)
+        if: matrix.os == 'macos-13'
+        run: |
+          brew install protobuf
+          protoc --version
+
+      - name: Install protoc (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          choco install protoc -y
+          protoc --version
+
+      # Platform-specific prerequisites
+      - name: Verify ConPTY availability (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          $version = [System.Environment]::OSVersion.Version
+          Write-Host "Windows version: $version"
+          if ($version.Build -lt 17763) {
+            Write-Error "ConPTY requires Windows 10 1809+ (build 17763+)"
+            exit 1
+          }
+          Write-Host "✓ ConPTY available"
+
+      - name: Check platform (Linux)
+        if: matrix.os == 'ubuntu-22.04'
+        run: |
+          echo "Platform: Linux"
+          uname -a
+          echo "✓ Ubuntu 22.04 LTS verified"
+
+      - name: Check platform (macOS)
+        if: matrix.os == 'macos-13'
+        run: |
+          echo "Platform: macOS"
+          sw_vers
+          uname -a
+          echo "✓ macOS 13 verified"
+
+      # Build verification
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Run clippy
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+      - name: Build workspace (debug)
+        run: cargo build --workspace --all-features
+
+      - name: Build workspace (release)
+        run: cargo build --workspace --all-features --release
+
+      # Basic smoke tests (fast, cross-platform compatible)
+      - name: Run unit tests
+        run: cargo test --workspace --lib --all-features
+
+      # Platform-specific test suites
+      - name: Run integration tests (Windows ConPTY)
+        if: matrix.os == 'windows-latest'
+        run: cargo test --workspace --test '*' --all-features
+
+      - name: Run integration tests (Unix PTY - Linux/macOS)
+        if: matrix.os != 'windows-latest'
+        run: |
+          echo "✓ Running Unix PTY integration tests (Phase 3 Week 1)"
+          cargo test --workspace --test unix_pty_integration --all-features
+          echo "✓ Unix PTY tests passed"
+
+  summary:
+    name: CI Summary
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: always()
+
+    steps:
+      - name: Check build results
+        run: |
+          if [ "${{ needs.build.result }}" != "success" ]; then
+            echo "❌ Cross-platform build failed"
+            exit 1
+          fi
+          echo "✅ All platforms built successfully"
+          echo ""
+          echo "Platform Matrix:"
+          echo "  - Ubuntu 22.04 LTS: ✓"
+          echo "  - macOS 13: ✓"
+          echo "  - Windows latest: ✓"
+          echo ""
+          echo "Phase 3 CI infrastructure ready for PTY abstraction work (Week 1-2)"
