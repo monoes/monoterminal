@@ -11,6 +11,9 @@
 #[cfg(target_os = "linux")]
 pub mod systemd;
 
+#[cfg(target_os = "linux")]
+pub mod sd_notify;
+
 #[cfg(target_os = "macos")]
 pub mod launchd;
 

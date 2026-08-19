@@ -255,6 +255,20 @@ async fn main() -> Result<()> {
 
     tracing::info!("Phase 1: Windows + Web client");
 
+    // Check if running under systemd (Type=notify)
+    #[cfg(target_os = "linux")]
+    let systemd_mode = args.systemd || platform::service::sd_notify::is_systemd();
+    #[cfg(not(target_os = "linux"))]
+    let systemd_mode = false;
+
+    if systemd_mode {
+        tracing::info!("Running in systemd mode (Type=notify)");
+        #[cfg(target_os = "linux")]
+        {
+            platform::service::sd_notify::notify_status("Starting MONOTERMINAL daemon...")?;
+        }
+    }
+
     if args.dev_mode {
         tracing::warn!("⚠️  DEV MODE ENABLED - Auth bypass active (auto-issuing JWT tokens)");
         tracing::warn!("⚠️  DO NOT use in production - for E2E testing only");
@@ -274,6 +288,11 @@ async fn main() -> Result<()> {
     }
 
     // 1. Load or generate Ed25519 keypair for JWT signing
+    #[cfg(target_os = "linux")]
+    if systemd_mode {
+        platform::service::sd_notify::notify_status("Loading Ed25519 keypair...")?;
+    }
+
     let keypair = load_or_generate_keypair()
         .context("Failed to load Ed25519 keypair")?;
     tracing::info!("Ed25519 keypair loaded");
@@ -287,6 +306,11 @@ async fn main() -> Result<()> {
     tracing::info!("Rate limiter initialized");
 
     // 4. Create session manager
+    #[cfg(target_os = "linux")]
+    if systemd_mode {
+        platform::service::sd_notify::notify_status("Initializing session manager...")?;
+    }
+
     let session_manager = Arc::new(session::manager::SessionManager::new(None));
     tracing::info!("Session manager initialized");
 
@@ -312,6 +336,11 @@ async fn main() -> Result<()> {
     );
 
     // 8. Create WebSocket server with auth + rate limiting
+    #[cfg(target_os = "linux")]
+    if systemd_mode {
+        platform::service::sd_notify::notify_status("Creating WebSocket server...")?;
+    }
+
     let server = server::Server::new(
         server_config,
         session_manager,
@@ -321,8 +350,22 @@ async fn main() -> Result<()> {
     )?;
     tracing::info!("WebSocket server created");
 
-    // 9. Run server (blocking until shutdown signal)
+    // 9. Notify systemd that we're ready (Type=notify contract)
+    #[cfg(target_os = "linux")]
+    if systemd_mode {
+        platform::service::sd_notify::notify_ready()?;
+        tracing::info!("✓ systemd notified: service ready");
+    }
+
+    // 10. Run server (blocking until shutdown signal)
     server.run().await?;
+
+    // 11. Notify systemd that we're stopping
+    #[cfg(target_os = "linux")]
+    if systemd_mode {
+        platform::service::sd_notify::notify_stopping()?;
+        tracing::info!("✓ systemd notified: service stopping");
+    }
 
     Ok(())
 }
