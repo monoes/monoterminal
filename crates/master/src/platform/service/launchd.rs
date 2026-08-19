@@ -86,14 +86,30 @@ pub fn install_service() -> Result<()> {
     Ok(())
 }
 
+/// Read yes/no confirmation from user
+fn read_confirmation() -> bool {
+    use std::io::{self, Write};
+
+    let mut input = String::new();
+    io::stdout().flush().expect("Failed to flush stdout");
+
+    match io::stdin().read_line(&mut input) {
+        Ok(_) => {
+            let trimmed = input.trim().to_lowercase();
+            trimmed == "y" || trimmed == "yes"
+        }
+        Err(_) => false,
+    }
+}
+
 /// Uninstall monoterminal launchd service
 ///
 /// Steps:
 /// 1. Unload service (if loaded)
 /// 2. Remove plist file
 /// 3. Remove binary
-/// 4. (Optional) Remove data directories
-/// 5. (Optional) Remove service user
+/// 4. Prompt for data directory removal
+/// 5. Prompt for service user removal
 pub fn uninstall_service() -> Result<()> {
     tracing::info!("Uninstalling MONOTERMINAL launchd service...");
 
@@ -114,24 +130,46 @@ pub fn uninstall_service() -> Result<()> {
         tracing::info!("Removed binary: {}", BINARY_PATH);
     }
 
-    // 4. Prompt for data directory removal
-    // TODO: Interactive prompt (for now, keep data)
-    tracing::info!("Data directory preserved: {}", data_dir().display());
-    tracing::info!("Log directory preserved: {}", log_dir().display());
+    // 4. Interactive prompt for data directory removal
+    let data_dir_path = data_dir();
+    let log_dir_path = log_dir();
 
-    // 5. Prompt for user removal
-    // TODO: Interactive prompt (for now, keep user)
-    tracing::info!("Service user preserved: {}", SERVICE_USER);
+    print!("\nData directory: {}\nRemove data directory? [y/N]: ", data_dir_path.display());
+    let remove_data = read_confirmation();
+
+    if remove_data {
+        println!("\nRemoving data directory...");
+        if data_dir_path.exists() {
+            fs::remove_dir_all(&data_dir_path)
+                .context(format!("Failed to remove data directory: {}", data_dir_path.display()))?;
+            println!("✓ Data directory removed: {}", data_dir_path.display());
+        }
+        if log_dir_path.exists() {
+            fs::remove_dir_all(&log_dir_path)
+                .context(format!("Failed to remove log directory: {}", log_dir_path.display()))?;
+            println!("✓ Log directory removed: {}", log_dir_path.display());
+        }
+    } else {
+        println!("\nData directory preserved: {}", data_dir_path.display());
+        println!("Log directory preserved: {}", log_dir_path.display());
+    }
+
+    // 5. Interactive prompt for user removal
+    print!("\nService user: {}\nRemove service user and group? [y/N]: ", SERVICE_USER);
+    let remove_user = read_confirmation();
+
+    if remove_user {
+        println!("\nRemoving service user and group...");
+        remove_service_user()?;
+    } else {
+        println!("\nService user preserved: {}", SERVICE_USER);
+        println!("To remove later: sudo dscl . -delete /Users/{}", SERVICE_USER);
+        println!("                 sudo dscl . -delete /Groups/{}", SERVICE_GROUP);
+    }
 
     tracing::info!("✓ MONOTERMINAL service uninstalled successfully");
     println!("");
     println!("MONOTERMINAL service uninstalled successfully!");
-    println!("");
-    println!("Data directory preserved: {}", data_dir().display());
-    println!("To remove data: sudo rm -rf \"{}\"", data_dir().display());
-    println!("");
-    println!("Service user preserved: {}", SERVICE_USER);
-    println!("To remove user: sudo dscl . -delete /Users/{}", SERVICE_USER);
 
     Ok(())
 }
@@ -533,6 +571,45 @@ fn unload_service() -> Result<()> {
     }
 
     tracing::info!("✓ Service unloaded");
+    Ok(())
+}
+
+/// Remove service user and group using dscl
+fn remove_service_user() -> Result<()> {
+    tracing::info!("Removing service user and group...");
+
+    // Remove user
+    let user_status = Command::new("dscl")
+        .args(&[".", "-delete", &format!("/Users/{}", SERVICE_USER)])
+        .status();
+
+    match user_status {
+        Ok(s) if s.success() => {
+            tracing::info!("✓ Service user removed: {}", SERVICE_USER);
+            println!("✓ Service user removed: {}", SERVICE_USER);
+        }
+        _ => {
+            eprintln!("Warning: Failed to remove service user (may need manual cleanup)");
+            tracing::warn!("Failed to remove service user: {}", SERVICE_USER);
+        }
+    }
+
+    // Remove group
+    let group_status = Command::new("dscl")
+        .args(&[".", "-delete", &format!("/Groups/{}", SERVICE_GROUP)])
+        .status();
+
+    match group_status {
+        Ok(s) if s.success() => {
+            tracing::info!("✓ Service group removed: {}", SERVICE_GROUP);
+            println!("✓ Service group removed: {}", SERVICE_GROUP);
+        }
+        _ => {
+            eprintln!("Warning: Failed to remove service group (may need manual cleanup)");
+            tracing::warn!("Failed to remove service group: {}", SERVICE_GROUP);
+        }
+    }
+
     Ok(())
 }
 
