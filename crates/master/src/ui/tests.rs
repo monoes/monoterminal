@@ -9,7 +9,7 @@ mod tests {
     use glyph_cache::{GlyphCache, GlyphKey};
     use terminal_grid::TerminalGrid;
     use tokio::sync::mpsc;
-    use vt_parser::{CellStyle, GridChange, VtParser};
+    use vt_parser::{GridChange, VtParser};
 
     #[test]
     fn test_vt_parser_to_grid_pipeline() {

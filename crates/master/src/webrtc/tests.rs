@@ -5,7 +5,6 @@
 mod integration_tests {
     use crate::webrtc::*;
     use std::sync::Arc;
-    use std::time::Duration;
 
     #[tokio::test]
     async fn test_webrtc_handshake_round_trip() {

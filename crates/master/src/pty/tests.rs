@@ -183,7 +183,7 @@ mod property_tests {
         tokio::time::sleep(Duration::from_millis(100)).await;
 
         // This should either succeed (buffered) or fail gracefully
-        let write_result = pty.write(b"this should not crash\r\n").await;
+        let _write_result = pty.write(b"this should not crash\r\n").await;
 
         // We don't assert on the result - just that it doesn't panic
         // The error should be handled gracefully
@@ -207,7 +207,7 @@ mod property_tests {
             .await
             .expect("Failed to create PTY");
 
-        let shell_pid = pty.shell_pid();
+        let _shell_pid = pty.shell_pid();
 
         // Start a long-running child process
         pty.write(b"timeout /t 60\r\n")
@@ -274,8 +274,8 @@ mod property_tests {
         // Spawn concurrent write tasks
         let write_task = {
             tokio::spawn(async move {
-                for i in 0..10 {
-                    let cmd = format!("echo write_{}\r\n", i);
+                for _i in 0..10 {
+                    let _cmd = format!("echo write_{}\r\n", _i);
                     tokio::time::sleep(Duration::from_millis(10)).await;
                 }
             })
