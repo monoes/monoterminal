@@ -4,7 +4,6 @@
 //! Run with: cargo run --example ui_test
 
 use anyhow::Result;
-use tracing_subscriber;
 
 // We need to re-export from the library
 // For now, we'll just test the modules compile

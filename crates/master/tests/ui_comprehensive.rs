@@ -51,7 +51,7 @@ mod window_tests {
 
         // Standard aspect ratio check
         let aspect_ratio = cell_height as f32 / cell_width as f32;
-        assert!(aspect_ratio >= 1.5 && aspect_ratio <= 2.5);
+        assert!((1.5..=2.5).contains(&aspect_ratio));
     }
 
     #[test]
@@ -501,13 +501,11 @@ mod ui_integration_tests {
         // Test complete UI pipeline flow (conceptual)
         // PTY Output → VT Parser → Terminal Grid → Renderer
 
-        let pipeline_stages = vec![
-            "PTY Output",
+        let pipeline_stages = ["PTY Output",
             "VT Parser",
             "Terminal Grid",
             "Glyph Cache",
-            "GPU Renderer",
-        ];
+            "GPU Renderer"];
 
         assert_eq!(pipeline_stages.len(), 5);
         assert_eq!(pipeline_stages[0], "PTY Output");
@@ -530,7 +528,7 @@ mod ui_integration_tests {
         let running_state = "running";
         let terminated_state = "terminated";
 
-        let states = vec![initial_state, running_state, terminated_state];
+        let states = [initial_state, running_state, terminated_state];
 
         assert_eq!(states.len(), 3);
         assert!(states.contains(&initial_state));

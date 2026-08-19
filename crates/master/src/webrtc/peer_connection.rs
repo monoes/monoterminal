@@ -65,12 +65,14 @@ pub struct PeerConnection {
     data_channel: Arc<Mutex<Option<Arc<RTCDataChannel>>>>,
 
     /// Configuration
+    #[allow(dead_code)]
     config: Arc<WebRtcConfig>,
 
     /// State
     state: Arc<Mutex<PeerConnectionState>>,
 
     /// Outgoing ICE candidates channel
+    #[allow(dead_code)]
     ice_candidates_tx: mpsc::Sender<IceCandidate>,
 
     /// Incoming data channel messages

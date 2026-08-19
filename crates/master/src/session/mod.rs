@@ -2,6 +2,8 @@
 // Phase 1: Windows + Web MVP
 // SRS §2.1.3, Architecture: docs/architecture/phase1-overview.md §2
 
+#![allow(clippy::module_inception)]
+
 pub mod manager;
 pub mod scrollback;
 pub mod session;

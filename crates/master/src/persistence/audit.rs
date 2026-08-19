@@ -237,7 +237,7 @@ mod tests {
         let conn = setup_test_db();
 
         // Log events for different users
-        for i in 0..3 {
+        for _i in 0..3 {
             let session_id = Uuid::new_v4();
             let event = AuditEvent::SessionCreate {
                 session_id,

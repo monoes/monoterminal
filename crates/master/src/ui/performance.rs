@@ -1,11 +1,13 @@
 //! Performance monitoring and frame timing
 //!
 //! Tracks frame budgets per SRS §2.1.1:
+//!
 //! - PTY read: 2ms
 //! - Dirty tracking: 0.5ms
 //! - Glyph lookup: 1ms
 //! - GPU render: 8ms
 //! - VSync: 5ms
+//!
 //! Target: 16.67ms (60 FPS)
 
 use std::collections::VecDeque;

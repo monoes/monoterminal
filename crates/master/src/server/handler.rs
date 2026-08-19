@@ -3,6 +3,9 @@
 // Implements task-2: Monomind bridge integration (health/upgrade/detection/dashboard)
 // Implements task-8: JWT authentication integration
 
+#![allow(clippy::result_large_err)]
+#![allow(clippy::too_many_arguments)]
+
 use futures_util::{SinkExt, StreamExt};
 use prost::Message;
 use std::net::SocketAddr;

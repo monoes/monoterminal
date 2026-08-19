@@ -57,6 +57,7 @@ impl TryInto<RTCIceCandidateInit> for IceCandidate {
 /// Manages ICE candidate discovery with timeout and metrics
 pub struct IceCandidateGatherer {
     config: Arc<WebRtcConfig>,
+    #[allow(dead_code)]
     candidates_tx: mpsc::Sender<IceCandidate>,
 }
 

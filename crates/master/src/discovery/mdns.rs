@@ -56,6 +56,7 @@ impl ServiceInfo {
 pub struct MdnsDiscovery {
     service_type: String,
     service_name: String,
+    #[allow(dead_code)]
     port: u16,
 }
 

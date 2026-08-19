@@ -2,6 +2,8 @@
 // Implements SRS §3.1.2 (WebSocket Framing) and §3.2.1 (Transport Security)
 // Implements SRS §3.2.4 (Rate Limiting)
 
+#![allow(clippy::result_large_err)]
+
 pub mod connection;
 pub mod error;
 pub mod handler;
@@ -66,6 +68,7 @@ pub struct Server {
     tls_acceptor: TlsAcceptor,
     rate_limiter: Arc<RateLimiter>,
     auth_service: Arc<Ed25519AuthService>,
+    #[allow(dead_code)]
     health_tx: broadcast::Sender<HealthStatus>,
     dev_mode: bool,
     /// Optional startup notification (sent once TCP listener is bound)

@@ -17,6 +17,7 @@ pub enum Permission {
 
 impl Permission {
     /// Parse permission from string (from ACL)
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Result<Self> {
         match s.to_lowercase().as_str() {
             "owner" => Ok(Permission::Owner),

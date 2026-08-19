@@ -1,0 +1,217 @@
+﻿cargo :     Checking monoterminal-master v0.1.0 (C:\Users\nokho\Desktop\projects\monoterminal\crates\master)
+At line:1 char:302
++ ... tch {} } }; cargo clippy --workspace --all-targets --all-features --  ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (    Checking mo...\crates\master):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+error: unexpected `cfg` condition value: `test_support`
+  --> crates\master\src\ui\mod.rs:26:17
+   |
+26 | #[cfg(any(test, feature = "test_support"))]
+   |                 ^^^^^^^^^^--------------
+   |                           |
+   |                           help: there is a expected value with a similar name: `"test-support"`
+   |
+   = note: expected values for `feature` are: `test-support`
+   = help: consider adding `test_support` as a feature in `Cargo.toml`
+   = note: see <https://doc.rust-lang.org/nightly/rustc/check-cfg/cargo-specifics.html> for more information about 
+checking conditional configuration
+   = note: `-D unexpected-cfgs` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(unexpected_cfgs)]`
+
+error[E0433]: cannot find type `AtomicBool` in this scope
+   --> crates\master\src\session\tests.rs:341:41
+    |
+341 |             let task_aborted = Arc::new(AtomicBool::new(false));
+    |                                         ^^^^^^^^^^ use of undeclared type `AtomicBool`
+    |
+help: consider importing this type alias
+    |
+332 +         use std::sync::atomic::AtomicBool;
+    |
+
+error[E0433]: cannot find type `Duration` in this scope
+   --> crates\master\src\ui\performance.rs:153:23
+    |
+153 |         thread::sleep(Duration::from_millis(1));
+    |                       ^^^^^^^^ use of undeclared type `Duration`
+    |
+    = note: struct `crate::webrtc::ice::tests::Duration` exists but is inaccessible
+help: consider importing this struct
+    |
+122 +     use std::time::Duration;
+    |
+
+error[E0433]: cannot find type `Duration` in this scope
+   --> crates\master\src\ui\performance.rs:165:23
+    |
+165 |         thread::sleep(Duration::from_millis(10));
+    |                       ^^^^^^^^ use of undeclared type `Duration`
+    |
+    = note: struct `crate::webrtc::ice::tests::Duration` exists but is inaccessible
+help: consider importing this struct
+    |
+122 +     use std::time::Duration;
+    |
+
+error[E0433]: cannot find type `Duration` in this scope
+   --> crates\master\src\ui\performance.rs:181:27
+    |
+181 |             thread::sleep(Duration::from_millis(16));
+    |                           ^^^^^^^^ use of undeclared type `Duration`
+    |
+    = note: struct `crate::webrtc::ice::tests::Duration` exists but is inaccessible
+help: consider importing this struct
+    |
+122 +     use std::time::Duration;
+    |
+
+error[E0433]: cannot find type `Duration` in this scope
+   --> crates\master\src\ui\performance.rs:203:27
+    |
+203 |             thread::sleep(Duration::from_millis(16));
+    |                           ^^^^^^^^ use of undeclared type `Duration`
+    |
+    = note: struct `crate::webrtc::ice::tests::Duration` exists but is inaccessible
+help: consider importing this struct
+    |
+122 +     use std::time::Duration;
+    |
+
+error[E0433]: cannot find type `Duration` in this scope
+   --> crates\master\src\ui\performance.rs:225:27
+    |
+225 |             thread::sleep(Duration::from_millis(1));
+    |                           ^^^^^^^^ use of undeclared type `Duration`
+    |
+    = note: struct `crate::webrtc::ice::tests::Duration` exists but is inaccessible
+help: consider importing this struct
+    |
+122 +     use std::time::Duration;
+    |
+
+error[E0433]: cannot find type `Duration` in this scope
+   --> crates\master\src\ui\performance.rs:239:23
+    |
+239 |         thread::sleep(Duration::from_millis(2));
+    |                       ^^^^^^^^ use of undeclared type `Duration`
+    |
+    = note: struct `crate::webrtc::ice::tests::Duration` exists but is inaccessible
+help: consider importing this struct
+    |
+122 +     use std::time::Duration;
+    |
+
+error[E0433]: cannot find type `Duration` in this scope
+   --> crates\master\src\ui\performance.rs:267:23
+    |
+267 |         thread::sleep(Duration::from_millis(50));
+    |                       ^^^^^^^^ use of undeclared type `Duration`
+    |
+    = note: struct `crate::webrtc::ice::tests::Duration` exists but is inaccessible
+help: consider importing this struct
+    |
+122 +     use std::time::Duration;
+    |
+
+error[E0433]: cannot find type `Duration` in this scope
+   --> crates\master\src\ui\performance.rs:274:27
+    |
+274 |             thread::sleep(Duration::from_millis(10));
+    |                           ^^^^^^^^ use of undeclared type `Duration`
+    |
+    = note: struct `crate::webrtc::ice::tests::Duration` exists but is inaccessible
+help: consider importing this struct
+    |
+122 +     use std::time::Duration;
+    |
+
+error: unused variable: `i`
+   --> crates\master\src\persistence\audit.rs:240:13
+    |
+240 |         for i in 0..3 {
+    |             ^ help: if this is intentional, prefix it with an underscore: `_i`
+    |
+    = note: `-D unused-variables` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(unused_variables)]`
+
+error: variable does not need to be mutable
+   --> crates\master\src\persistence\migrations.rs:128:13
+    |
+128 |         let mut conn = Connection::open_in_memory().unwrap();
+    |             ----^^^^
+    |             |
+    |             help: remove this `mut`
+    |
+    = note: `-D unused-mut` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(unused_mut)]`
+
+error: variable does not need to be mutable
+  --> crates\master\src\persistence\schema.rs:51:13
+   |
+51 |         let mut conn = Connection::open_in_memory().unwrap();
+   |             ----^^^^
+   |             |
+   |             help: remove this `mut`
+
+error: variable does not need to be mutable
+  --> crates\master\src\persistence\schema.rs:84:13
+   |
+84 |         let mut conn = Connection::open_in_memory().unwrap();
+   |             ----^^^^
+   |             |
+   |             help: remove this `mut`
+
+error: variable does not need to be mutable
+   --> crates\master\src\persistence\mod.rs:153:13
+    |
+153 |         let mut conn = db.get_conn().unwrap();
+    |             ----^^^^
+    |             |
+    |             help: remove this `mut`
+
+error: module has the same name as its containing module
+ --> crates\master\src\session\mod.rs:7:1
+  |
+7 | pub mod session;
+  | ^^^^^^^^^^^^^^^^
+  |
+  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#module_inception
+  = note: `-D clippy::module-inception` implied by `-D warnings`
+  = help: to override `-D warnings` add `#[allow(clippy::module_inception)]`
+
+error: doc list item without indentation
+  --> crates\master\src\ui\mod.rs:12:5
+   |
+12 | //! Total: 16.5ms ✅
+   |     ^
+   |
+   = help: if this is supposed to be its own paragraph, add a blank line
+   = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#doc_lazy_continuation
+   = note: `-D clippy::doc-lazy-continuation` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::doc_lazy_continuation)]`
+help: indent this line
+   |
+12 | //!   Total: 16.5ms ✅
+   |     ++
+
+error: doc list item without indentation
+ --> crates\master\src\ui\performance.rs:9:5
+  |
+9 | //! Target: 16.67ms (60 FPS)
+  |     ^
+  |
+  = help: if this is supposed to be its own paragraph, add a blank line
+  = help: for further information visit 
+https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#doc_lazy_continuation
+help: indent this line
+  |
+9 | //!   Target: 16.67ms (60 FPS)
+  |     ++
+
+error: could not compile `monoterminal-master` (lib) due to 4 previous errors
+warning: build failed, waiting for other jobs to finish...
+For more information about this error, try `rustc --explain E0433`.
+error: could not compile `monoterminal-master` (lib test) due to 15 previous errors
