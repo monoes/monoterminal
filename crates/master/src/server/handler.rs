@@ -561,9 +561,12 @@ async fn process_message(
         Some(envelope::Message::HealthCheckResponse(_)) |
         Some(envelope::Message::UpgradeResponse(_)) |
         Some(envelope::Message::DetectionResponse(_)) |
-        Some(envelope::Message::MonitoringData(_)) => {
-            warn!("Received unexpected server->client message from {}", peer_addr);
-            Err(ServerError::InvalidMessage("Client sent server message type".to_string()))
+        Some(envelope::Message::MonitoringData(_)) |
+        Some(envelope::Message::WebrtcOffer(_)) |
+        Some(envelope::Message::WebrtcAnswer(_)) |
+        Some(envelope::Message::IceCandidate(_)) => {
+            warn!("Received unexpected server->client or P2P message from {}", peer_addr);
+            Err(ServerError::InvalidMessage("Client sent server/P2P message type".to_string()))
         }
         None => {
             warn!("Received envelope with no message from {}", peer_addr);
