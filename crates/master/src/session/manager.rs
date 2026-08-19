@@ -74,17 +74,29 @@ impl SessionManager {
         }
     }
 
-    /// Create new terminal session
+    /// Create new terminal session (backward-compatible, no RBAC)
+    ///
+    /// For tests and non-auth scenarios. Production code should use `create_session_with_user()`.
+    pub async fn create_session(
+        &self,
+        working_dir: Option<PathBuf>,
+        rows: u16,
+        cols: u16,
+    ) -> Result<SessionId> {
+        self.create_session_with_user(None, working_dir, rows, cols).await
+    }
+
+    /// Create new terminal session with optional owner user_id (RBAC-enabled)
     ///
     /// Phase 1: Spawns ConPTY backend
     /// Phase 2+: Will support OpenPTY for Linux/macOS
     ///
     /// # Arguments
-    /// * `owner_user_id` - User creating the session (from JWT claims)
+    /// * `owner_user_id` - User creating the session (from JWT claims, optional)
     /// * `working_dir` - Working directory for shell
     /// * `rows` - Terminal rows
     /// * `cols` - Terminal columns
-    pub async fn create_session(
+    pub async fn create_session_with_user(
         &self,
         owner_user_id: Option<String>,
         working_dir: Option<PathBuf>,
@@ -200,15 +212,26 @@ impl SessionManager {
         Ok(id)
     }
 
-    /// Attach client to existing session
+    /// Attach client to existing session (backward-compatible, no RBAC)
+    pub async fn attach_client(
+        &self,
+        session_id: SessionId,
+        client_id: super::session::ClientId,
+        output_tx: mpsc::Sender<Vec<u8>>,
+    ) -> Result<SessionSnapshot> {
+        self.attach_client_with_user(session_id, client_id, output_tx, None).await
+    }
+
+    /// Attach client to existing session with optional user_id (RBAC-enabled)
+    ///
     /// Returns session snapshot with scrollback for late-joiner sync
     ///
     /// # Arguments
     /// * `session_id` - Session to attach to
     /// * `client_id` - Client identifier
     /// * `output_tx` - Channel for sending output to client
-    /// * `user_id` - User requesting attach (for RBAC permission check)
-    pub async fn attach_client(
+    /// * `user_id` - User requesting attach (for RBAC permission check, optional)
+    pub async fn attach_client_with_user(
         &self,
         session_id: SessionId,
         client_id: super::session::ClientId,
@@ -278,13 +301,22 @@ impl SessionManager {
         Ok(())
     }
 
-    /// Send input to session PTY
+    /// Send input to session PTY (backward-compatible, no RBAC)
+    pub async fn send_input(
+        &self,
+        session_id: SessionId,
+        data: &[u8],
+    ) -> Result<()> {
+        self.send_input_with_user(session_id, data, None).await
+    }
+
+    /// Send input to session PTY with optional user_id (RBAC-enabled)
     ///
     /// # Arguments
     /// * `session_id` - Target session
     /// * `data` - Input data to send
-    /// * `user_id` - User sending input (for RBAC permission check)
-    pub async fn send_input(
+    /// * `user_id` - User sending input (for RBAC permission check, optional)
+    pub async fn send_input_with_user(
         &self,
         session_id: SessionId,
         data: &[u8],
@@ -325,14 +357,24 @@ impl SessionManager {
     }
 
     /// Resize session terminal
-    /// Resize terminal
+    /// Resize terminal (backward-compatible, no RBAC)
+    pub async fn resize_session(
+        &self,
+        session_id: SessionId,
+        rows: u16,
+        cols: u16,
+    ) -> Result<()> {
+        self.resize_session_with_user(session_id, rows, cols, None).await
+    }
+
+    /// Resize terminal with optional user_id (RBAC-enabled)
     ///
     /// # Arguments
     /// * `session_id` - Target session
     /// * `rows` - New row count
     /// * `cols` - New column count
-    /// * `user_id` - User requesting resize (for RBAC permission check)
-    pub async fn resize_session(
+    /// * `user_id` - User requesting resize (for RBAC permission check, optional)
+    pub async fn resize_session_with_user(
         &self,
         session_id: SessionId,
         rows: u16,
@@ -374,12 +416,17 @@ impl SessionManager {
     }
 
     /// Kill session and underlying PTY
-    /// Terminate a session
+    /// Terminate a session (backward-compatible, no RBAC)
+    pub async fn kill_session(&self, session_id: SessionId) -> Result<()> {
+        self.kill_session_with_user(session_id, None).await
+    }
+
+    /// Terminate a session with optional user_id (RBAC-enabled)
     ///
     /// # Arguments
     /// * `session_id` - Session to terminate
-    /// * `user_id` - User requesting termination (for RBAC permission check)
-    pub async fn kill_session(&self, session_id: SessionId, user_id: Option<String>) -> Result<()> {
+    /// * `user_id` - User requesting termination (for RBAC permission check, optional)
+    pub async fn kill_session_with_user(&self, session_id: SessionId, user_id: Option<String>) -> Result<()> {
         // Phase 2: RBAC permission check (Action::Kill - owner only)
         if let Some(uid) = &user_id {
             self.check_session_permission(&session_id, uid, Action::Kill).await?;

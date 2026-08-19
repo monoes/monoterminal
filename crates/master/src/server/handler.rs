@@ -233,26 +233,29 @@ async fn process_message(
             debug!("Processing AttachRequest from {}: session_id={}", peer_addr, req.session_id);
 
             // SRS §3.2.2: JWT authentication verification
-            if !dev_mode {
-                // Production mode: verify JWT token
+            // Phase 2: Extract user_id from JWT claims for RBAC
+            let user_id = if !dev_mode {
+                // Production mode: verify JWT token and extract user_id
                 if req.auth_token.is_empty() {
                     warn!("AttachRequest from {} missing auth_token", peer_addr);
                     return Err(ServerError::AuthFailed("Missing authentication token".to_string()));
                 }
 
-                let _claims = verify_auth_token(auth_service, &req.auth_token)?;
-                debug!("JWT verified for AttachRequest from {}", peer_addr);
+                let claims = verify_auth_token(auth_service, &req.auth_token)?;
+                debug!("JWT verified for AttachRequest from {}: user_id={}", peer_addr, claims.sub);
+                Some(claims.sub)
             } else {
                 // Dev mode: bypass auth (for E2E testing only)
                 warn!("⚠️  DEV MODE: Skipping JWT verification for AttachRequest from {}", peer_addr);
-            }
+                None
+            };
 
             // Parse or create session_id (protocol: "UUID or empty for new session")
             let session_id = if req.session_id.is_empty() {
-                // Create new session with requested dimensions
-                info!("Creating new session for {} ({}x{})", peer_addr, req.rows, req.cols);
+                // Create new session with requested dimensions (Phase 2: set owner from JWT)
+                info!("Creating new session for {} ({}x{}, user_id={:?})", peer_addr, req.rows, req.cols, user_id);
                 session_manager
-                    .create_session(None, req.rows as u16, req.cols as u16)
+                    .create_session_with_user(user_id.clone(), None, req.rows as u16, req.cols as u16)
                     .await
                     .map_err(|e| ServerError::InvalidMessage(format!("Failed to create session: {}", e)))?
             } else {
@@ -264,9 +267,9 @@ async fn process_message(
             // Create output channel for this client
             let (output_tx, rx) = mpsc::channel(256); // 256 messages ≈ 1MB buffer per SRS §3.1.4
 
-            // Attach client to session
+            // Attach client to session (Phase 2: RBAC permission check)
             let snapshot = session_manager
-                .attach_client(session_id, client_id, output_tx)
+                .attach_client_with_user(session_id, client_id, output_tx, user_id.clone())
                 .await
                 .map_err(|e| match e {
                     crate::session::SessionError::NotFound(_) =>
@@ -323,24 +326,28 @@ async fn process_message(
             debug!("Processing InputData from {}: {} bytes", peer_addr, input.data.len());
 
             // SRS §3.2.2: JWT authentication verification
-            if !dev_mode {
-                // Production mode: verify JWT token
+            // Phase 2: Extract user_id from JWT claims for RBAC
+            let user_id = if !dev_mode {
+                // Production mode: verify JWT token and extract user_id
                 if input.auth_token.is_empty() {
                     warn!("InputData from {} missing auth_token", peer_addr);
                     return Err(ServerError::AuthFailed("Missing authentication token".to_string()));
                 }
 
-                let _claims = verify_auth_token(auth_service, &input.auth_token)?;
-                debug!("JWT verified for InputData from {}", peer_addr);
-            }
+                let claims = verify_auth_token(auth_service, &input.auth_token)?;
+                debug!("JWT verified for InputData from {}: user_id={}", peer_addr, claims.sub);
+                Some(claims.sub)
+            } else {
+                None
+            };
 
             // Ensure client is attached
             let session_id = attached_session
                 .ok_or_else(|| ServerError::InvalidMessage("Not attached to session".to_string()))?;
 
-            // Forward input to session PTY
+            // Forward input to session PTY (Phase 2: RBAC permission check)
             session_manager
-                .send_input(session_id, &input.data)
+                .send_input_with_user(session_id, &input.data, user_id)
                 .await
                 .map_err(|e| ServerError::InvalidMessage(format!("Send input failed: {}", e)))?;
 
@@ -351,24 +358,28 @@ async fn process_message(
             debug!("Processing ResizeRequest from {}: {}x{}", peer_addr, resize.rows, resize.cols);
 
             // SRS §3.2.2: JWT authentication verification
-            if !dev_mode {
-                // Production mode: verify JWT token
+            // Phase 2: Extract user_id from JWT claims for RBAC
+            let user_id = if !dev_mode {
+                // Production mode: verify JWT token and extract user_id
                 if resize.auth_token.is_empty() {
                     warn!("ResizeRequest from {} missing auth_token", peer_addr);
                     return Err(ServerError::AuthFailed("Missing authentication token".to_string()));
                 }
 
-                let _claims = verify_auth_token(auth_service, &resize.auth_token)?;
-                debug!("JWT verified for ResizeRequest from {}", peer_addr);
-            }
+                let claims = verify_auth_token(auth_service, &resize.auth_token)?;
+                debug!("JWT verified for ResizeRequest from {}: user_id={}", peer_addr, claims.sub);
+                Some(claims.sub)
+            } else {
+                None
+            };
 
             // Ensure client is attached
             let session_id = attached_session
                 .ok_or_else(|| ServerError::InvalidMessage("Not attached to session".to_string()))?;
 
-            // Resize session PTY
+            // Resize session PTY (Phase 2: RBAC permission check)
             session_manager
-                .resize_session(session_id, resize.rows as u16, resize.cols as u16)
+                .resize_session_with_user(session_id, resize.rows as u16, resize.cols as u16, user_id)
                 .await
                 .map_err(|e| ServerError::InvalidMessage(format!("Resize failed: {}", e)))?;
 
