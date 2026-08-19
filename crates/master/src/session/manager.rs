@@ -27,12 +27,10 @@ impl SessionManager {
     /// Create new session manager
     pub fn new(default_shell: Option<String>) -> Self {
         let default_shell = default_shell.unwrap_or_else(|| {
-            // Per architecture: pwsh.exe (PowerShell 7+) if available, else cmd.exe
-            if which::which("pwsh.exe").is_ok() {
-                "pwsh.exe".to_string()
-            } else {
-                "cmd.exe".to_string()
-            }
+            // DIAGNOSTIC TEST: Use ping instead of cmd.exe to match Microsoft ConPTY sample
+            // This verifies our ConPTY implementation is correct
+            // TODO: Revert to cmd.exe after test
+            "ping.exe -n 3 localhost".to_string()
         });
 
         tracing::info!("SessionManager initialized with default shell: {}", default_shell);
@@ -81,7 +79,7 @@ impl SessionManager {
         let pty = crate::pty::ConPtyBackend::create(config).await
             .map_err(|e| SessionError::PtyCreateFailed(e.to_string()))?;
 
-        // Create SessionContainer WITHOUT AbortOnDrop (test mode)
+        // Create SessionContainer with AbortOnDrop tracking for proper cleanup
         let container = SessionContainer::new(
             id,
             Box::new(pty),
@@ -95,16 +93,18 @@ impl SessionManager {
         self.sessions.write().await.insert(id, container.clone());
         tracing::info!("LIFECYCLE: SessionContainer stored in HashMap for session {}", id);
 
-        // NOW spawn tasks WITHOUT AbortOnDrop tracking
+        // Spawn tasks WITH AbortOnDrop tracking (fixes memory leak)
+        // Store JoinHandles in container - Drop will abort tasks to release Arc references
         tracing::info!("LIFECYCLE: About to spawn pty_output_loop for session {}", id);
-        tokio::spawn(Self::pty_output_loop(
+        let output_handle = tokio::spawn(Self::pty_output_loop(
             container.session.clone(),
             container.pty.clone(),
         ));
-        tracing::info!("LIFECYCLE: pty_output_loop spawned (NO AbortOnDrop) for session {}", id);
+        *container.output_task.lock().await = Some(output_handle);
+        tracing::info!("LIFECYCLE: pty_output_loop spawned WITH AbortOnDrop for session {}", id);
 
-        // Spawn monomind detection task
-        tokio::spawn({
+        // Spawn monomind detection task and store handle
+        let monomind_handle = tokio::spawn({
             let session_arc = container.session.clone();
             async move {
                 use monoterminal_monomind_bridge::detect_monomind;
@@ -129,8 +129,9 @@ impl SessionManager {
                 }
             }
         });
+        *container.monomind_task.lock().await = Some(monomind_handle);
 
-        tracing::info!("Session {} created successfully (NO AbortOnDrop test)", id);
+        tracing::info!("Session {} created successfully WITH AbortOnDrop tracking", id);
 
         Ok(id)
     }

@@ -6,7 +6,8 @@ pub mod session;
 pub mod scrollback;
 pub mod manager;
 
-pub use session::{Session, SessionId, SessionState, SessionSnapshot, ClientId};
+pub use session::{Session, SessionId, SessionState, SessionSnapshot, ClientId, SessionContainer};
+pub use manager::SessionManager;
 
 #[cfg(test)]
 mod tests;
