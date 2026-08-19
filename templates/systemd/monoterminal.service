@@ -1,0 +1,90 @@
+# MONOTERMINAL systemd Service Unit File
+# Phase 3 Week 3: Service Management Architecture
+#
+# Installation:
+#   sudo cp monoterminal.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable monoterminal
+#   sudo systemctl start monoterminal
+#
+# Status:
+#   sudo systemctl status monoterminal
+#   sudo journalctl -u monoterminal -f
+
+[Unit]
+Description=MONOTERMINAL Master Daemon
+Documentation=https://github.com/monoterminal/monoterminal
+After=network.target
+
+# Phase 3: Basic system service
+# Phase 4: Add socket activation (After=monoterminal.socket)
+
+[Service]
+# Service type: notify (daemon signals readiness to systemd)
+Type=notify
+
+# Executable and arguments
+ExecStart=/usr/local/bin/monoterminal-master --systemd
+ExecReload=/bin/kill -HUP $MAINPID
+
+# Restart policy: auto-restart on failure
+Restart=on-failure
+RestartSec=5s
+
+# User and group (dedicated service user)
+User=monoterminal
+Group=monoterminal
+
+# Working directory and state (Phase 3 task-53 integration)
+WorkingDirectory=/var/lib/monoterminal
+StateDirectory=monoterminal
+LogsDirectory=monoterminal
+ConfigurationDirectory=monoterminal
+
+# StateDirectory creates /var/lib/monoterminal (data_dir from task-53)
+# LogsDirectory creates /var/log/monoterminal (log_dir from task-53)
+# ConfigurationDirectory creates /etc/monoterminal
+
+# Environment
+Environment="RUST_LOG=info"
+Environment="TERM=xterm-256color"
+
+# Logging (journal + file)
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=monoterminal
+
+# Custom log file (in addition to journal)
+# Application writes to /var/log/monoterminal/ (managed via LogsDirectory)
+
+# Security hardening (systemd sandboxing)
+# Phase 3: Basic restrictions
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/monoterminal /var/log/monoterminal
+
+# Phase 4: Additional hardening (deferred)
+# ProtectKernelTunables=true
+# ProtectControlGroups=true
+# RestrictRealtime=true
+# RestrictNamespaces=true
+# RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+# SystemCallFilter=@system-service
+# SystemCallErrorNumber=EPERM
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=512
+
+# Notification settings (for Type=notify)
+NotifyAccess=main
+TimeoutStartSec=60s
+TimeoutStopSec=30s
+
+# Watchdog (Phase 4)
+# WatchdogSec=30s
+
+[Install]
+WantedBy=multi-user.target

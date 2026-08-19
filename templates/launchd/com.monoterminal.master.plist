@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+MONOTERMINAL launchd Property List
+Phase 3 Week 3: Service Management Architecture
+
+Installation:
+  sudo cp com.monoterminal.master.plist /Library/LaunchDaemons/
+  sudo chmod 644 /Library/LaunchDaemons/com.monoterminal.master.plist
+  sudo chown root:wheel /Library/LaunchDaemons/com.monoterminal.master.plist
+  sudo launchctl load /Library/LaunchDaemons/com.monoterminal.master.plist
+
+Status:
+  sudo launchctl list | grep monoterminal
+  sudo tail -f /Library/Logs/MONOTERMINAL/stdout.log
+
+Uninstall:
+  sudo launchctl unload /Library/LaunchDaemons/com.monoterminal.master.plist
+  sudo rm /Library/LaunchDaemons/com.monoterminal.master.plist
+-->
+<plist version="1.0">
+<dict>
+    <!-- Service identification -->
+    <key>Label</key>
+    <string>com.monoterminal.master</string>
+
+    <!-- Program and arguments -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/bin/monoterminal-master</string>
+        <string>--launchd</string>
+    </array>
+
+    <!-- Working directory (Phase 3 task-53 integration) -->
+    <!-- data_dir() for macOS: /Library/Application Support/MONOTERMINAL -->
+    <key>WorkingDirectory</key>
+    <string>/Library/Application Support/MONOTERMINAL</string>
+
+    <!-- Auto-start on boot -->
+    <key>RunAtLoad</key>
+    <true/>
+
+    <!-- Keep alive (auto-restart on crash) -->
+    <key>KeepAlive</key>
+    <dict>
+        <!-- Restart if exits with non-zero status -->
+        <key>SuccessfulExit</key>
+        <false/>
+        <!-- Restart if crashes -->
+        <key>Crashed</key>
+        <true/>
+    </dict>
+
+    <!-- Restart throttle: minimum 5 seconds between restarts -->
+    <key>ThrottleInterval</key>
+    <integer>5</integer>
+
+    <!-- Standard output and error (Phase 3 task-53 integration) -->
+    <!-- log_dir() for macOS: /Library/Logs/MONOTERMINAL -->
+    <key>StandardOutPath</key>
+    <string>/Library/Logs/MONOTERMINAL/stdout.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Library/Logs/MONOTERMINAL/stderr.log</string>
+
+    <!-- User and group (dedicated service user) -->
+    <!-- Underscore prefix for system accounts on macOS -->
+    <key>UserName</key>
+    <string>_monoterminal</string>
+    <key>GroupName</key>
+    <string>_monoterminal</string>
+
+    <!-- Environment variables -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>RUST_LOG</key>
+        <string>info</string>
+        <key>TERM</key>
+        <string>xterm-256color</string>
+    </dict>
+
+    <!-- Resource limits -->
+    <key>SoftResourceLimits</key>
+    <dict>
+        <!-- File descriptors: 65536 (for 1000-session target) -->
+        <key>NumberOfFiles</key>
+        <integer>65536</integer>
+        <!-- Processes: 512 (for PTY spawning) -->
+        <key>NumberOfProcesses</key>
+        <integer>512</integer>
+    </dict>
+
+    <!-- Hard resource limits (same as soft for now) -->
+    <key>HardResourceLimits</key>
+    <dict>
+        <key>NumberOfFiles</key>
+        <integer>65536</integer>
+        <key>NumberOfProcesses</key>
+        <integer>512</integer>
+    </dict>
+
+    <!-- Process type: Adaptive for daemons -->
+    <!-- Background priority, CPU/I/O throttling when idle -->
+    <key>ProcessType</key>
+    <string>Adaptive</string>
+
+    <!-- Session creation (create new session, detach from terminal) -->
+    <key>SessionCreate</key>
+    <true/>
+
+    <!-- Nice priority (0 = normal, higher = lower priority) -->
+    <key>Nice</key>
+    <integer>0</integer>
+
+    <!-- Phase 4: Socket listeners (deferred to Phase 3.5) -->
+    <!--
+    <key>Sockets</key>
+    <dict>
+        <key>Listeners</key>
+        <dict>
+            <key>SockServiceName</key>
+            <string>5000</string>
+            <key>SockType</key>
+            <string>stream</string>
+            <key>SockFamily</key>
+            <string>IPv4</string>
+        </dict>
+    </dict>
+    -->
+
+    <!-- Disabled features (security) -->
+    <!-- No interactive login capability -->
+    <key>Disabled</key>
+    <false/>
+
+    <!-- Abandoned process cleanup -->
+    <key>AbandonProcessGroup</key>
+    <true/>
+</dict>
+</plist>
