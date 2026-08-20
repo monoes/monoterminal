@@ -115,9 +115,10 @@ harness = false
 name = "persistence_performance"
 harness = false
 
-[[bench]]
-name = "unix_pty_performance"
-harness = false
+# Temporarily disabled - requires Unix-specific setup (task-63)
+# [[bench]]
+# name = "unix_pty_performance"
+# harness = false
 
 [[test]]
 name = "stability_24h"
