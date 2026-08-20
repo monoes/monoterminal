@@ -19,17 +19,19 @@ use uuid::Uuid;
 
 use super::error::{Result, ServerError};
 use crate::auth::{AuthService, Claims};
+use crate::clipboard::ClipboardManager;
 use crate::session::manager::SessionManager;
 use crate::session::{ClientId, SessionId};
 use monoterminal_protocol::{envelope, Envelope, ErrorCode};
 
 /// Handle WebSocket connection with bidirectional streaming
-/// Client → Server: AttachRequest, InputData, ResizeRequest, DetachRequest
-/// Server → Client: AttachResponse, OutputData (continuous), ErrorResponse
+/// Client → Server: AttachRequest, InputData, ResizeRequest, DetachRequest, ClipboardGetRequest, ClipboardSetRequest
+/// Server → Client: AttachResponse, OutputData (continuous), ErrorResponse, ClipboardGetResponse
 pub async fn handle_websocket(
     ws_stream: WebSocketStream<TlsStream<TcpStream>>,
     peer_addr: SocketAddr,
     session_manager: Arc<SessionManager>,
+    clipboard_manager: Arc<ClipboardManager>,
     auth_service: Arc<dyn AuthService>,
     dev_mode: bool,
 ) -> Result<()> {
@@ -78,6 +80,7 @@ pub async fn handle_websocket(
                                 match process_message(
                                     envelope,
                                     &session_manager,
+                                    &clipboard_manager,
                                     auth_service.as_ref(),
                                     dev_mode,
                                     client_id,
@@ -228,6 +231,7 @@ fn verify_auth_token(auth_service: &dyn AuthService, token: &str) -> Result<Clai
 async fn process_message(
     envelope: Envelope,
     session_manager: &SessionManager,
+    clipboard_manager: &ClipboardManager,
     auth_service: &dyn AuthService,
     dev_mode: bool,
     client_id: ClientId,
@@ -380,16 +384,26 @@ async fn process_message(
                 None
             };
 
-            // Ensure client is attached
-            let session_id = attached_session.ok_or_else(|| {
-                ServerError::InvalidMessage("Not attached to session".to_string())
-            })?;
+            // Phase 4: Route input to pane (if pane_id specified) or focused pane
+            // Backward compatibility: If pane_id is None, fall back to old behavior (attached session)
+            if input.pane_id.is_some() && !input.pane_id.as_ref().unwrap().is_empty() {
+                // Phase 4: Route to specified pane
+                let pane_id = input.pane_id.as_deref();
+                session_manager
+                    .send_input_to_pane(pane_id, &input.data, user_id)
+                    .await
+                    .map_err(|e| ServerError::InvalidMessage(format!("Send input failed: {}", e)))?;
+            } else {
+                // Backward compatibility: Route to attached session (Phase 1-3 behavior)
+                let session_id = attached_session.ok_or_else(|| {
+                    ServerError::InvalidMessage("Not attached to session".to_string())
+                })?;
 
-            // Forward input to session PTY (Phase 2: RBAC permission check)
-            session_manager
-                .send_input_with_user(session_id, &input.data, user_id)
-                .await
-                .map_err(|e| ServerError::InvalidMessage(format!("Send input failed: {}", e)))?;
+                session_manager
+                    .send_input_with_user(session_id, &input.data, user_id)
+                    .await
+                    .map_err(|e| ServerError::InvalidMessage(format!("Send input failed: {}", e)))?;
+            }
 
             // No response needed for input data
             Ok(None)
@@ -640,6 +654,229 @@ async fn process_message(
 
             Ok(Some(response))
         }
+        Some(envelope::Message::SearchRequest(_req)) => {
+            // Phase 4: Scrollback search (task-71, rust-engineer-protocol)
+            // TODO(Week 1 Day 2-3): Implement search handler
+            warn!(
+                "SearchRequest not yet implemented (Phase 4 Week 1 Day 2-3)"
+            );
+            Err(ServerError::InvalidMessage(
+                "Search feature not yet implemented".to_string(),
+            ))
+        }
+        Some(envelope::Message::SplitPaneCommand(cmd)) => {
+            // Phase 4 Week 2: Splits/Tabs handler (ADR-018, task-73)
+            debug!(
+                "Processing SplitPaneCommand from {}: pane_id={}, direction={:?}",
+                peer_addr, cmd.pane_id, cmd.direction
+            );
+
+            // Extract user_id from JWT for RBAC
+            let user_id = if !dev_mode {
+                if cmd.pane_id.is_empty() {
+                    return Err(ServerError::InvalidMessage(
+                        "SplitPaneCommand missing pane_id".to_string(),
+                    ));
+                }
+                // Note: Auth token would be in a separate field in a real implementation
+                // For now, user_id is extracted from session context
+                None
+            } else {
+                None
+            };
+
+            // Call SessionManager to handle split (dimensions derived from existing pane's session)
+            let layout_update = session_manager
+                .handle_split_pane(
+                    &cmd.pane_id,
+                    cmd.direction().into(),
+                    Some(cmd.new_session_shell.clone()),
+                    user_id,
+                )
+                .await
+                .map_err(|e| ServerError::InvalidMessage(format!("Split pane failed: {}", e)))?;
+
+            // Return LayoutUpdate to client
+            let response = Envelope {
+                sequence_number: envelope.sequence_number,
+                message: Some(envelope::Message::LayoutUpdate(layout_update)),
+            };
+
+            Ok(Some(response))
+        }
+        Some(envelope::Message::ClosePaneCommand(cmd)) => {
+            // Phase 4 Week 2: Splits/Tabs handler (ADR-018, task-73)
+            debug!(
+                "Processing ClosePaneCommand from {}: pane_id={}",
+                peer_addr, cmd.pane_id
+            );
+
+            // Extract user_id from JWT for RBAC
+            let user_id = if !dev_mode {
+                if cmd.pane_id.is_empty() {
+                    return Err(ServerError::InvalidMessage(
+                        "ClosePaneCommand missing pane_id".to_string(),
+                    ));
+                }
+                None
+            } else {
+                None
+            };
+
+            // Call SessionManager to handle close
+            let layout_update = session_manager
+                .handle_close_pane(&cmd.pane_id, user_id)
+                .await
+                .map_err(|e| ServerError::InvalidMessage(format!("Close pane failed: {}", e)))?;
+
+            // Return LayoutUpdate to client
+            let response = Envelope {
+                sequence_number: envelope.sequence_number,
+                message: Some(envelope::Message::LayoutUpdate(layout_update)),
+            };
+
+            Ok(Some(response))
+        }
+        Some(envelope::Message::FocusPaneCommand(cmd)) => {
+            // Phase 4 Week 2: Splits/Tabs handler (ADR-018, task-73)
+            debug!(
+                "Processing FocusPaneCommand from {}: pane_id={}",
+                peer_addr, cmd.pane_id
+            );
+
+            if cmd.pane_id.is_empty() {
+                return Err(ServerError::InvalidMessage(
+                    "FocusPaneCommand missing pane_id".to_string(),
+                ));
+            }
+
+            // Call SessionManager to handle focus
+            let layout_update = session_manager
+                .handle_focus_pane(&cmd.pane_id)
+                .await
+                .map_err(|e| ServerError::InvalidMessage(format!("Focus pane failed: {}", e)))?;
+
+            // Return LayoutUpdate to client
+            let response = Envelope {
+                sequence_number: envelope.sequence_number,
+                message: Some(envelope::Message::LayoutUpdate(layout_update)),
+            };
+
+            Ok(Some(response))
+        }
+        Some(envelope::Message::ClipboardGetRequest(req)) => {
+            // Phase 4 Week 2: Bidirectional Clipboard (ADR-020, task-74)
+            debug!(
+                "Processing ClipboardGetRequest from {}: request_id={}",
+                peer_addr, req.request_id
+            );
+
+            // Extract session_id from attached_session
+            let session_id = attached_session
+                .ok_or_else(|| {
+                    ServerError::InvalidMessage("Client not attached to session".to_string())
+                })?;
+
+            // user_id: Session-level auth (verified at AttachRequest)
+            // TODO: Extract user_id from session state once RBAC is fully implemented
+            let user_id = "session-user".to_string();
+
+            // Call ClipboardManager
+            match clipboard_manager
+                .handle_clipboard_get(session_id, user_id, peer_addr)
+                .await
+            {
+                Ok(content) => {
+                    let response = Envelope {
+                        sequence_number: envelope.sequence_number,
+                        message: Some(envelope::Message::ClipboardGetResponse(
+                            monoterminal_protocol::ClipboardGetResponse {
+                                request_id: req.request_id,
+                                content,
+                                mime_type: "text/plain".to_string(),
+                                authorized: true,
+                                error: String::new(),
+                            },
+                        )),
+                    };
+                    Ok(Some(response))
+                }
+                Err(e) => {
+                    // Return error response to client
+                    let error_msg = match e {
+                        crate::clipboard::ClipboardError::RateLimitExceeded { retry_after } => {
+                            format!("Rate limit exceeded. Retry after {} seconds", retry_after)
+                        }
+                        crate::clipboard::ClipboardError::AuthorizationRequired => {
+                            "Authorization required for clipboard access".to_string()
+                        }
+                        _ => format!("Clipboard error: {}", e),
+                    };
+
+                    let response = Envelope {
+                        sequence_number: envelope.sequence_number,
+                        message: Some(envelope::Message::ClipboardGetResponse(
+                            monoterminal_protocol::ClipboardGetResponse {
+                                request_id: req.request_id,
+                                content: String::new(),
+                                mime_type: String::new(),
+                                authorized: false,
+                                error: error_msg,
+                            },
+                        )),
+                    };
+                    Ok(Some(response))
+                }
+            }
+        }
+        Some(envelope::Message::ClipboardSetRequest(req)) => {
+            // Phase 4 Week 2: Bidirectional Clipboard (ADR-020, task-74)
+            debug!(
+                "Processing ClipboardSetRequest from {}: {} bytes",
+                peer_addr,
+                req.content.len()
+            );
+
+            // Extract session_id from attached_session
+            let session_id = attached_session
+                .ok_or_else(|| {
+                    ServerError::InvalidMessage("Client not attached to session".to_string())
+                })?;
+
+            // user_id: Session-level auth (verified at AttachRequest)
+            // TODO: Extract user_id from session state once RBAC is fully implemented
+            let user_id = "session-user".to_string();
+
+            // Call ClipboardManager
+            clipboard_manager
+                .handle_clipboard_set(session_id, req.content, user_id, peer_addr)
+                .await
+                .map_err(|e| {
+                    let error_msg = match e {
+                        crate::clipboard::ClipboardError::RateLimitExceeded { retry_after } => {
+                            format!("Rate limit exceeded. Retry after {} seconds", retry_after)
+                        }
+                        crate::clipboard::ClipboardError::SizeLimitExceeded => {
+                            "Clipboard size exceeds 1MB limit".to_string()
+                        }
+                        _ => format!("Clipboard error: {}", e),
+                    };
+                    ServerError::InvalidMessage(error_msg)
+                })?;
+
+            // No response for clipboard set (fire-and-forget)
+            Ok(None)
+        }
+        Some(envelope::Message::ClipboardGetResponse(_resp)) => {
+            // Server → Client message (unexpected from client)
+            warn!(
+                "Received unexpected ClipboardGetResponse from {}",
+                peer_addr
+            );
+            Err(ServerError::InvalidMessage(
+                "Client sent server→client message type".to_string(),
+            ))
+        }
         Some(envelope::Message::AttachResponse(_))
         | Some(envelope::Message::OutputData(_))
         | Some(envelope::Message::ErrorResponse(_))
@@ -650,7 +887,10 @@ async fn process_message(
         | Some(envelope::Message::MonitoringData(_))
         | Some(envelope::Message::WebrtcOffer(_))
         | Some(envelope::Message::WebrtcAnswer(_))
-        | Some(envelope::Message::IceCandidate(_)) => {
+        | Some(envelope::Message::IceCandidate(_))
+        | Some(envelope::Message::SearchResponse(_))
+        | Some(envelope::Message::LayoutUpdate(_))
+        | Some(envelope::Message::ClipboardOsc52(_)) => {
             warn!(
                 "Received unexpected server->client or P2P message from {}",
                 peer_addr

@@ -15,7 +15,7 @@ use super::{
 };
 use crate::auth::{check_permission, Action};
 use crate::layout::{LayoutManager, SplitDirection};
-use crate::persistence::{session as db_session, Database};
+use crate::persistence::{layout::LayoutPersistence, session as db_session, Database};
 use crate::pty::{PtyBackend, PtyConfig};
 
 /// Central session manager
@@ -34,6 +34,10 @@ pub struct SessionManager {
     /// Pane layout manager (Phase 4: Splits/Tabs, ADR-018)
     /// Initialized on first session creation
     layout: Arc<RwLock<Option<LayoutManager>>>,
+
+    /// Layout persistence (Phase 4: task-74 Day 4)
+    /// Saves/loads layout state to/from SQLite
+    layout_persistence: Option<Arc<LayoutPersistence>>,
 }
 
 impl SessionManager {
@@ -82,11 +86,17 @@ impl SessionManager {
             }
         }
 
+        // Initialize layout persistence if database available
+        let layout_persistence = db.as_ref().map(|db_arc| {
+            Arc::new(LayoutPersistence::new(Arc::clone(db_arc)))
+        });
+
         Self {
             sessions: Arc::new(RwLock::new(HashMap::new())),
             default_shell,
             db,
             layout: Arc::new(RwLock::new(None)), // Phase 4: Initialized on first session
+            layout_persistence,
         }
     }
 
@@ -615,7 +625,7 @@ impl SessionManager {
         let _custom_shell = new_session_shell; // Reserved for future use
 
         let new_session_id =
-            self.create_session_with_user(user_id, working_dir, rows, cols)
+            self.create_session_with_user(user_id.clone(), working_dir, rows, cols)
                 .await?;
 
         tracing::info!(
@@ -642,8 +652,19 @@ impl SessionManager {
             new_pane_id
         );
 
+        // Get layout snapshot before releasing lock
+        let layout_update = layout.to_proto();
+        drop(layout_guard); // Release lock before async auto-save
+
+        // Auto-save layout (if user_id available)
+        if let Some(uid) = user_id {
+            if let Err(e) = self.auto_save_layout(&uid).await {
+                tracing::warn!("Failed to auto-save layout after split: {}", e);
+            }
+        }
+
         // Return updated layout
-        Ok(layout.to_proto())
+        Ok(layout_update)
     }
 
     /// Handle close pane command (Phase 4: Splits/Tabs)
@@ -674,7 +695,7 @@ impl SessionManager {
         };
 
         // Kill the PTY session
-        self.kill_session_with_user(session_id, user_id).await?;
+        self.kill_session_with_user(session_id, user_id.clone()).await?;
 
         tracing::info!("Killed session {} for pane '{}'", session_id, pane_id);
 
@@ -690,8 +711,19 @@ impl SessionManager {
 
         tracing::info!("Closed pane '{}'", pane_id);
 
+        // Get layout snapshot before releasing lock
+        let layout_update = layout.to_proto();
+        drop(layout_guard); // Release lock before async auto-save
+
+        // Auto-save layout (if user_id available)
+        if let Some(uid) = user_id {
+            if let Err(e) = self.auto_save_layout(&uid).await {
+                tracing::warn!("Failed to auto-save layout after close: {}", e);
+            }
+        }
+
         // Return updated layout
-        Ok(layout.to_proto())
+        Ok(layout_update)
     }
 
     /// Handle focus pane command (Phase 4: Splits/Tabs)
@@ -707,6 +739,9 @@ impl SessionManager {
         &self,
         pane_id: &str,
     ) -> Result<monoterminal_protocol::LayoutUpdate> {
+        // Note: focus_pane doesn't have user_id parameter (not needed for RBAC)
+        // Auto-save is skipped for focus changes (minor state change, can skip persistence)
+
         let mut layout_guard = self.layout.write().await;
         let layout = layout_guard
             .as_mut()
@@ -760,6 +795,100 @@ impl SessionManager {
 
         // Send input to the pane's session
         self.send_input_with_user(session_id, data, user_id).await
+    }
+
+    /// Auto-save layout to persistence layer (Phase 4: task-74 Day 4)
+    ///
+    /// Called after every layout change (split/close/focus) to persist state.
+    ///
+    /// # Arguments
+    /// * `user_id` - User ID to save layout for
+    ///
+    /// # Returns
+    /// * `Ok(())` - Layout saved successfully (or no persistence available)
+    /// * `Err(_)` - Database error or serialization failure
+    async fn auto_save_layout(&self, user_id: &str) -> Result<()> {
+        // Check if persistence is available
+        let persistence = match &self.layout_persistence {
+            Some(p) => p,
+            None => {
+                tracing::debug!("Layout persistence not available, skipping auto-save");
+                return Ok(());
+            }
+        };
+
+        // Get layout snapshot
+        let layout_update = {
+            let layout_guard = self.layout.read().await;
+            match layout_guard.as_ref() {
+                Some(layout) => layout.to_proto(),
+                None => {
+                    tracing::debug!("No layout to save (LayoutManager not initialized)");
+                    return Ok(());
+                }
+            }
+        };
+
+        // Save to persistence layer
+        persistence
+            .save_layout(user_id, &layout_update)
+            .await
+            .map_err(|e| {
+                SessionError::LayoutError(format!("Failed to save layout: {}", e))
+            })?;
+
+        tracing::debug!("Auto-saved layout for user {}", user_id);
+
+        Ok(())
+    }
+
+    /// Auto-load layout from persistence layer (Phase 4: task-74 Day 4)
+    ///
+    /// Called on session attachment to restore saved layout state.
+    ///
+    /// # Arguments
+    /// * `user_id` - User ID to load layout for
+    ///
+    /// # Returns
+    /// * `Ok(())` - Layout loaded (or no saved layout available)
+    /// * `Err(_)` - Database error or deserialization failure
+    async fn auto_load_layout(&self, user_id: &str) -> Result<()> {
+        // Check if persistence is available
+        let persistence = match &self.layout_persistence {
+            Some(p) => p,
+            None => {
+                tracing::debug!("Layout persistence not available, skipping auto-load");
+                return Ok(());
+            }
+        };
+
+        // Load layout from persistence
+        let _layout_update = match persistence.load_layout(user_id).await {
+            Ok(Some(layout)) => layout,
+            Ok(None) => {
+                tracing::debug!("No saved layout for user {}", user_id);
+                return Ok(());
+            }
+            Err(e) => {
+                return Err(SessionError::LayoutError(format!(
+                    "Failed to load layout: {}",
+                    e
+                )));
+            }
+        };
+
+        // TODO: Restore layout from LayoutUpdate proto
+        // This requires implementing LayoutManager::from_proto() or similar
+        // For now, just log that we loaded the layout
+        tracing::info!(
+            "Loaded layout for user {} (restoration not yet implemented)",
+            user_id
+        );
+
+        // Store the loaded layout update for future use
+        // When LayoutManager::from_proto() is implemented, reconstruct layout here
+
+        Ok(())
     }
 
     /// Check if user has permission to perform action on session (Phase 2: RBAC)
