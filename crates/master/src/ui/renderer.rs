@@ -62,11 +62,6 @@ pub struct Renderer {
     bind_group: Option<wgpu::BindGroup>,
     vertex_buffer: Option<wgpu::Buffer>,
 
-    // Week 8 Day 3-4 Optimization #2: Vertex buffer reuse
-    // Reusable vertex buffer to avoid per-frame allocations
-    // Pre-allocated capacity: 80x24 grid * 6 vertices/cell = 11,520 vertices
-    vertex_cache: Vec<GlyphVertex>,
-
     // egui integration (TODO: Add egui_wgpu_renderer on Day 2)
     // For now, we prepare the terminal rendering pipeline
 
@@ -112,11 +107,6 @@ impl Renderer {
             cell_height
         );
 
-        // Pre-allocate vertex cache for 80x24 grid (11,520 vertices)
-        // Avoids per-frame allocations (Week 8 Day 3-4 Optimization #2)
-        let vertex_cache_capacity = 24 * 80 * 6; // rows * cols * vertices_per_cell
-        let vertex_cache = Vec::with_capacity(vertex_cache_capacity);
-
         Ok(Self {
             instance,
             adapter: None,
@@ -132,7 +122,6 @@ impl Renderer {
             atlas_sampler: None,
             bind_group: None,
             vertex_buffer: None,
-            vertex_cache,
 
             // Terminal rendering state (80x24 default)
             terminal_grid: TerminalGrid::new(24, 80),
@@ -437,7 +426,7 @@ impl Renderer {
         // Build vertex data from dirty cells SECOND (mutable borrow for glyph cache)
         // Target: <1ms glyph lookup + 0.5ms dirty tracking
         perf.mark("dirty_tracking_start");
-        let vertex_count = self.build_vertices(perf)?;
+        let vertices = self.build_vertices(perf)?;
         perf.mark("glyph_lookup");
 
         // NOW borrow resources immutably (all mutable work done)
@@ -459,13 +448,13 @@ impl Renderer {
         });
 
         // Upload vertices to GPU
-        if vertex_count > 0 {
+        if !vertices.is_empty() {
             queue.write_buffer(
                 self.vertex_buffer
                     .as_ref()
                     .context("Vertex buffer not initialized")?,
                 0,
-                bytemuck::cast_slice(&self.vertex_cache[..vertex_count]),
+                bytemuck::cast_slice(&vertices),
             );
         }
         perf.mark("upload_vertices");
@@ -495,7 +484,7 @@ impl Renderer {
             perf.mark("render_pass_begin");
 
             // Draw glyphs if we have vertices
-            if vertex_count > 0 {
+            if !vertices.is_empty() {
                 render_pass.set_pipeline(
                     self.text_pipeline
                         .as_ref()
@@ -515,7 +504,7 @@ impl Renderer {
                         .context("Vertex buffer not initialized")?
                         .slice(..),
                 );
-                render_pass.draw(0..vertex_count as u32, 0..1);
+                render_pass.draw(0..vertices.len() as u32, 0..1);
             }
 
             perf.mark("render_pass");
@@ -555,10 +544,8 @@ impl Renderer {
     /// Build vertex data from dirty terminal cells
     /// Target: <0.5ms dirty tracking + <1ms glyph lookup = <1.5ms total
     /// Returns vertex array ready for GPU upload
-    fn build_vertices(&mut self, perf: &mut PerformanceMonitor) -> Result<usize> {
-        // Week 8 Day 3-4 Optimization #2: Reuse vertex cache instead of allocating new Vec
-        // Clear previous frame's vertices but retain capacity
-        self.vertex_cache.clear();
+    fn build_vertices(&mut self, perf: &mut PerformanceMonitor) -> Result<Vec<GlyphVertex>> {
+        let mut vertices = Vec::new();
 
         let surface_config = self
             .surface_config
@@ -614,7 +601,7 @@ impl Renderer {
             );
 
             // Top-left
-            self.vertex_cache.push(GlyphVertex {
+            vertices.push(GlyphVertex {
                 position: [x_ndc, y_ndc],
                 tex_coords: [tex_x, tex_y],
                 fg_color,
@@ -622,7 +609,7 @@ impl Renderer {
             });
 
             // Top-right
-            self.vertex_cache.push(GlyphVertex {
+            vertices.push(GlyphVertex {
                 position: [x_ndc + cell_width_ndc, y_ndc],
                 tex_coords: [tex_x + tex_w, tex_y],
                 fg_color,
@@ -630,7 +617,7 @@ impl Renderer {
             });
 
             // Bottom-left
-            self.vertex_cache.push(GlyphVertex {
+            vertices.push(GlyphVertex {
                 position: [x_ndc, y_ndc - cell_height_ndc],
                 tex_coords: [tex_x, tex_y + tex_h],
                 fg_color,
@@ -639,7 +626,7 @@ impl Renderer {
 
             // Triangle 2
             // Top-right (duplicate)
-            self.vertex_cache.push(GlyphVertex {
+            vertices.push(GlyphVertex {
                 position: [x_ndc + cell_width_ndc, y_ndc],
                 tex_coords: [tex_x + tex_w, tex_y],
                 fg_color,
@@ -647,7 +634,7 @@ impl Renderer {
             });
 
             // Bottom-right
-            self.vertex_cache.push(GlyphVertex {
+            vertices.push(GlyphVertex {
                 position: [x_ndc + cell_width_ndc, y_ndc - cell_height_ndc],
                 tex_coords: [tex_x + tex_w, tex_y + tex_h],
                 fg_color,
@@ -655,7 +642,7 @@ impl Renderer {
             });
 
             // Bottom-left (duplicate)
-            self.vertex_cache.push(GlyphVertex {
+            vertices.push(GlyphVertex {
                 position: [x_ndc, y_ndc - cell_height_ndc],
                 tex_coords: [tex_x, tex_y + tex_h],
                 fg_color,
@@ -666,7 +653,7 @@ impl Renderer {
         // Clear dirty region after rendering
         self.terminal_grid.clear_dirty();
 
-        Ok(self.vertex_cache.len())
+        Ok(vertices)
     }
 
     /// Ensure glyph is cached and uploaded to GPU atlas
