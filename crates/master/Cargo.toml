@@ -83,6 +83,7 @@ windows = { workspace = true }
 # Unix-specific (Phase 3: Unix PTY support)
 [target.'cfg(unix)'.dependencies]
 portable-pty = "0.8"
+libc = "0.2"
 
 [features]
 test-support = []

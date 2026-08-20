@@ -47,6 +47,10 @@ pub enum PtyError {
     /// PTY disconnected (channel closed)
     #[error("PTY disconnected")]
     Disconnected,
+
+    /// Failed to terminate PTY session
+    #[error("Failed to terminate PTY: {0}")]
+    TerminateFailed(String),
 }
 
 /// Result type for PTY operations

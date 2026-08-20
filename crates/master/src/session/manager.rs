@@ -143,8 +143,14 @@ impl SessionManager {
             environment: std::env::vars().collect(),
         };
 
-        // Spawn PTY backend (ConPtyBackend for Phase 1 Windows)
+        // Spawn PTY backend (platform-conditional: ConPtyBackend for Windows, UnixPtyBackend for Unix)
+        #[cfg(windows)]
         let pty = crate::pty::ConPtyBackend::create(config)
+            .await
+            .map_err(|e| SessionError::PtyCreateFailed(e.to_string()))?;
+
+        #[cfg(unix)]
+        let pty = crate::pty::UnixPtyBackend::create(config)
             .await
             .map_err(|e| SessionError::PtyCreateFailed(e.to_string()))?;
 

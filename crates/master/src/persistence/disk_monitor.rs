@@ -91,9 +91,23 @@ pub fn get_disk_usage(path: &Path) -> Result<DiskUsage> {
 /// Get disk usage for a path (Unix-specific implementation)
 #[cfg(not(target_os = "windows"))]
 pub fn get_disk_usage(path: &Path) -> Result<DiskUsage> {
-    use std::os::unix::fs::statvfs;
+    use std::ffi::CString;
+    use std::os::unix::ffi::OsStrExt;
 
-    let stat = statvfs(path).context("Failed to get filesystem stats")?;
+    // Convert path to C string
+    let path_cstr = CString::new(path.as_os_str().as_bytes())
+        .context("Failed to convert path to C string")?;
+
+    // Call libc::statvfs
+    let mut stat: libc::statvfs = unsafe { std::mem::zeroed() };
+    let result = unsafe { libc::statvfs(path_cstr.as_ptr(), &mut stat) };
+
+    if result != 0 {
+        return Err(anyhow::anyhow!(
+            "Failed to get filesystem stats: {}",
+            std::io::Error::last_os_error()
+        ));
+    }
 
     let block_size = stat.f_bsize as u64;
     let total_bytes = stat.f_blocks as u64 * block_size;

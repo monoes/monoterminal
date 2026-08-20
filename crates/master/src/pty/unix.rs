@@ -17,6 +17,7 @@ use super::{
 };
 use async_trait::async_trait;
 use portable_pty::{CommandBuilder, NativePtySystem, PtyPair, PtySize, PtySystem};
+use std::future::Future;
 use std::io::{self, Read as StdRead, Write as StdWrite};
 use std::sync::{Arc, Mutex};
 use tokio::io::{AsyncReadExt, AsyncWriteExt, BufReader};
@@ -90,7 +91,7 @@ impl tokio::io::AsyncRead for PtyReader {
         self: std::pin::Pin<&mut Self>,
         cx: &mut std::task::Context<'_>,
         buf: &mut tokio::io::ReadBuf<'_>,
-    ) -> std::task::Poll<io::Result<usize>> {
+    ) -> std::task::Poll<io::Result<()>> {
         // Use spawn_blocking for synchronous read (portable-pty provides blocking I/O)
         let reader = self.reader.clone();
         let buf_len = buf.remaining();
@@ -105,7 +106,7 @@ impl tokio::io::AsyncRead for PtyReader {
         match fut.as_mut().poll(cx) {
             std::task::Poll::Ready(Ok((Ok(n), temp_buf))) => {
                 buf.put_slice(&temp_buf[..n]);
-                std::task::Poll::Ready(Ok(n))
+                std::task::Poll::Ready(Ok(()))
             }
             std::task::Poll::Ready(Ok((Err(e), _))) => std::task::Poll::Ready(Err(e)),
             std::task::Poll::Ready(Err(e)) => {
