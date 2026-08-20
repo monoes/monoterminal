@@ -88,23 +88,28 @@ impl PtyWriter {
 impl tokio::io::AsyncRead for PtyReader {
     fn poll_read(
         self: std::pin::Pin<&mut Self>,
-        _cx: &mut std::task::Context<'_>,
+        cx: &mut std::task::Context<'_>,
         buf: &mut tokio::io::ReadBuf<'_>,
     ) -> std::task::Poll<io::Result<usize>> {
         // Use spawn_blocking for synchronous read (portable-pty provides blocking I/O)
         let reader = self.reader.clone();
-        let mut temp_buf = vec![0u8; buf.remaining()];
+        let buf_len = buf.remaining();
 
-        match std::task::ready!(Box::pin(tokio::task::spawn_blocking(move || {
+        let mut fut = Box::pin(tokio::task::spawn_blocking(move || {
+            let mut temp_buf = vec![0u8; buf_len];
             let mut r = reader.lock().unwrap();
-            r.read(&mut temp_buf)
-        }))) {
-            Ok(Ok(n)) => {
+            let result = r.read(&mut temp_buf);
+            (result, temp_buf)
+        }));
+
+        match fut.as_mut().poll(cx) {
+            std::task::Poll::Ready(Ok((Ok(n), temp_buf))) => {
                 buf.put_slice(&temp_buf[..n]);
                 std::task::Poll::Ready(Ok(n))
             }
-            Ok(Err(e)) => std::task::Poll::Ready(Err(e)),
-            Err(e) => std::task::Poll::Ready(Err(io::Error::new(io::ErrorKind::Other, e))),
+            std::task::Poll::Ready(Ok((Err(e), _))) => std::task::Poll::Ready(Err(e)),
+            std::task::Poll::Ready(Err(e)) => std::task::Poll::Ready(Err(io::Error::new(io::ErrorKind::Other, e))),
+            std::task::Poll::Pending => std::task::Poll::Pending,
         }
     }
 }
@@ -113,35 +118,41 @@ impl tokio::io::AsyncRead for PtyReader {
 impl tokio::io::AsyncWrite for PtyWriter {
     fn poll_write(
         self: std::pin::Pin<&mut Self>,
-        _cx: &mut std::task::Context<'_>,
+        cx: &mut std::task::Context<'_>,
         buf: &[u8],
     ) -> std::task::Poll<io::Result<usize>> {
         let writer = self.writer.clone();
         let data = buf.to_vec();
 
-        match std::task::ready!(Box::pin(tokio::task::spawn_blocking(move || {
+        let mut fut = Box::pin(tokio::task::spawn_blocking(move || {
             let mut w = writer.lock().unwrap();
             w.write(&data)
-        }))) {
-            Ok(Ok(n)) => std::task::Poll::Ready(Ok(n)),
-            Ok(Err(e)) => std::task::Poll::Ready(Err(e)),
-            Err(e) => std::task::Poll::Ready(Err(io::Error::new(io::ErrorKind::Other, e))),
+        }));
+
+        match fut.as_mut().poll(cx) {
+            std::task::Poll::Ready(Ok(Ok(n))) => std::task::Poll::Ready(Ok(n)),
+            std::task::Poll::Ready(Ok(Err(e))) => std::task::Poll::Ready(Err(e)),
+            std::task::Poll::Ready(Err(e)) => std::task::Poll::Ready(Err(io::Error::new(io::ErrorKind::Other, e))),
+            std::task::Poll::Pending => std::task::Poll::Pending,
         }
     }
 
     fn poll_flush(
         self: std::pin::Pin<&mut Self>,
-        _cx: &mut std::task::Context<'_>,
+        cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<io::Result<()>> {
         let writer = self.writer.clone();
 
-        match std::task::ready!(Box::pin(tokio::task::spawn_blocking(move || {
+        let mut fut = Box::pin(tokio::task::spawn_blocking(move || {
             let mut w = writer.lock().unwrap();
             w.flush()
-        }))) {
-            Ok(Ok(())) => std::task::Poll::Ready(Ok(())),
-            Ok(Err(e)) => std::task::Poll::Ready(Err(e)),
-            Err(e) => std::task::Poll::Ready(Err(io::Error::new(io::ErrorKind::Other, e))),
+        }));
+
+        match fut.as_mut().poll(cx) {
+            std::task::Poll::Ready(Ok(Ok(()))) => std::task::Poll::Ready(Ok(())),
+            std::task::Poll::Ready(Ok(Err(e))) => std::task::Poll::Ready(Err(e)),
+            std::task::Poll::Ready(Err(e)) => std::task::Poll::Ready(Err(io::Error::new(io::ErrorKind::Other, e))),
+            std::task::Poll::Pending => std::task::Poll::Pending,
         }
     }
 
