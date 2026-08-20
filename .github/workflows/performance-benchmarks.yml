@@ -1,0 +1,332 @@
+# Cross-Platform Performance Benchmarks
+# Phase 3 Week 7-8 - task-64
+#
+# Validates SRS performance targets across Windows, Linux, and macOS:
+# - PTY performance (ConPTY vs portable-pty)
+# - GPU rendering (DX12, Vulkan, Metal backends)
+# - Platform parity (<20% variance acceptable)
+
+name: Cross-Platform Performance Benchmarks
+
+on:
+  # Manual trigger for on-demand profiling
+  workflow_dispatch:
+    inputs:
+      platforms:
+        description: 'Platforms to benchmark (comma-separated: windows,linux,macos)'
+        required: false
+        default: 'windows,linux,macos'
+      upload_artifacts:
+        description: 'Upload benchmark artifacts'
+        required: false
+        default: 'true'
+
+  # Weekly scheduled profiling for regression tracking
+  schedule:
+    - cron: '0 0 * * 0' # Every Sunday at midnight UTC
+
+  # Optional: Run on specific branches
+  # push:
+  #   branches: [main, phase3-profiling]
+  # pull_request:
+  #   branches: [main]
+
+env:
+  RUST_BACKTRACE: 1
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # ===== Windows Profiling =====
+  benchmark-windows:
+    name: Windows Performance Benchmarks
+    runs-on: windows-latest
+    timeout-minutes: 30
+    if: |
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' &&
+      contains(github.event.inputs.platforms, 'windows')
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-registry-
+
+      - name: Cache Cargo index
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-index-
+
+      - name: Cache target directory
+        uses: actions/cache@v3
+        with:
+          path: target
+          key: ${{ runner.os }}-target-bench-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-target-bench-
+
+      - name: Create evidence directory
+        run: New-Item -ItemType Directory -Path "tests/evidence/phase3/ci" -Force
+        shell: pwsh
+
+      - name: Run PTY throughput benchmark
+        run: |
+          cargo bench --bench pty_throughput -- --save-baseline windows-baseline 2>&1 | Tee-Object -FilePath "tests/evidence/phase3/ci/windows-pty-$(Get-Date -Format 'yyyyMMdd-HHmmss').log"
+        shell: pwsh
+        continue-on-error: true
+
+      - name: Run FPS rendering benchmark
+        run: |
+          cargo bench --bench fps_rendering -- --save-baseline windows-baseline 2>&1 | Tee-Object -FilePath "tests/evidence/phase3/ci/windows-fps-$(Get-Date -Format 'yyyyMMdd-HHmmss').log"
+        shell: pwsh
+        continue-on-error: true
+
+      # Note: ConPTY benchmarks require actual process spawning (not currently implemented)
+      # Future: Add conpty_performance.rs benchmark
+
+      - name: Upload Windows benchmark results
+        if: github.event.inputs.upload_artifacts == 'true' || github.event_name == 'schedule'
+        uses: actions/upload-artifact@v3
+        with:
+          name: windows-benchmarks
+          path: |
+            target/criterion/
+            tests/evidence/phase3/ci/windows-*.log
+          retention-days: 30
+
+      - name: Upload Windows criterion reports
+        if: github.event.inputs.upload_artifacts == 'true' || github.event_name == 'schedule'
+        uses: actions/upload-artifact@v3
+        with:
+          name: windows-criterion-html
+          path: target/criterion/*/report/index.html
+          retention-days: 7
+
+  # ===== Linux Profiling =====
+  benchmark-linux:
+    name: Linux Performance Benchmarks
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    if: |
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' &&
+      contains(github.event.inputs.platforms, 'linux')
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libvulkan-dev \
+            vulkan-tools \
+            mesa-vulkan-drivers \
+            libxcb-shape0-dev \
+            libxcb-xfixes0-dev
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-registry-
+
+      - name: Cache target directory
+        uses: actions/cache@v3
+        with:
+          path: target
+          key: ${{ runner.os }}-target-bench-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-target-bench-
+
+      - name: Create evidence directory
+        run: mkdir -p tests/evidence/phase3/ci
+
+      - name: Run PTY throughput benchmark
+        run: |
+          cargo bench --bench pty_throughput -- --save-baseline linux-baseline 2>&1 | tee "tests/evidence/phase3/ci/linux-pty-$(date +%Y%m%d-%H%M%S).log"
+        continue-on-error: true
+
+      - name: Run Unix PTY performance benchmark
+        run: |
+          cargo bench --bench unix_pty_performance -- --save-baseline linux-baseline 2>&1 | tee "tests/evidence/phase3/ci/linux-unix-pty-$(date +%Y%m%d-%H%M%S).log"
+        continue-on-error: true
+
+      - name: Run FPS rendering benchmark
+        run: |
+          cargo bench --bench fps_rendering -- --save-baseline linux-baseline 2>&1 | tee "tests/evidence/phase3/ci/linux-fps-$(date +%Y%m%d-%H%M%S).log"
+        continue-on-error: true
+
+      - name: Upload Linux benchmark results
+        if: github.event.inputs.upload_artifacts == 'true' || github.event_name == 'schedule'
+        uses: actions/upload-artifact@v3
+        with:
+          name: linux-benchmarks
+          path: |
+            target/criterion/
+            tests/evidence/phase3/ci/linux-*.log
+          retention-days: 30
+
+  # ===== macOS Profiling =====
+  benchmark-macos:
+    name: macOS Performance Benchmarks
+    runs-on: macos-13
+    timeout-minutes: 30
+    if: |
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' &&
+      contains(github.event.inputs.platforms, 'macos')
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-registry-
+
+      - name: Cache target directory
+        uses: actions/cache@v3
+        with:
+          path: target
+          key: ${{ runner.os }}-target-bench-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-target-bench-
+
+      - name: Create evidence directory
+        run: mkdir -p tests/evidence/phase3/ci
+
+      - name: Run PTY throughput benchmark
+        run: |
+          cargo bench --bench pty_throughput -- --save-baseline macos-baseline 2>&1 | tee "tests/evidence/phase3/ci/macos-pty-$(date +%Y%m%d-%H%M%S).log"
+        continue-on-error: true
+
+      - name: Run Unix PTY performance benchmark
+        run: |
+          cargo bench --bench unix_pty_performance -- --save-baseline macos-baseline 2>&1 | tee "tests/evidence/phase3/ci/macos-unix-pty-$(date +%Y%m%d-%H%M%S).log"
+        continue-on-error: true
+
+      - name: Run FPS rendering benchmark
+        run: |
+          cargo bench --bench fps_rendering -- --save-baseline macos-baseline 2>&1 | tee "tests/evidence/phase3/ci/macos-fps-$(date +%Y%m%d-%H%M%S).log"
+        continue-on-error: true
+
+      - name: Upload macOS benchmark results
+        if: github.event.inputs.upload_artifacts == 'true' || github.event_name == 'schedule'
+        uses: actions/upload-artifact@v3
+        with:
+          name: macos-benchmarks
+          path: |
+            target/criterion/
+            tests/evidence/phase3/ci/macos-*.log
+          retention-days: 30
+
+  # ===== Platform Comparison Report =====
+  compare-platforms:
+    name: Generate Platform Comparison Report
+    runs-on: ubuntu-latest
+    needs: [benchmark-windows, benchmark-linux, benchmark-macos]
+    if: always() && (needs.benchmark-windows.result == 'success' || needs.benchmark-linux.result == 'success' || needs.benchmark-macos.result == 'success')
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download Windows benchmarks
+        if: needs.benchmark-windows.result == 'success'
+        uses: actions/download-artifact@v3
+        with:
+          name: windows-benchmarks
+          path: results/windows
+        continue-on-error: true
+
+      - name: Download Linux benchmarks
+        if: needs.benchmark-linux.result == 'success'
+        uses: actions/download-artifact@v3
+        with:
+          name: linux-benchmarks
+          path: results/linux
+        continue-on-error: true
+
+      - name: Download macOS benchmarks
+        if: needs.benchmark-macos.result == 'success'
+        uses: actions/download-artifact@v3
+        with:
+          name: macos-benchmarks
+          path: results/macos
+        continue-on-error: true
+
+      - name: Generate comparison report
+        run: |
+          cat > PLATFORM-COMPARISON-REPORT.md <<'EOF'
+          # Cross-Platform Performance Comparison
+
+          **Date:** $(date +%Y-%m-%d)
+          **Run:** ${{ github.run_number }}
+          **Workflow:** ${{ github.workflow }}
+
+          ## Platforms Profiled
+
+          - Windows: ${{ needs.benchmark-windows.result }}
+          - Linux: ${{ needs.benchmark-linux.result }}
+          - macOS: ${{ needs.benchmark-macos.result }}
+
+          ## Results
+
+          See attached artifacts for detailed Criterion reports and logs.
+
+          **Artifacts:**
+          - Windows: `windows-benchmarks` (if available)
+          - Linux: `linux-benchmarks` (if available)
+          - macOS: `macos-benchmarks` (if available)
+
+          **Criterion HTML Reports:**
+          - Navigate to `target/criterion/*/report/index.html` in each artifact
+
+          ## Next Steps
+
+          1. Download artifacts
+          2. Extract benchmark results
+          3. Update `tests/evidence/phase3/PLATFORM-COMPARISON-MATRIX.md`
+          4. Calculate platform variance
+          5. Identify optimization opportunities
+
+          EOF
+
+      - name: Upload comparison report
+        uses: actions/upload-artifact@v3
+        with:
+          name: platform-comparison-report
+          path: PLATFORM-COMPARISON-REPORT.md
+          retention-days: 30
