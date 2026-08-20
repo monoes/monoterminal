@@ -44,6 +44,15 @@ impl HeadlessGpuContext {
     /// - `wgpu::Backends::VULKAN` - Vulkan (Linux/Windows)
     /// - `wgpu::Backends::METAL` - Metal (macOS)
     /// - `wgpu::Backends::GL` - OpenGL (fallback)
+    ///
+    /// # Software Rendering Fallback
+    ///
+    /// If no hardware adapter is found, automatically falls back to software rendering:
+    /// - Windows: WARP (DirectX software rasterizer)
+    /// - Linux: Mesa llvmpipe
+    /// - macOS: Software renderer (if available)
+    ///
+    /// This ensures tests pass in CI environments without GPU hardware.
     pub async fn new_with_backends(backends: wgpu::Backends) -> Result<Self> {
         tracing::debug!(
             "Creating headless GPU context with backends: {:?}",
@@ -55,19 +64,45 @@ impl HeadlessGpuContext {
             ..Default::default()
         });
 
+        // Try hardware adapter first (preferred for performance)
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
-                power_preference: wgpu::PowerPreference::LowPower,
+                power_preference: wgpu::PowerPreference::HighPerformance,
                 compatible_surface: None, // ← Headless mode (no window)
                 force_fallback_adapter: false,
             })
-            .await
-            .context("Failed to find GPU adapter (try software rendering?)")?;
+            .await;
+
+        // Fallback to software adapter if hardware unavailable (CI environments)
+        let adapter = match adapter {
+            Some(adapter) => {
+                tracing::info!(
+                    "Hardware GPU adapter found: {} ({:?})",
+                    adapter.get_info().name,
+                    adapter.get_info().backend
+                );
+                adapter
+            }
+            None => {
+                tracing::warn!("No hardware GPU adapter available, falling back to software rendering");
+                tracing::debug!("Requesting software adapter with force_fallback_adapter: true");
+
+                instance
+                    .request_adapter(&wgpu::RequestAdapterOptions {
+                        power_preference: wgpu::PowerPreference::LowPower,
+                        compatible_surface: None,
+                        force_fallback_adapter: true, // ← Software rendering (WARP/llvmpipe)
+                    })
+                    .await
+                    .context("Failed to find GPU adapter (no hardware or software rendering available)")?
+            }
+        };
 
         tracing::info!(
-            "GPU adapter found: {} ({:?})",
+            "Using GPU adapter: {} ({:?}, device_type: {:?})",
             adapter.get_info().name,
-            adapter.get_info().backend
+            adapter.get_info().backend,
+            adapter.get_info().device_type
         );
 
         let (device, queue) = adapter
