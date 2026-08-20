@@ -14,11 +14,13 @@ use super::{
     Result, Session, SessionContainer, SessionError, SessionId, SessionSnapshot, SessionState,
 };
 use crate::auth::{check_permission, Action};
+use crate::layout::{LayoutManager, SplitDirection};
 use crate::persistence::{session as db_session, Database};
 use crate::pty::{PtyBackend, PtyConfig};
 
 /// Central session manager
 /// Phase 1: Single active session (simplified from SRS multi-session design)
+/// Phase 4: Pane layout management (ADR-018, task-73)
 pub struct SessionManager {
     /// Active sessions (Option A: SessionContainer with separated locks)
     sessions: Arc<RwLock<HashMap<SessionId, SessionContainer>>>,
@@ -28,6 +30,10 @@ pub struct SessionManager {
 
     /// Persistence layer (Phase 2: SQLite session + scrollback storage)
     db: Option<Arc<Database>>,
+
+    /// Pane layout manager (Phase 4: Splits/Tabs, ADR-018)
+    /// Initialized on first session creation
+    layout: Arc<RwLock<Option<LayoutManager>>>,
 }
 
 impl SessionManager {
@@ -39,10 +45,7 @@ impl SessionManager {
     /// Create new session manager with optional persistence
     pub fn new_with_db(default_shell: Option<String>, db: Option<Arc<Database>>) -> Self {
         let default_shell = default_shell.unwrap_or_else(|| {
-            // DIAGNOSTIC TEST: Use ping instead of cmd.exe to match Microsoft ConPTY sample
-            // This verifies our ConPTY implementation is correct
-            // TODO: Revert to cmd.exe after test
-            "ping.exe -n 3 localhost".to_string()
+            "cmd.exe".to_string()
         });
 
         tracing::info!(
@@ -83,6 +86,7 @@ impl SessionManager {
             sessions: Arc::new(RwLock::new(HashMap::new())),
             default_shell,
             db,
+            layout: Arc::new(RwLock::new(None)), // Phase 4: Initialized on first session
         }
     }
 
@@ -223,6 +227,18 @@ impl SessionManager {
             "Session {} created successfully WITH AbortOnDrop tracking",
             id
         );
+
+        // Phase 4: Initialize layout on first session creation (ADR-018, task-73)
+        {
+            let mut layout_guard = self.layout.write().await;
+            if layout_guard.is_none() {
+                *layout_guard = Some(LayoutManager::new(id));
+                tracing::info!(
+                    "LayoutManager initialized with first session {} as pane-0",
+                    id
+                );
+            }
+        }
 
         // Persist to database (Phase 2: graceful degradation if DB unavailable)
         if let Some(db) = &self.db {
@@ -544,6 +560,206 @@ impl SessionManager {
         }
 
         Ok(())
+    }
+
+    // ============================================================================
+    // Phase 4: Pane Layout Management (ADR-018, task-73)
+    // ============================================================================
+
+    /// Handle split pane command (Phase 4: Splits/Tabs)
+    ///
+    /// Creates a new PTY session and splits the specified pane into two panes.
+    ///
+    /// # Arguments
+    /// * `pane_id` - Which pane to split
+    /// * `direction` - Split direction (horizontal/vertical)
+    /// * `new_session_shell` - Shell command for new pane (e.g., "cmd.exe", "/bin/bash")
+    /// * `user_id` - User requesting split (for RBAC, optional)
+    ///
+    /// # Returns
+    /// LayoutUpdate with new layout tree and focused pane ID
+    pub async fn handle_split_pane(
+        &self,
+        pane_id: &str,
+        direction: SplitDirection,
+        new_session_shell: Option<String>,
+        user_id: Option<String>,
+    ) -> Result<monoterminal_protocol::LayoutUpdate> {
+        // Get current working directory and dimensions from existing pane's session
+        let (working_dir, rows, cols) = {
+            let layout_guard = self.layout.read().await;
+            if let Some(layout) = layout_guard.as_ref() {
+                if let Some(session_id) = layout.get_session_id(pane_id) {
+                    let sessions = self.sessions.read().await;
+                    if let Some(container) = sessions.get(&session_id) {
+                        let session = container.session.read().await;
+                        (
+                            Some(session.working_dir.clone()),
+                            session.dimensions.rows,
+                            session.dimensions.cols,
+                        )
+                    } else {
+                        (None, 24, 80) // Fallback defaults
+                    }
+                } else {
+                    (None, 24, 80) // Fallback defaults
+                }
+            } else {
+                (None, 24, 80) // Fallback defaults
+            }
+        };
+
+        // Create new PTY session for the new pane
+        // TODO: Support custom shell per pane via new_session_shell parameter
+        // For now, use default shell (requires refactoring create_session to accept shell override)
+        let _custom_shell = new_session_shell; // Reserved for future use
+
+        let new_session_id =
+            self.create_session_with_user(user_id, working_dir, rows, cols)
+                .await?;
+
+        tracing::info!(
+            "Created new session {} for split pane ({}x{})",
+            new_session_id,
+            rows,
+            cols
+        );
+
+        // Update layout tree
+        let mut layout_guard = self.layout.write().await;
+        let layout = layout_guard
+            .as_mut()
+            .ok_or_else(|| SessionError::LayoutError("LayoutManager not initialized".to_string()))?;
+
+        let new_pane_id = layout
+            .split_pane(pane_id, direction, new_session_id)
+            .map_err(|e| SessionError::LayoutError(format!("Split pane failed: {}", e)))?;
+
+        tracing::info!(
+            "Split pane '{}' ({:?}) → created new pane '{}'",
+            pane_id,
+            direction,
+            new_pane_id
+        );
+
+        // Return updated layout
+        Ok(layout.to_proto())
+    }
+
+    /// Handle close pane command (Phase 4: Splits/Tabs)
+    ///
+    /// Closes a pane and kills its associated PTY session.
+    ///
+    /// # Arguments
+    /// * `pane_id` - Which pane to close
+    /// * `user_id` - User requesting close (for RBAC, optional)
+    ///
+    /// # Returns
+    /// LayoutUpdate with new layout tree after pane removal
+    pub async fn handle_close_pane(
+        &self,
+        pane_id: &str,
+        user_id: Option<String>,
+    ) -> Result<monoterminal_protocol::LayoutUpdate> {
+        // Get session ID for the pane
+        let session_id = {
+            let layout_guard = self.layout.read().await;
+            let layout = layout_guard
+                .as_ref()
+                .ok_or_else(|| SessionError::LayoutError("LayoutManager not initialized".to_string()))?;
+
+            layout
+                .get_session_id(pane_id)
+                .ok_or_else(|| SessionError::LayoutError(format!("Pane '{}' not found", pane_id)))?
+        };
+
+        // Kill the PTY session
+        self.kill_session_with_user(session_id, user_id).await?;
+
+        tracing::info!("Killed session {} for pane '{}'", session_id, pane_id);
+
+        // Update layout tree (remove pane and collapse if needed)
+        let mut layout_guard = self.layout.write().await;
+        let layout = layout_guard
+            .as_mut()
+            .ok_or_else(|| SessionError::LayoutError("LayoutManager not initialized".to_string()))?;
+
+        layout
+            .close_pane(pane_id)
+            .map_err(|e| SessionError::LayoutError(format!("Close pane failed: {}", e)))?;
+
+        tracing::info!("Closed pane '{}'", pane_id);
+
+        // Return updated layout
+        Ok(layout.to_proto())
+    }
+
+    /// Handle focus pane command (Phase 4: Splits/Tabs)
+    ///
+    /// Changes which pane has input focus.
+    ///
+    /// # Arguments
+    /// * `pane_id` - Which pane to focus
+    ///
+    /// # Returns
+    /// LayoutUpdate with updated focus state
+    pub async fn handle_focus_pane(
+        &self,
+        pane_id: &str,
+    ) -> Result<monoterminal_protocol::LayoutUpdate> {
+        let mut layout_guard = self.layout.write().await;
+        let layout = layout_guard
+            .as_mut()
+            .ok_or_else(|| SessionError::LayoutError("LayoutManager not initialized".to_string()))?;
+
+        layout
+            .focus_pane(pane_id)
+            .map_err(|e| SessionError::LayoutError(format!("Focus pane failed: {}", e)))?;
+
+        tracing::info!("Focused pane '{}'", pane_id);
+
+        // Return updated layout
+        Ok(layout.to_proto())
+    }
+
+    /// Send input to the focused pane (or specified pane)
+    ///
+    /// Phase 4: Routes input to pane's session. Falls back to focused pane if pane_id is None.
+    ///
+    /// # Arguments
+    /// * `pane_id` - Target pane ID (None = focused pane)
+    /// * `data` - Input data to send
+    /// * `user_id` - User sending input (for RBAC, optional)
+    pub async fn send_input_to_pane(
+        &self,
+        pane_id: Option<&str>,
+        data: &[u8],
+        user_id: Option<String>,
+    ) -> Result<()> {
+        // Determine target pane (specified or focused)
+        let (target_pane_id, session_id) = {
+            let layout_guard = self.layout.read().await;
+            let layout = layout_guard
+                .as_ref()
+                .ok_or_else(|| SessionError::LayoutError("LayoutManager not initialized".to_string()))?;
+
+            let target = pane_id.unwrap_or_else(|| layout.get_focused_pane_id());
+            let sid = layout
+                .get_session_id(target)
+                .ok_or_else(|| SessionError::LayoutError(format!("Pane '{}' not found", target)))?;
+
+            (target.to_string(), sid)
+        };
+
+        tracing::debug!(
+            "Routing input ({} bytes) to pane '{}' (session {})",
+            data.len(),
+            target_pane_id,
+            session_id
+        );
+
+        // Send input to the pane's session
+        self.send_input_with_user(session_id, data, user_id).await
     }
 
     /// Check if user has permission to perform action on session (Phase 2: RBAC)
