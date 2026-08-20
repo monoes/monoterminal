@@ -14,12 +14,10 @@
 
 mod common;
 
-
 // ===== Window Module Tests =====
 
 #[cfg(test)]
 mod window_tests {
-    
 
     #[test]
     fn test_window_dimensions() {
@@ -91,7 +89,6 @@ mod window_tests {
 
 #[cfg(test)]
 mod layout_tests {
-    
 
     #[test]
     fn test_layout_grid_size_standard() {
@@ -147,7 +144,7 @@ mod layout_tests {
 
 #[cfg(test)]
 mod performance_tests {
-    
+
     use std::time::Duration;
 
     #[test]
@@ -219,7 +216,6 @@ mod performance_tests {
 
 #[cfg(test)]
 mod font_tests {
-    
 
     #[test]
     fn test_font_sizes() {
@@ -263,7 +259,6 @@ mod font_tests {
 
 #[cfg(test)]
 mod vt_parser_advanced_tests {
-    
 
     #[test]
     fn test_vt_parser_escape_sequences() {
@@ -343,7 +338,6 @@ mod vt_parser_advanced_tests {
 
 #[cfg(test)]
 mod terminal_grid_advanced_tests {
-    
 
     #[test]
     fn test_grid_boundary_checks() {
@@ -422,7 +416,6 @@ mod terminal_grid_advanced_tests {
 
 #[cfg(test)]
 mod renderer_tests {
-    
 
     #[test]
     fn test_renderer_wgpu_backend() {
@@ -494,7 +487,7 @@ mod renderer_tests {
 
 #[cfg(test)]
 mod ui_integration_tests {
-    
+
     use std::time::Duration;
 
     #[test]
@@ -502,11 +495,13 @@ mod ui_integration_tests {
         // Test complete UI pipeline flow (conceptual)
         // PTY Output → VT Parser → Terminal Grid → Renderer
 
-        let pipeline_stages = ["PTY Output",
+        let pipeline_stages = [
+            "PTY Output",
             "VT Parser",
             "Terminal Grid",
             "Glyph Cache",
-            "GPU Renderer"];
+            "GPU Renderer",
+        ];
 
         assert_eq!(pipeline_stages.len(), 5);
         assert_eq!(pipeline_stages[0], "PTY Output");

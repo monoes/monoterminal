@@ -249,7 +249,9 @@ async fn e2e_acl_permission_enforcement() -> Result<()> {
             monoterminal_master::persistence::session::load_session(&conn, &session_id)?
         };
 
-        let loaded_acl = loaded.acl.unwrap_or_else(|| panic!("ACL missing for {}", name));
+        let loaded_acl = loaded
+            .acl
+            .unwrap_or_else(|| panic!("ACL missing for {}", name));
         assert_eq!(
             loaded_acl.get(*user),
             Some(&permission.to_string()),

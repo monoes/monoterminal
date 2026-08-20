@@ -2,7 +2,7 @@
 // Implements SRS §3.1.2 (WebSocket Framing) and §3.2.1 (Transport Security)
 // Implements SRS §3.2.4 (Rate Limiting)
 
-#![allow(dead_code)]  // Server features not all integrated yet, cleanup tracked in task-63
+#![allow(dead_code)] // Server features not all integrated yet, cleanup tracked in task-63
 
 pub mod connection;
 pub mod error;

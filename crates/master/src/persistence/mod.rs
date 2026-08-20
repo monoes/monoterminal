@@ -9,7 +9,7 @@
 //! - zstd compression for scrollback (60-80% reduction)
 //! - Automatic daily backups (7-day retention)
 
-#![allow(dead_code)]  // Phase 2 features not all integrated yet, cleanup tracked in task-63
+#![allow(dead_code)] // Phase 2 features not all integrated yet, cleanup tracked in task-63
 //! - Disk space monitoring (80% warning, 95% emergency purge)
 
 pub mod audit;

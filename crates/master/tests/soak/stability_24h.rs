@@ -115,9 +115,7 @@ fn extract_json_value(json: &str, key: &str) -> Result<f64, Box<dyn std::error::
     if let Some(start) = json.find(&pattern) {
         let value_start = start + pattern.len();
         let remaining = &json[value_start..];
-        let value_end = remaining
-            .find([',', '}'])
-            .unwrap_or(remaining.len());
+        let value_end = remaining.find([',', '}']).unwrap_or(remaining.len());
         let value_str = &remaining[..value_end].trim();
         Ok(value_str.parse()?)
     } else {

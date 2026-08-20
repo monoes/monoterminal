@@ -4,12 +4,11 @@
 // This module owns the conversion from internal types (HealthStatus, DashboardData)
 // to the wire protocol types (HealthCheckResponse, DashboardResponse).
 
-use crate::{
-    AgentInfo as BridgeAgentInfo, DashboardData, HealthIssue, HealthStatus, MemoryStats,
-    Severity,
-};
 #[cfg(test)]
 use crate::OrgStatus;
+use crate::{
+    AgentInfo as BridgeAgentInfo, DashboardData, HealthIssue, HealthStatus, MemoryStats, Severity,
+};
 use std::time::SystemTime;
 
 // Re-export protocol types for convenience

@@ -108,7 +108,9 @@ impl tokio::io::AsyncRead for PtyReader {
                 std::task::Poll::Ready(Ok(n))
             }
             std::task::Poll::Ready(Ok((Err(e), _))) => std::task::Poll::Ready(Err(e)),
-            std::task::Poll::Ready(Err(e)) => std::task::Poll::Ready(Err(io::Error::new(io::ErrorKind::Other, e))),
+            std::task::Poll::Ready(Err(e)) => {
+                std::task::Poll::Ready(Err(io::Error::new(io::ErrorKind::Other, e)))
+            }
             std::task::Poll::Pending => std::task::Poll::Pending,
         }
     }
@@ -132,7 +134,9 @@ impl tokio::io::AsyncWrite for PtyWriter {
         match fut.as_mut().poll(cx) {
             std::task::Poll::Ready(Ok(Ok(n))) => std::task::Poll::Ready(Ok(n)),
             std::task::Poll::Ready(Ok(Err(e))) => std::task::Poll::Ready(Err(e)),
-            std::task::Poll::Ready(Err(e)) => std::task::Poll::Ready(Err(io::Error::new(io::ErrorKind::Other, e))),
+            std::task::Poll::Ready(Err(e)) => {
+                std::task::Poll::Ready(Err(io::Error::new(io::ErrorKind::Other, e)))
+            }
             std::task::Poll::Pending => std::task::Poll::Pending,
         }
     }
@@ -151,7 +155,9 @@ impl tokio::io::AsyncWrite for PtyWriter {
         match fut.as_mut().poll(cx) {
             std::task::Poll::Ready(Ok(Ok(()))) => std::task::Poll::Ready(Ok(())),
             std::task::Poll::Ready(Ok(Err(e))) => std::task::Poll::Ready(Err(e)),
-            std::task::Poll::Ready(Err(e)) => std::task::Poll::Ready(Err(io::Error::new(io::ErrorKind::Other, e))),
+            std::task::Poll::Ready(Err(e)) => {
+                std::task::Poll::Ready(Err(io::Error::new(io::ErrorKind::Other, e)))
+            }
             std::task::Poll::Pending => std::task::Poll::Pending,
         }
     }

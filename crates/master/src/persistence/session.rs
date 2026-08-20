@@ -61,11 +61,7 @@ pub fn create_session(conn: &Connection, record: &SessionRecord) -> Result<()> {
         .map(serde_json::to_string)
         .transpose()?;
 
-    let acl_json = record
-        .acl
-        .as_ref()
-        .map(serde_json::to_string)
-        .transpose()?;
+    let acl_json = record.acl.as_ref().map(serde_json::to_string).transpose()?;
 
     let metadata_json = record
         .metadata

@@ -407,7 +407,7 @@ async fn main() -> Result<()> {
 /// 2. File: %ProgramData%\MONOTERMINAL\jwt_key.bin (service mode)
 /// 3. File: %LOCALAPPDATA%\monoterminal\jwt_key.bin (console mode)
 /// 4. Auto-generate and save new key
-#[allow(dead_code)]  // Reserved for production deployment, cleanup tracked in task-63
+#[allow(dead_code)] // Reserved for production deployment, cleanup tracked in task-63
 fn load_or_generate_jwt_key() -> Result<[u8; 32]> {
     use std::env;
     use std::fs;
@@ -471,7 +471,7 @@ fn load_or_generate_jwt_key() -> Result<[u8; 32]> {
 }
 
 /// Generate cryptographically secure random 32-byte key
-#[allow(dead_code)]  // Reserved for production deployment, cleanup tracked in task-63
+#[allow(dead_code)] // Reserved for production deployment, cleanup tracked in task-63
 fn generate_random_key() -> [u8; 32] {
     use rand::RngCore;
     let mut key = [0u8; 32];

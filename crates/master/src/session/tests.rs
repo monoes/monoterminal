@@ -332,8 +332,8 @@ mod session_tests {
         use super::*;
         use crate::session::session::{Session, SessionContainer};
         use std::path::PathBuf;
-        use std::sync::Arc;
         use std::sync::atomic::AtomicBool;
+        use std::sync::Arc;
         use tokio::sync::{Mutex, RwLock};
 
         /// Test that dropping SessionContainer aborts the output_task

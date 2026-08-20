@@ -1,7 +1,7 @@
 // WebSocket connection management
 // Implements SRS §3.1.4 (Output Buffering & Flow Control)
 
-#![allow(dead_code)]  // Connection management features not all integrated yet, cleanup tracked in task-63
+#![allow(dead_code)] // Connection management features not all integrated yet, cleanup tracked in task-63
 
 use std::time::Duration;
 use tokio::sync::mpsc;

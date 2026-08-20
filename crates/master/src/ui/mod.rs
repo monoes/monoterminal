@@ -13,7 +13,7 @@
 //!
 //! Total: 16.5ms ✅
 
-#![allow(dead_code)]  // UI features not all integrated yet, cleanup tracked in task-63
+#![allow(dead_code)] // UI features not all integrated yet, cleanup tracked in task-63
 
 pub mod backend_selection;
 pub mod fonts;

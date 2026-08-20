@@ -3,7 +3,7 @@
 // SRS §2.1.3, Architecture: docs/architecture/phase1-overview.md §2
 
 #![allow(clippy::module_inception)]
-#![allow(dead_code)]  // Session features not all integrated yet, cleanup tracked in task-63
+#![allow(dead_code)] // Session features not all integrated yet, cleanup tracked in task-63
 
 pub mod manager;
 pub mod scrollback;

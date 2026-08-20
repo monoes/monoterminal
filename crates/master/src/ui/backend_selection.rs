@@ -38,10 +38,14 @@ pub fn select_backend() -> wgpu::Backends {
     // CI environment detection - force software-compatible backends
     // PRIMARY includes Vulkan/Metal/DX12, GL provides software fallback (Mesa/llvmpipe)
     if std::env::var("CI").is_ok() || std::env::var("GITHUB_ACTIONS").is_ok() {
-        tracing::info!("CI environment detected - using software-compatible backends (PRIMARY | GL)");
-        tracing::debug!("CI env vars: CI={:?}, GITHUB_ACTIONS={:?}",
+        tracing::info!(
+            "CI environment detected - using software-compatible backends (PRIMARY | GL)"
+        );
+        tracing::debug!(
+            "CI env vars: CI={:?}, GITHUB_ACTIONS={:?}",
             std::env::var("CI"),
-            std::env::var("GITHUB_ACTIONS"));
+            std::env::var("GITHUB_ACTIONS")
+        );
         return wgpu::Backends::PRIMARY | wgpu::Backends::GL;
     }
 
@@ -99,10 +103,14 @@ mod tests {
 
         // CI environment: should return PRIMARY | GL for software fallback
         if std::env::var("CI").is_ok() || std::env::var("GITHUB_ACTIONS").is_ok() {
-            assert!(backends.contains(wgpu::Backends::GL),
-                "CI environment should include GL backend for software rendering");
-            assert!(backends.contains(wgpu::Backends::PRIMARY),
-                "CI environment should include PRIMARY backends");
+            assert!(
+                backends.contains(wgpu::Backends::GL),
+                "CI environment should include GL backend for software rendering"
+            );
+            assert!(
+                backends.contains(wgpu::Backends::PRIMARY),
+                "CI environment should include PRIMARY backends"
+            );
         } else {
             // Production environment: platform-specific backends
             #[cfg(target_os = "windows")]
@@ -142,8 +150,10 @@ mod tests {
         // Test CI detection
         std::env::set_var("CI", "true");
         let backends = select_backend();
-        assert!(backends.contains(wgpu::Backends::GL),
-            "CI=true should trigger GL backend");
+        assert!(
+            backends.contains(wgpu::Backends::GL),
+            "CI=true should trigger GL backend"
+        );
 
         // Cleanup
         std::env::remove_var("CI");

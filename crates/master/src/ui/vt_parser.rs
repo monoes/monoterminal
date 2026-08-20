@@ -4,7 +4,6 @@
 //! Supports: SGR (colors, bold, italic), cursor movement, screen clear, true-color (24-bit RGB)
 //! Per SRS §2.1.1 - Target: <2ms parse time per frame
 
-
 /// VT100/ANSI sequence parser
 pub struct VtParser {
     /// Pending parse state

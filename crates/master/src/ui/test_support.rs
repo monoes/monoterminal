@@ -84,7 +84,9 @@ impl HeadlessGpuContext {
                 adapter
             }
             None => {
-                tracing::warn!("No hardware GPU adapter available, falling back to software rendering");
+                tracing::warn!(
+                    "No hardware GPU adapter available, falling back to software rendering"
+                );
                 tracing::debug!("Requesting software adapter with force_fallback_adapter: true");
 
                 instance
@@ -94,7 +96,9 @@ impl HeadlessGpuContext {
                         force_fallback_adapter: true, // ← Software rendering (WARP/llvmpipe)
                     })
                     .await
-                    .context("Failed to find GPU adapter (no hardware or software rendering available)")?
+                    .context(
+                        "Failed to find GPU adapter (no hardware or software rendering available)",
+                    )?
             }
         };
 
@@ -237,7 +241,7 @@ impl HeadlessGpuContext {
     /// Calculate padded bytes per row (wgpu requires 256-byte alignment)
     fn padded_bytes_per_row(bytes_per_row: u32) -> u32 {
         let align = wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
-        
+
         (bytes_per_row + align - 1) / align * align
     }
 

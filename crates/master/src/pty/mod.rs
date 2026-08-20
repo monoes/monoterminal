@@ -8,7 +8,7 @@
 // Phase 3: Linux posix_openpt (§2.1.2.1 [D1.2.1])
 // Phase 3: macOS openpty BSD (§2.1.2.2 [D1.2.2])
 
-#![allow(dead_code)]  // Multi-platform features not all integrated yet, cleanup tracked in task-63
+#![allow(dead_code)] // Multi-platform features not all integrated yet, cleanup tracked in task-63
 
 pub mod error;
 

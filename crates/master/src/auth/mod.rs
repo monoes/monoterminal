@@ -1,7 +1,7 @@
 // Authentication and authorization module
 // Implements SRS §3.2: Ed25519 + JWT + RBAC + Rate Limiting
 
-#![allow(dead_code)]  // Phase 2 placeholder implementations, cleanup tracked in task-63
+#![allow(dead_code)] // Phase 2 placeholder implementations, cleanup tracked in task-63
 
 pub mod challenge;
 pub mod jwt;

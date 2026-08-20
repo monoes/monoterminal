@@ -7,11 +7,6 @@
 
 #[cfg(test)]
 mod websocket_fanout_tests {
-    
-    
-    
-    
-    
 
     // Test 1: Single client attach → output fan-out
     #[tokio::test]
