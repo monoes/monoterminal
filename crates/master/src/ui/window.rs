@@ -13,7 +13,7 @@ use winit::{
     window::{Window as WinitWindow, WindowAttributes},
 };
 
-use super::{performance::PerformanceMonitor, Renderer};
+use super::{activity::ActivityTracker, performance::PerformanceMonitor, Renderer};
 
 /// Window wrapper managing the native window
 pub struct Window {
@@ -59,6 +59,8 @@ struct App {
     window: Option<Arc<WinitWindow>>,
     renderer: Renderer,
     perf_monitor: PerformanceMonitor,
+    activity_tracker: ActivityTracker,
+    last_frame: Option<std::time::Instant>,
 }
 
 impl App {
@@ -68,6 +70,8 @@ impl App {
             window: None,
             renderer,
             perf_monitor: PerformanceMonitor::new(),
+            activity_tracker: ActivityTracker::new(),
+            last_frame: None,
         }
     }
 }
@@ -125,6 +129,16 @@ impl ApplicationHandler for App {
                 event_loop.exit();
             }
 
+            WindowEvent::KeyboardInput { .. } => {
+                // Track keyboard activity for adaptive frame rate
+                self.activity_tracker.on_input();
+            }
+
+            WindowEvent::CursorMoved { .. } | WindowEvent::MouseInput { .. } => {
+                // Track mouse activity for adaptive frame rate
+                self.activity_tracker.on_input();
+            }
+
             WindowEvent::Resized(new_size) => {
                 if let Err(e) = self.renderer.resize(new_size.width, new_size.height) {
                     tracing::error!("Failed to resize: {}", e);
@@ -132,6 +146,24 @@ impl ApplicationHandler for App {
             }
 
             WindowEvent::RedrawRequested => {
+                // Adaptive frame rate throttling (Week 8 Day 3-4 optimization)
+                // Check if enough time has passed since last frame
+                let frame_duration = self.activity_tracker.frame_duration();
+
+                if let Some(last_frame) = self.last_frame {
+                    let elapsed = last_frame.elapsed();
+                    if elapsed < frame_duration {
+                        // Too soon for next frame, sleep briefly and skip render
+                        std::thread::sleep(frame_duration - elapsed);
+                        if let Some(window) = &self.window {
+                            window.request_redraw();
+                        }
+                        return;
+                    }
+                }
+
+                self.last_frame = Some(std::time::Instant::now());
+
                 // Start frame timing
                 self.perf_monitor.start_frame();
 
@@ -142,11 +174,16 @@ impl ApplicationHandler for App {
                             // End frame timing and check budget
                             let frame_time = self.perf_monitor.end_frame();
 
-                            // Log if we exceed 16.67ms budget
-                            if frame_time > 16.67 {
+                            // Log if we exceed budget (target FPS dependent on activity)
+                            let target_fps = self.activity_tracker.target_fps();
+                            let target_frame_time = (1000.0 / target_fps as f32) as f32;
+
+                            if frame_time > target_frame_time {
                                 tracing::warn!(
-                                    "Frame time exceeded budget: {:.2}ms (target: 16.67ms)",
-                                    frame_time
+                                    "Frame time exceeded budget: {:.2}ms (target: {:.2}ms for {} FPS)",
+                                    frame_time,
+                                    target_frame_time,
+                                    target_fps
                                 );
                             }
                         }

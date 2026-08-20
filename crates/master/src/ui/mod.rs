@@ -15,6 +15,7 @@
 
 #![allow(dead_code)] // UI features not all integrated yet, cleanup tracked in task-63
 
+pub mod activity;
 pub mod backend_selection;
 pub mod fonts;
 pub mod glyph_cache;
