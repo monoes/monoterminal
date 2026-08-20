@@ -95,8 +95,8 @@ pub fn get_disk_usage(path: &Path) -> Result<DiskUsage> {
     use std::os::unix::ffi::OsStrExt;
 
     // Convert path to C string
-    let path_cstr = CString::new(path.as_os_str().as_bytes())
-        .context("Failed to convert path to C string")?;
+    let path_cstr =
+        CString::new(path.as_os_str().as_bytes()).context("Failed to convert path to C string")?;
 
     // Call libc::statvfs
     let mut stat: libc::statvfs = unsafe { std::mem::zeroed() };
