@@ -476,4 +476,496 @@ This document defines the comprehensive documentation strategy for Phase 3 (Linu
 4. **Cross-Platform Testing**
    ```bash
    # Run tests on all platforms
-   cargo test --
+   cargo test --all
+   
+   # Platform-specific tests
+   cargo test --target x86_64-unknown-linux-gnu
+   cargo test --target x86_64-apple-darwin
+   cargo test --target x86_64-pc-windows-msvc
+   ```
+
+5. **CI/CD Integration**
+   - GitHub Actions matrix for all platforms
+   - Automated testing on PR
+   - Cross-platform build verification
+
+6. **Common Pitfalls**
+   - **File paths:** Use `std::path::Path` for cross-platform paths
+   - **Line endings:** Use `.gitattributes` to normalize CRLF/LF
+   - **Process spawning:** Different shell commands per platform
+   - **Permissions:** Unix-specific (chmod, chown don't exist on Windows)
+
+---
+
+### 4.2 PTY Abstraction Guide
+
+**File:** `docs/development/pty-abstraction.md`  
+**Length:** ~1000 words  
+**Sections:**
+
+1. **Overview**
+   - PTY abstraction design pattern
+   - Platform-specific implementations
+   - Common trait interface
+
+2. **Pty Trait Interface**
+   ```rust
+   pub trait Pty {
+       fn spawn(&mut self, cmd: &str, args: &[&str]) -> Result<()>;
+       fn read(&mut self, buf: &mut [u8]) -> Result<usize>;
+       fn write(&self, buf: &[u8]) -> Result<usize>;
+       fn resize(&self, rows: u16, cols: u16) -> Result<()>;
+       fn kill(&mut self) -> Result<()>;
+   }
+   ```
+
+3. **Unix Implementation (openpty)**
+   ```rust
+   // crates/master/src/pty/unix.rs
+   pub struct UnixPty {
+       master_fd: RawFd,
+       child_pid: Pid,
+   }
+   
+   impl Pty for UnixPty {
+       fn spawn(&mut self, cmd: &str, args: &[&str]) -> Result<()> {
+           // openpty() + fork() + exec()
+       }
+   }
+   ```
+
+4. **Windows Implementation (ConPTY)**
+   ```rust
+   // crates/master/src/pty/conpty.rs
+   pub struct ConPty {
+       conpty_handle: HPCON,
+       process_handle: HANDLE,
+   }
+   
+   impl Pty for ConPty {
+       fn spawn(&mut self, cmd: &str, args: &[&str]) -> Result<()> {
+           // CreatePseudoConsole() + CreateProcess()
+       }
+   }
+   ```
+
+5. **Usage Example**
+   ```rust
+   #[cfg(unix)]
+   let mut pty = UnixPty::new()?;
+   
+   #[cfg(windows)]
+   let mut pty = ConPty::new()?;
+   
+   pty.spawn("/bin/bash", &[])?;
+   pty.resize(24, 80)?;
+   pty.write(b"echo hello\\n")?;
+   ```
+
+6. **Testing Strategy**
+   - Unit tests per platform
+   - Integration tests via trait interface
+   - Platform-specific edge cases
+
+---
+
+### 4.3 Testing Guide (Cross-Platform)
+
+**File:** `docs/development/testing.md`  
+**Length:** ~800 words  
+**Sections:**
+
+1. **Test Organization**
+   - Unit tests: `#[cfg(test)] mod tests { ... }`
+   - Integration tests: `tests/*.rs`
+   - Platform-specific tests: `#[cfg(unix)]`, `#[cfg(windows)]`
+
+2. **Running Tests**
+   ```bash
+   # All tests
+   cargo test
+   
+   # Specific test
+   cargo test test_pty_spawn
+   
+   # Platform-specific
+   cargo test --features unix-pty
+   ```
+
+3. **Coverage Measurement**
+   ```bash
+   # tarpaulin (Linux/macOS)
+   cargo tarpaulin --out Html --output-dir coverage/
+   
+   # Manual projection (when tools hang)
+   # See task-47 for methodology
+   ```
+
+4. **Cross-Platform Test Patterns**
+   ```rust
+   #[test]
+   #[cfg(unix)]
+   fn test_unix_pty() {
+       // Unix-specific test
+   }
+   
+   #[test]
+   #[cfg(windows)]
+   fn test_conpty() {
+       // Windows-specific test
+   }
+   
+   #[test]
+   fn test_cross_platform() {
+       // Works on all platforms
+   }
+   ```
+
+5. **CI Matrix**
+   - Ubuntu 22.04, Debian 11, Fedora 38
+   - macOS 13 (Intel), macOS 14 (Apple Silicon)
+   - Windows 2022, Windows latest
+
+6. **Performance Tests**
+   - Benchmarks in `benches/*.rs`
+   - `cargo bench` for performance regression detection
+
+---
+
+## 5. Architecture Documentation Details
+
+### 5.1 Phase 3 Architecture Overview
+
+**File:** `docs/architecture/phase3-overview.md`  
+**Length:** ~1200 words  
+**Sections:**
+
+1. **Phase 3 Goals**
+   - Platform expansion (Linux + macOS)
+   - Feature parity with Windows
+   - Service management integration
+   - Distribution packaging
+
+2. **Architecture Diagram**
+   ```
+   ┌─────────────────────────────────────────┐
+   │         Web Client (PWA)                │
+   │   React + xterm.js + Protobuf           │
+   └─────────────────┬───────────────────────┘
+                     │ WebSocket + TLS
+   ┌─────────────────▼───────────────────────┐
+   │     Master Daemon (Rust)                │
+   │  ┌────────────┬────────────┬──────────┐ │
+   │  │ PTY Layer  │  Rendering │  Storage │ │
+   │  │ (Unix/Win) │  (wgpu)    │ (SQLite) │ │
+   │  └────────────┴────────────┴──────────┘ │
+   └─────────────────┬───────────────────────┘
+                     │
+   ┌─────────────────▼───────────────────────┐
+   │       Platform Services                 │
+   │  systemd (Linux) | launchd (macOS)      │
+   │  Windows Service                        │
+   └─────────────────────────────────────────┘
+   ```
+
+3. **Cross-Platform Components**
+   - **PTY Abstraction:** `src/pty/mod.rs`, `unix.rs`, `conpty.rs`
+   - **Service Management:** `src/service/systemd.rs`, `launchd.rs`, `windows.rs`
+   - **Rendering:** `src/rendering/mod.rs` (wgpu backends: Vulkan, Metal, DirectX 12)
+
+4. **Platform-Specific Integration**
+   - **Linux:** systemd Type=notify, socket activation, journald logging
+   - **macOS:** launchd socket activation, syslog, HiDPI support
+   - **Windows:** Windows Service, Event Log, ConPTY (baseline)
+
+5. **Distribution Packaging**
+   - **Linux:** .deb (apt), .rpm (yum/dnf)
+   - **macOS:** .pkg (installer), Homebrew tap
+   - **Windows:** .exe (installer), MSI (existing)
+
+6. **Testing Strategy**
+   - 405 tests across 6 platforms
+   - 95% automation, 20-minute CI execution
+   - See `phase3-integration-testing-strategy.md`
+
+---
+
+### 5.2 ADR-015: Cross-Platform PTY Abstraction
+
+**File:** `docs/architecture/adr/015-pty-abstraction.md`  
+**Length:** ~600 words  
+**Sections:**
+
+1. **Context**
+   - Need cross-platform PTY support (Linux, macOS, Windows)
+   - Different APIs per platform (openpty vs ConPTY)
+   - Same interface required for all platforms
+
+2. **Decision**
+   - Use trait-based abstraction (`Pty` trait)
+   - Platform-specific implementations behind trait
+   - Compile-time selection via `cfg` attributes
+
+3. **Implementation**
+   ```rust
+   pub trait Pty {
+       fn spawn(&mut self, cmd: &str, args: &[&str]) -> Result<()>;
+       fn read(&mut self, buf: &mut [u8]) -> Result<usize>;
+       fn write(&self, buf: &[u8]) -> Result<usize>;
+       fn resize(&self, rows: u16, cols: u16) -> Result<()>;
+   }
+   
+   #[cfg(unix)]
+   pub type PlatformPty = UnixPty;
+   
+   #[cfg(windows)]
+   pub type PlatformPty = ConPty;
+   ```
+
+4. **Consequences**
+   - ✅ Clean, testable interface
+   - ✅ Platform-specific optimizations possible
+   - ✅ Easy to mock for testing
+   - ❌ Some platform quirks leak through trait
+   - ❌ Signal handling differs (Unix SIGWINCH vs Windows events)
+
+5. **Alternatives Considered**
+   - **Option 1:** Conditional compilation everywhere (rejected: messy)
+   - **Option 2:** Runtime dispatch via `Box<dyn Pty>` (rejected: performance)
+   - **Option 3:** Trait abstraction (selected: best balance)
+
+---
+
+### 5.3 ADR-016: Service Management Design
+
+**File:** `docs/architecture/adr/016-service-management.md`  
+**Length:** ~700 words  
+**Sections:**
+
+1. **Context**
+   - Need daemon to run as system service
+   - Different service managers per platform
+   - Must support socket activation, auto-restart, logging
+
+2. **Decision**
+   - Platform-specific service managers:
+     - Linux: systemd Type=notify + socket activation
+     - macOS: launchd + socket activation
+     - Windows: Windows Service API (existing)
+   - Graceful shutdown (SIGTERM → 10s → sessions saved → exit)
+   - Structured logging to system journal/syslog/Event Log
+
+3. **systemd Integration**
+   ```ini
+   [Unit]
+   Description=Monoterminal Master Daemon
+   
+   [Service]
+   Type=notify
+   ExecStart=/usr/bin/monoterminal daemon
+   Restart=always
+   
+   [Install]
+   WantedBy=multi-user.target
+   ```
+
+4. **launchd Integration**
+   ```xml
+   <key>Label</key>
+   <string>com.monoterminal.daemon</string>
+   <key>ProgramArguments</key>
+   <array>
+       <string>/usr/local/bin/monoterminal</string>
+       <string>daemon</string>
+   </array>
+   <key>RunAtLoad</key>
+   <true/>
+   ```
+
+5. **Consequences**
+   - ✅ Native integration per platform
+   - ✅ Auto-restart on crash
+   - ✅ Socket activation (Linux/macOS)
+   - ❌ Different configuration per platform
+   - ❌ Must test on all platforms
+
+---
+
+### 5.4 ADR-017: Distribution Packaging Strategy
+
+**File:** `docs/architecture/adr/017-distribution-packaging.md`  
+**Length:** ~600 words  
+**Sections:**
+
+1. **Context**
+   - Need native packages for all platforms
+   - Users expect platform-native installation
+   - Must support auto-updates
+
+2. **Decision**
+   - **Linux:**
+     - .deb for Ubuntu/Debian (via `cargo-deb`)
+     - .rpm for Fedora/RHEL (via `cargo-generate-rpm`)
+     - APT/YUM repositories for updates
+   - **macOS:**
+     - Homebrew tap (primary)
+     - .pkg installer (secondary)
+   - **Windows:**
+     - .exe installer (existing, via NSIS)
+
+3. **Package Contents**
+   - Binary: `/usr/bin/monoterminal` (Linux/macOS), `C:\Program Files\Monoterminal\` (Windows)
+   - Service file: `/etc/systemd/system/monoterminal.service`, `~/Library/LaunchAgents/`
+   - Configuration: `/etc/monoterminal/`, `~/.monoterminal/`
+
+4. **Signing**
+   - Linux: GPG-signed packages
+   - macOS: Apple Developer ID signing
+   - Windows: Authenticode signing (existing)
+
+5. **Consequences**
+   - ✅ Native installation experience
+   - ✅ Auto-updates via package managers
+   - ✅ Dependency management
+   - ❌ Signing complexity
+   - ❌ Must maintain multiple build pipelines
+
+---
+
+## 6. Timeline and Ownership
+
+### 6.1 Week 11: User + Developer Documentation
+
+| Day | Activity | Owner | Deliverable |
+|-----|----------|-------|-------------|
+| Mon | Installation guides (Ubuntu, Debian, Fedora, macOS) | technical-writer | 4 guides complete |
+| Tue | Service management guides (systemd, launchd) | technical-writer | 2 guides complete |
+| Wed | Troubleshooting guides (Linux, macOS) | technical-writer | 2 guides complete |
+| Thu | Cross-Platform Development Guide | technical-writer + qa-lead | 1 guide complete |
+| Fri | PTY Abstraction Guide + Testing Guide | technical-writer + qa-lead | 2 guides complete |
+
+**Total Week 11:** 10 user + developer docs complete
+
+### 6.2 Week 12: Architecture Documentation + Review
+
+| Day | Activity | Owner | Deliverable |
+|-----|----------|-------|-------------|
+| Mon | Phase 3 Architecture Overview | principal-architect | 1 overview complete |
+| Tue | ADR-015 (PTY Abstraction) | principal-architect | 1 ADR complete |
+| Wed | ADR-016 (Service Management) | principal-architect | 1 ADR complete |
+| Thu | ADR-017 (Distribution Packaging) | principal-architect | 1 ADR complete |
+| Fri | Documentation review + publish | eng-director + qa-lead | Docs published |
+
+**Total Week 12:** 5 architecture docs complete
+
+---
+
+## 7. Documentation Quality Standards
+
+### 7.1 Writing Standards
+
+1. **Clarity**
+   - Use active voice ("Install the package" not "The package should be installed")
+   - Keep sentences short (<25 words)
+   - Define acronyms on first use
+
+2. **Consistency**
+   - Use same terminology across all docs
+   - Follow existing style guide
+   - Use code blocks for all commands
+
+3. **Completeness**
+   - Every guide includes Prerequisites, Steps, Verification, Troubleshooting
+   - Every code example includes expected output
+   - Every troubleshooting entry includes Symptom → Diagnosis → Fix
+
+4. **Accuracy**
+   - Test all commands on target platforms
+   - Verify all file paths exist
+   - Validate all code examples compile/run
+
+### 7.2 Review Checklist
+
+- [ ] All commands tested on target platform
+- [ ] All file paths verified to exist
+- [ ] All code examples compile and run
+- [ ] All screenshots captured at 1920x1080
+- [ ] All links verified (no 404s)
+- [ ] All acronyms defined
+- [ ] Consistent terminology used
+- [ ] Grammar/spelling checked
+- [ ] Peer reviewed by 1+ engineer
+
+---
+
+## 8. Success Metrics
+
+### 8.1 Documentation Completeness
+
+| Category | Target | Actual | Status |
+|----------|--------|--------|--------|
+| User Docs | 10 documents | TBD | ⏳ Pending |
+| Developer Docs | 8 documents | TBD | ⏳ Pending |
+| Architecture Docs | 5 documents | TBD | ⏳ Pending |
+| **Total** | **23 documents** | **TBD** | **⏳ Pending** |
+
+### 8.2 User Success Metrics
+
+- ✅ Users can install on any platform without support tickets
+- ✅ <5 installation issues per 100 users
+- ✅ <10 service management issues per 100 users
+- ✅ >90% user satisfaction with documentation (survey)
+
+### 8.3 Developer Success Metrics
+
+- ✅ New contributors can build on all platforms within 30 minutes
+- ✅ >80% of PRs have correct cross-platform code patterns
+- ✅ <3 platform-specific bugs per release
+
+---
+
+## 9. Phase 3 Gate Documentation Criteria
+
+**Phase 3 documentation is COMPLETE when:**
+
+1. ✅ All 23 documents created and reviewed
+2. ✅ All commands tested on all platforms
+3. ✅ All code examples validated
+4. ✅ All screenshots captured
+5. ✅ All documentation published to docs.monoterminal.dev
+6. ✅ User installation guides available for all platforms
+7. ✅ Developer onboarding guide complete
+8. ✅ Architecture ADRs reviewed by principal-architect
+
+**Escalation:** If documentation incomplete, escalate to eng-director for gate decision
+
+---
+
+## 10. Summary
+
+**Documentation Plan Overview:**
+
+- **23 total documents** across 3 categories
+- **Week 11:** User + Developer docs (10 guides)
+- **Week 12:** Architecture docs (5 ADRs + overview)
+- **Timeline:** 2 weeks parallel with integration testing
+- **Ownership:** technical-writer (user/dev docs), principal-architect (architecture docs), qa-lead (testing guides)
+
+**Key Deliverables:**
+1. Installation guides for all platforms (Ubuntu, Debian, Fedora, macOS)
+2. Service management guides (systemd, launchd)
+3. Cross-platform development guide
+4. PTY abstraction guide
+5. Architecture overview + 3 ADRs
+
+**Phase 3 Gate:** Documentation complete when all 23 docs published and validated
+
+---
+
+**Document Status:** DRAFT  
+**Next Review:** After task-60 completion  
+**Approval Required:** eng-director + principal-architect
+
+---
+
+**End of Documentation Plan**

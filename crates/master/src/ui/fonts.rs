@@ -132,7 +132,6 @@ impl Default for FontManager {
 }
 
 // Re-export GlyphCache from glyph_cache module
-pub use super::glyph_cache::{GlyphCache, GlyphInfo, GlyphKey};
 
 #[cfg(test)]
 mod tests {

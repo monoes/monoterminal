@@ -318,7 +318,7 @@ mod tests {
         let key_path = temp_dir.path().join("invalid.key");
 
         // Write invalid size (not 32 bytes)
-        fs::write(&key_path, &[0u8; 16]).unwrap();
+        fs::write(&key_path, [0u8; 16]).unwrap();
 
         let result = load_keypair(&key_path);
         assert!(result.is_err());

@@ -413,6 +413,7 @@ async fn stress_rapid_creation_termination() -> Result<()> {
 async fn stress_large_scrollback() -> Result<()> {
     let (_temp_dir, db, _manager) = setup_test_env().await?;
 
+    #[allow(dead_code)]
     const LINES_COUNT: usize = 10_000;
     let session_id = Uuid::new_v4();
 

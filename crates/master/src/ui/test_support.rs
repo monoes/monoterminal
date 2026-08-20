@@ -202,8 +202,8 @@ impl HeadlessGpuContext {
     /// Calculate padded bytes per row (wgpu requires 256-byte alignment)
     fn padded_bytes_per_row(bytes_per_row: u32) -> u32 {
         let align = wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
-        let padded = (bytes_per_row + align - 1) / align * align;
-        padded
+        
+        (bytes_per_row + align - 1) / align * align
     }
 
     /// Get adapter info (for debugging)

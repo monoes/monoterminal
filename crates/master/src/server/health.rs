@@ -1,6 +1,8 @@
 // Health check and metrics endpoints
 // ADR-011 §8: Health check endpoints (/health, TURN probe, directory probe)
 
+#![allow(dead_code)]  // Health check features not all integrated yet, cleanup tracked in task-63
+
 use crate::webrtc::config::StunServerConfig;
 use crate::webrtc::ice::probe_stun_server;
 use crate::webrtc::WebRtcMetrics;

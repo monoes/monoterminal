@@ -136,7 +136,7 @@ mod session_tests {
         let inputs: &[&[u8]] = &[b"echo hello\r\n", b"dir\r\n", b"cd ..\r\n"];
 
         for input in inputs {
-            let result = manager.send_input(session_id, *input).await;
+            let result = manager.send_input(session_id, input).await;
             assert!(result.is_ok(), "Failed to send input: {:?}", input);
 
             tokio::time::sleep(Duration::from_millis(50)).await;
@@ -180,7 +180,7 @@ mod session_tests {
 
         // Scrollback should have some data (from shell prompt and/or output)
         // Note: We can't guarantee exact content due to timing
-        assert!(snapshot.scrollback.len() >= 0);
+        // (len is always >= 0 by type, so no assertion needed)
 
         manager.kill_session(session_id).await.ok();
     }
@@ -340,7 +340,7 @@ mod session_tests {
         #[tokio::test]
         async fn test_drop_aborts_output_task() {
             let task_aborted = Arc::new(AtomicBool::new(false));
-            let task_aborted_clone = task_aborted.clone();
+            let _task_aborted_clone = task_aborted.clone();
 
             // Create a mock session container
             let session = Arc::new(RwLock::new(Session::new(

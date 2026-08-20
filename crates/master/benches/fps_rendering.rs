@@ -74,7 +74,7 @@ fn bench_glyph_cache_lookup(c: &mut Criterion) {
     }
 
     // Add some common Unicode chars
-    let common_unicode = vec!['→', '←', '↑', '↓', '✓', '✗', '…', '•'];
+    let common_unicode = ['→', '←', '↑', '↓', '✓', '✗', '…', '•'];
     for (idx, ch) in common_unicode.iter().enumerate() {
         cache.insert(*ch, (128 + idx as u32, 0));
     }
@@ -110,6 +110,7 @@ fn bench_gpu_command_submission(c: &mut Criterion) {
 
     // Simulate building vertex buffers for text rendering
     #[derive(Clone, Copy)]
+    #[allow(dead_code)]
     struct Vertex {
         pos: [f32; 2],
         uv: [f32; 2],
@@ -174,7 +175,7 @@ fn bench_full_frame_cycle(c: &mut Criterion) {
 
     // Simulate all frame components
     let mut dirty_bits = vec![false; total_cells];
-    let mut screen_buffer = vec![' '; total_cells];
+    let screen_buffer = vec![' '; total_cells];
 
     use std::collections::HashMap;
     let mut glyph_cache: HashMap<char, (u32, u32)> = HashMap::new();
@@ -183,6 +184,7 @@ fn bench_full_frame_cycle(c: &mut Criterion) {
     }
 
     #[derive(Clone, Copy)]
+    #[allow(dead_code)]
     struct Vertex {
         pos: [f32; 2],
         uv: [f32; 2],
@@ -244,6 +246,7 @@ fn bench_incremental_rendering(c: &mut Criterion) {
     let dirty_percentages = vec![1, 5, 10, 25, 50, 100];
 
     #[derive(Clone, Copy)]
+    #[allow(dead_code)]
     struct Vertex {
         pos: [f32; 2],
         uv: [f32; 2],

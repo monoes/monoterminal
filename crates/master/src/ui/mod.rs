@@ -13,6 +13,8 @@
 //!
 //! Total: 16.5ms ✅
 
+#![allow(dead_code)]  // UI features not all integrated yet, cleanup tracked in task-63
+
 pub mod backend_selection;
 pub mod fonts;
 pub mod glyph_cache;
@@ -29,7 +31,6 @@ pub mod window;
 pub mod test_support;
 
 pub use renderer::Renderer;
-pub use renderer_bridge::RendererBridge;
 pub use window::Window;
 
 #[cfg(test)]

@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generatedAt": "2026-08-19T23:35:27.818Z",
+  "generatedAt": "2026-08-20T00:20:36.619Z",
   "totalAgents": 89,
   "agents": [
     {
@@ -21,8 +21,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\architecture\\system-design\\arch-system-design.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "crdt-synchronizer",
@@ -37,8 +37,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\consensus\\crdt-synchronizer.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "quorum-manager",
@@ -57,8 +57,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\consensus\\quorum-manager.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "security-manager",
@@ -73,8 +73,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\consensus\\security-manager.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "coder",
@@ -94,8 +94,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\core\\coder.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "coordinator",
@@ -116,8 +116,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\core\\coordinator.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "planner",
@@ -137,8 +137,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\core\\planner.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "researcher",
@@ -158,8 +158,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\core\\researcher.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "reviewer",
@@ -179,8 +179,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\core\\reviewer.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "tester",
@@ -200,8 +200,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\core\\tester.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "design-monodesign",
@@ -238,8 +238,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\design\\design-monodesign.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "engineering-ai-data-remediation-engineer",
@@ -256,8 +256,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\engineering\\engineering-ai-data-remediation-engineer.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "engineering-ai-engineer",
@@ -279,8 +279,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\engineering\\engineering-ai-engineer.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "engineering-autonomous-optimization-architect",
@@ -297,8 +297,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\engineering\\engineering-autonomous-optimization-architect.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "engineering-backend-architect",
@@ -320,8 +320,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\engineering\\engineering-backend-architect.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "engineering-code-reviewer",
@@ -343,8 +343,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\engineering\\engineering-code-reviewer.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "engineering-data-engineer",
@@ -361,8 +361,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\engineering\\engineering-data-engineer.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "engineering-database-optimizer",
@@ -393,8 +393,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\engineering\\engineering-database-optimizer.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "engineering-devops-automator",
@@ -429,8 +429,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\engineering\\engineering-devops-automator.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "engineering-embedded-firmware-engineer",
@@ -447,8 +447,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\engineering\\engineering-embedded-firmware-engineer.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "engineering-feishu-integration-developer",
@@ -465,8 +465,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\engineering\\engineering-feishu-integration-developer.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "engineering-frontend-developer",
@@ -497,8 +497,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\engineering\\engineering-frontend-developer.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "engineering-git-workflow-master",
@@ -529,8 +529,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\engineering\\engineering-git-workflow-master.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "engineering-incident-response-commander",
@@ -547,8 +547,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\engineering\\engineering-incident-response-commander.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "engineering-mobile-app-builder",
@@ -574,8 +574,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\engineering\\engineering-mobile-app-builder.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "engineering-rapid-prototyper",
@@ -592,8 +592,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\engineering\\engineering-rapid-prototyper.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "engineering-security-engineer",
@@ -628,8 +628,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\engineering\\engineering-security-engineer.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "engineering-senior-developer",
@@ -651,8 +651,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\engineering\\engineering-senior-developer.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "engineering-software-architect",
@@ -674,8 +674,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\engineering\\engineering-software-architect.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "engineering-solidity-smart-contract-engineer",
@@ -701,8 +701,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\engineering\\engineering-solidity-smart-contract-engineer.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "engineering-sre",
@@ -733,8 +733,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\engineering\\engineering-sre.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "engineering-technical-writer",
@@ -756,8 +756,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\engineering\\engineering-technical-writer.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "engineering-threat-detection-engineer",
@@ -783,8 +783,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\engineering\\engineering-threat-detection-engineer.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "engineering-wechat-mini-program-developer",
@@ -801,8 +801,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\engineering\\engineering-wechat-mini-program-developer.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "code-review-swarm",
@@ -819,8 +819,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\github\\code-review-swarm.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "github-modes",
@@ -837,8 +837,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\github\\github-modes.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "issue-tracker",
@@ -855,8 +855,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\github\\issue-tracker.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "multi-repo-swarm",
@@ -873,8 +873,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\github\\multi-repo-swarm.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "pr-manager",
@@ -891,8 +891,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\github\\pr-manager.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "project-board-sync",
@@ -909,8 +909,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\github\\project-board-sync.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "release-manager",
@@ -927,8 +927,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\github\\release-manager.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "repo-architect",
@@ -945,8 +945,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\github\\repo-architect.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "swarm-issue",
@@ -963,8 +963,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\github\\swarm-issue.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "swarm-pr",
@@ -981,8 +981,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\github\\swarm-pr.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "sync-coordinator",
@@ -999,8 +999,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\github\\sync-coordinator.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "workflow-automation",
@@ -1017,8 +1017,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\github\\workflow-automation.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "goal-planner",
@@ -1033,8 +1033,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\goal\\goal-planner.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "collective-intelligence-coordinator",
@@ -1053,8 +1053,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\hive-mind\\collective-intelligence-coordinator.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "scout-explorer",
@@ -1069,8 +1069,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\hive-mind\\scout-explorer.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "swarm-memory-manager",
@@ -1085,8 +1085,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\hive-mind\\swarm-memory-manager.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "worker-specialist",
@@ -1101,8 +1101,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\hive-mind\\worker-specialist.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "marketing-competitive-content",
@@ -1119,8 +1119,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\marketing\\marketing-competitive-content.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "marketing-cro-specialist",
@@ -1137,8 +1137,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\marketing\\marketing-cro-specialist.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "marketing-email-specialist",
@@ -1155,8 +1155,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\marketing\\marketing-email-specialist.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "marketing-launch-strategist",
@@ -1173,8 +1173,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\marketing\\marketing-launch-strategist.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "marketing-pricing-strategist",
@@ -1191,8 +1191,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\marketing\\marketing-pricing-strategist.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "benchmark-suite",
@@ -1207,8 +1207,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\optimization\\benchmark-suite.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "load-balancer",
@@ -1223,8 +1223,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\optimization\\load-balancer.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "performance-monitor",
@@ -1239,8 +1239,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\optimization\\performance-monitor.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "resource-allocator",
@@ -1255,8 +1255,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\optimization\\resource-allocator.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "topology-optimizer",
@@ -1271,8 +1271,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\optimization\\topology-optimizer.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "integration-architect",
@@ -1287,8 +1287,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\specialists\\integration-architect.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "agentic-identity-trust",
@@ -1305,8 +1305,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\specialized\\agentic-identity-trust.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "agents-orchestrator",
@@ -1323,8 +1323,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\specialized\\agents-orchestrator.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "automation-governance-architect",
@@ -1341,8 +1341,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\specialized\\automation-governance-architect.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "blockchain-security-auditor",
@@ -1359,8 +1359,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\specialized\\blockchain-security-auditor.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "compliance-auditor",
@@ -1377,8 +1377,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\specialized\\compliance-auditor.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "identity-graph-operator",
@@ -1395,8 +1395,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\specialized\\identity-graph-operator.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "lsp-index-engineer",
@@ -1413,8 +1413,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\specialized\\lsp-index-engineer.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "spec-mobile-react-native",
@@ -1431,8 +1431,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\specialized\\mobile\\spec-mobile-react-native.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "specialized-cultural-intelligence-strategist",
@@ -1449,8 +1449,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\specialized\\specialized-cultural-intelligence-strategist.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "specialized-developer-advocate",
@@ -1467,8 +1467,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\specialized\\specialized-developer-advocate.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "specialized-document-generator",
@@ -1485,8 +1485,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\specialized\\specialized-document-generator.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "specialized-mcp-builder",
@@ -1503,8 +1503,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\specialized\\specialized-mcp-builder.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "specialized-model-qa",
@@ -1521,8 +1521,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\specialized\\specialized-model-qa.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "specialized-workflow-architect",
@@ -1539,8 +1539,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\specialized\\specialized-workflow-architect.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "zk-steward",
@@ -1557,8 +1557,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\specialized\\zk-steward.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "mesh-coordinator",
@@ -1577,8 +1577,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\swarm\\mesh-coordinator.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "automation-smart-agent",
@@ -1593,8 +1593,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\templates\\automation-smart-agent.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "coordinator-swarm-init",
@@ -1609,8 +1609,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\templates\\coordinator-swarm-init.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "production-validator",
@@ -1627,8 +1627,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\testing\\production-validator.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "tdd-london-swarm",
@@ -1650,8 +1650,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\testing\\tdd-london-swarm.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "testing-accessibility-auditor",
@@ -1677,8 +1677,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\testing\\testing-accessibility-auditor.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "testing-api-tester",
@@ -1695,8 +1695,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\testing\\testing-api-tester.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "testing-evidence-collector",
@@ -1713,8 +1713,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\testing\\testing-evidence-collector.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "testing-performance-benchmarker",
@@ -1731,8 +1731,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\testing\\testing-performance-benchmarker.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "testing-test-results-analyzer",
@@ -1749,8 +1749,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\testing\\testing-test-results-analyzer.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "testing-tool-evaluator",
@@ -1767,8 +1767,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\testing\\testing-tool-evaluator.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     },
     {
       "slug": "testing-workflow-optimizer",
@@ -1785,8 +1785,8 @@
       "deprecated": false,
       "dependencies": [],
       "filePath": ".claude\\agents\\testing\\testing-workflow-optimizer.md",
-      "registeredAt": "2026-08-19T23:35:27.818Z",
-      "lastUpdated": "2026-08-19T23:35:27.818Z"
+      "registeredAt": "2026-08-20T00:20:36.619Z",
+      "lastUpdated": "2026-08-20T00:20:36.619Z"
     }
   ]
 }

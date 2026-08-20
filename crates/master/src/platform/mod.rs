@@ -8,6 +8,8 @@
 // - Database paths
 // - Service management (install/uninstall/status)
 //
+
+#![allow(dead_code)]  // Phase 3 features not all integrated yet, cleanup tracked in task-63
 // Platform support:
 // - Windows: %ProgramData%, %LOCALAPPDATA%
 // - Linux: /var/lib, ~/.local/share, XDG compliance, systemd
@@ -16,5 +18,3 @@
 pub mod paths;
 pub mod service;
 
-pub use paths::{data_dir, log_dir, session_db_path, user_data_dir};
-pub use service::{install_service, service_status, uninstall_service, ServiceStatus};

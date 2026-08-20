@@ -33,8 +33,7 @@ use tokio::runtime::Runtime;
 
 // Server and auth components
 use monoterminal_master::{
-    auth::{AuthService, Ed25519AuthService, RateLimiter, UserId},
-    server::TlsConfig,
+    auth::{AuthService, Ed25519AuthService, RateLimiter},
     server::{Server, ServerConfig},
     session::manager::SessionManager,
 };
@@ -43,7 +42,6 @@ use tracing::{debug, error, info, warn};
 
 // Protocol
 use monoterminal_protocol::Envelope;
-use prost::Message as ProstMessage;
 
 // Test utilities (WebSocket client)
 #[path = "../tests/common/ws_client.rs"]
@@ -581,6 +579,7 @@ fn bench_latency_budget_breakdown(c: &mut Criterion) {
 // ============================================================================
 
 /// Mock WebSocket echo server for baseline latency measurement
+#[allow(dead_code)]
 async fn mock_websocket_echo_server(addr: SocketAddr) {
     use futures_util::{SinkExt, StreamExt};
     use tokio::net::TcpListener;
@@ -603,10 +602,12 @@ async fn mock_websocket_echo_server(addr: SocketAddr) {
 }
 
 /// Mock WebSocket client for RTT measurement
+#[allow(dead_code)]
 struct MockWebSocketClient {
     // TODO: Implement actual client using tokio-tungstenite
 }
 
+#[allow(dead_code)]
 impl MockWebSocketClient {
     async fn connect(_url: &str) -> Result<Self, Box<dyn std::error::Error>> {
         // TODO: Implement real connection

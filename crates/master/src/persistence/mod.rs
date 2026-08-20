@@ -8,6 +8,8 @@
 //! - Connection pooling (r2d2) for multi-threaded access
 //! - zstd compression for scrollback (60-80% reduction)
 //! - Automatic daily backups (7-day retention)
+
+#![allow(dead_code)]  // Phase 2 features not all integrated yet, cleanup tracked in task-63
 //! - Disk space monitoring (80% warning, 95% emergency purge)
 
 pub mod audit;
@@ -150,7 +152,7 @@ mod tests {
         let db = Database::new(&db_path).unwrap();
 
         // Verify WAL mode is enabled
-        let mut conn = db.get_conn().unwrap();
+        let conn = db.get_conn().unwrap();
         let journal_mode: String = conn
             .query_row("PRAGMA journal_mode", [], |row| row.get(0))
             .unwrap();

@@ -9,6 +9,8 @@
 //! Purpose: Prove backend APIs work independently of frontend
 //! Part of: Option B - Rust WebSocket integration test (approved by eng-director)
 
+#![allow(clippy::field_reassign_with_default)]
+
 use monoterminal_master::{
     auth::Ed25519AuthService,
     server::{Server, ServerConfig},

@@ -48,7 +48,7 @@ mod tests {
 
     #[test]
     fn test_init_schema() {
-        let mut conn = Connection::open_in_memory().unwrap();
+        let conn = Connection::open_in_memory().unwrap();
 
         init_schema(&conn).unwrap();
 
@@ -81,7 +81,7 @@ mod tests {
 
     #[test]
     fn test_init_schema_idempotent() {
-        let mut conn = Connection::open_in_memory().unwrap();
+        let conn = Connection::open_in_memory().unwrap();
 
         // Initialize twice - should not error
         init_schema(&conn).unwrap();

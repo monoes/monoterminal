@@ -2,6 +2,9 @@
 // Implements ADR-011: P2P Networking Architecture
 // SRS §2.3: P2P Networking, §7.2: Phase 2 Acceptance Criteria
 
+#![allow(dead_code)]  // Phase 2 placeholder implementations, cleanup tracked in task-63
+#![allow(unused_imports)]  // Phase 2 placeholder imports, cleanup tracked in task-63
+
 pub mod config;
 pub mod error;
 pub mod handshake;
@@ -12,12 +15,11 @@ pub mod transport;
 #[cfg(test)]
 mod tests;
 
-pub use config::{StunServerConfig, WebRtcConfig};
-pub use error::{Result, WebRtcError};
-pub use handshake::{HandshakeVerifier, PeerHandshake, PeerHandshakeResponse};
-pub use ice::{probe_stun_server, IceCandidate, IceCandidateGatherer};
-pub use peer_connection::{DataChannelMessage, PeerConnection, PeerConnectionState};
-pub use transport::{DualTransport, Transport, TransportType};
+pub use config::WebRtcConfig;
+pub use handshake::{HandshakeVerifier, PeerHandshake};
+pub use ice::IceCandidateGatherer;
+pub use peer_connection::{PeerConnection, PeerConnectionState};
+pub use transport::DualTransport;
 
 use prometheus::{Counter, Gauge, Histogram, HistogramOpts, Registry};
 

@@ -1,6 +1,8 @@
 // Authentication and authorization module
 // Implements SRS §3.2: Ed25519 + JWT + RBAC + Rate Limiting
 
+#![allow(dead_code)]  // Phase 2 placeholder implementations, cleanup tracked in task-63
+
 pub mod challenge;
 pub mod jwt;
 pub mod keys;
@@ -15,7 +17,7 @@ pub use challenge::{Challenge, Ed25519ChallengeHandler};
 pub use jwt::{Claims, JwtService, TokenPair};
 pub use keys::{load_or_generate_keypair, Ed25519KeyPair};
 pub use rate_limit::RateLimiter;
-pub use rbac::{check_permission, Action, Permission};
+pub use rbac::{check_permission, Action};
 
 // ===== Core Types =====
 

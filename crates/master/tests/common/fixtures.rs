@@ -7,7 +7,9 @@ use tempfile::TempDir;
 /// Test context providing temporary directories and configuration
 pub struct TestContext {
     pub temp_dir: TempDir,
+    #[allow(dead_code)]
     pub config_path: PathBuf,
+    #[allow(dead_code)]
     pub database_path: PathBuf,
 }
 

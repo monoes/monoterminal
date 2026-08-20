@@ -2,6 +2,8 @@
 //!
 //! Day 1: Mock integration tests for VT parser → terminal grid → renderer pipeline
 
+#![allow(clippy::module_inception)]
+
 #[cfg(test)]
 mod tests {
     use super::super::*;

@@ -125,7 +125,7 @@ mod tests {
 
     #[test]
     fn test_verify_migrations() {
-        let mut conn = Connection::open_in_memory().unwrap();
+        let conn = Connection::open_in_memory().unwrap();
         super::super::schema::init_schema(&conn).unwrap();
 
         verify_migrations(&conn).unwrap();

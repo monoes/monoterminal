@@ -3,6 +3,8 @@
 //! Comprehensive test coverage for WebSocket server components
 //! Target: ≥70% coverage per SRS §6.1
 //!
+
+#![allow(clippy::field_reassign_with_default)]
 //! Coverage areas:
 //! - Server configuration and defaults
 //! - TLS configuration

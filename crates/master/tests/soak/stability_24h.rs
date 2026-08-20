@@ -16,7 +16,6 @@
 //! SOAK_DURATION_HOURS=1 cargo test --release --test stability_24h -- --ignored --nocapture
 //! ```
 
-use std::env;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread;
@@ -70,7 +69,7 @@ impl MemoryStats {
 
         // Use PowerShell to get process stats
         let output = std::process::Command::new("powershell")
-            .args(&[
+            .args([
                 "-NoProfile",
                 "-Command",
                 &format!(
@@ -117,7 +116,7 @@ fn extract_json_value(json: &str, key: &str) -> Result<f64, Box<dyn std::error::
         let value_start = start + pattern.len();
         let remaining = &json[value_start..];
         let value_end = remaining
-            .find(|c: char| c == ',' || c == '}')
+            .find([',', '}'])
             .unwrap_or(remaining.len());
         let value_str = &remaining[..value_end].trim();
         Ok(value_str.parse()?)
@@ -179,7 +178,7 @@ fn spawn_memory_monitor(
 #[cfg(windows)]
 fn check_zombie_processes() -> Result<(), String> {
     let output = std::process::Command::new("powershell")
-        .args(&[
+        .args([
             "-NoProfile",
             "-Command",
             "Get-Process cmd,powershell -ErrorAction SilentlyContinue | Measure-Object | Select-Object -ExpandProperty Count",
@@ -342,7 +341,7 @@ async fn test_24h_stability_zero_crashes() {
 
         let elapsed = start_time.elapsed();
         let elapsed_hours = elapsed.as_secs_f64() / 3600.0;
-        let total_hours = config.duration_hours as f64;
+        let total_hours = config.duration_hours;
         let progress = (elapsed_hours / total_hours) * 100.0;
 
         println!(

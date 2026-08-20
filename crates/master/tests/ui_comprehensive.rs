@@ -198,6 +198,7 @@ mod performance_tests {
     }
 
     #[test]
+    #[allow(clippy::assertions_on_constants)]
     fn test_performance_budget_boundaries() {
         // Each component should be within reasonable bounds
         const PTY_BUDGET: f32 = 2.0;

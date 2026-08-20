@@ -261,7 +261,6 @@ fn bench_concurrent_sessions_latency(c: &mut Criterion) {
 
     use monoterminal_protocol::{Envelope, OutputData};
     use prost::Message;
-    use std::sync::Arc;
 
     // Simulate output from multiple sessions being processed concurrently
     for n_sessions in [1, 5, 10, 20].iter() {

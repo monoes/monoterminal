@@ -243,7 +243,7 @@ mod property_tests {
 
             let pty = ConPtyBackend::create(config)
                 .await
-                .expect(&format!("Failed to create PTY iteration {}", i));
+                .unwrap_or_else(|_| panic!("Failed to create PTY iteration {}", i));
 
             assert!(pty.shell_pid() > 0);
 

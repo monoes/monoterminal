@@ -85,6 +85,7 @@ impl MockPtyHandle {
     }
 
     /// Try to receive output without blocking
+    #[allow(dead_code)]
     pub fn try_recv_output(&mut self) -> Result<Vec<u8>, mpsc::error::TryRecvError> {
         self.output_rx.try_recv()
     }

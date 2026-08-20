@@ -11,12 +11,15 @@ use tokio_tungstenite::{
 /// Test WebSocket client for integration tests
 pub struct TestWsClient {
     stream: Option<WebSocketStream<MaybeTlsStream<TcpStream>>>,
+    #[allow(dead_code)]
     url: String,
+    #[allow(dead_code)]
     accept_invalid_certs: bool,
 }
 
 impl TestWsClient {
     /// Create a new test client (not yet connected)
+    #[allow(dead_code)]
     pub fn new(url: impl Into<String>) -> Self {
         Self {
             stream: None,
@@ -26,6 +29,7 @@ impl TestWsClient {
     }
 
     /// Create a new test client that accepts self-signed/invalid certificates
+    #[allow(dead_code)]
     pub fn new_accept_invalid_certs(url: impl Into<String>) -> Self {
         Self {
             stream: None,
@@ -35,6 +39,7 @@ impl TestWsClient {
     }
 
     /// Connect to the WebSocket server
+    #[allow(dead_code)]
     pub async fn connect(&mut self) -> Result<()> {
         let (stream, _response) = if self.accept_invalid_certs {
             // Create TLS connector that accepts invalid certificates (for testing only)
@@ -85,6 +90,8 @@ impl TestWsClient {
     }
 
     /// Close the connection
+    #[allow(dead_code)]
+    #[allow(unused_imports)]
     pub async fn close(&mut self) -> Result<()> {
         if let Some(mut stream) = self.stream.take() {
             use futures_util::SinkExt;
@@ -94,11 +101,13 @@ impl TestWsClient {
     }
 
     /// Check if connected
+    #[allow(dead_code)]
     pub fn is_connected(&self) -> bool {
         self.stream.is_some()
     }
 
     /// Send AttachRequest and wait for AttachResponse
+    #[allow(dead_code)]
     pub async fn attach(
         &mut self,
         session_id: &str,
@@ -146,6 +155,7 @@ impl TestWsClient {
     }
 
     /// Send input data to attached session
+    #[allow(dead_code)]
     pub async fn send_input(&mut self, data: &[u8], jwt_bearer: &str) -> Result<()> {
         use prost::Message as ProstMessage;
 
@@ -169,6 +179,7 @@ impl TestWsClient {
     }
 
     /// Send resize request
+    #[allow(dead_code)]
     pub async fn resize(&mut self, rows: u32, cols: u32, jwt_bearer: &str) -> Result<()> {
         use prost::Message as ProstMessage;
 
@@ -193,6 +204,7 @@ impl TestWsClient {
     }
 
     /// Send detach request
+    #[allow(dead_code)]
     pub async fn detach(&mut self, session_id: &str) -> Result<()> {
         use prost::Message as ProstMessage;
 
@@ -217,10 +229,9 @@ impl TestWsClient {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[test]
     fn test_client_creation() {
+        use super::*;
         let client = TestWsClient::new("ws://127.0.0.1:8080");
         assert!(!client.is_connected());
     }

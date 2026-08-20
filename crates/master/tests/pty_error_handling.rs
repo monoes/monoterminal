@@ -2,6 +2,8 @@
 // Tests error types and error propagation
 // SRS §2.1.2: PTY Management
 
+#![allow(clippy::unnecessary_literal_unwrap)]
+
 use monoterminal_master::pty::error::*;
 use std::io;
 
@@ -76,6 +78,7 @@ fn test_error_is_send_sync() {
 #[test]
 fn test_pty_result_ok() {
     let result: PtyResult<i32> = Ok(42);
+    assert!(result.is_ok());
     assert_eq!(result.unwrap(), 42);
 }
 

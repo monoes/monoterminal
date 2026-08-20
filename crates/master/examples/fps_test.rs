@@ -51,6 +51,7 @@ struct FpsTestApp {
     frames_this_second: u32,
 
     // Mock PTY data generator
+    #[allow(dead_code)]
     pty_tx: mpsc::Sender<Bytes>,
 }
 

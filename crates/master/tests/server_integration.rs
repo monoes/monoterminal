@@ -4,6 +4,8 @@
 //! Tests server startup, TLS handshake, WebSocket upgrade, and message handling
 //! Target: ≥70% coverage for critical server paths
 
+#![allow(clippy::field_reassign_with_default)]  // Test pattern for config modification
+
 use monoterminal_master::{
     auth::{Ed25519AuthService, RateLimiter},
     server::{Server, ServerConfig, TlsConfig},
@@ -154,7 +156,7 @@ async fn test_server_rate_limit_config() {
 
 #[test]
 fn test_tls_config_paths() {
-    use std::path::PathBuf;
+    
 
     let tls_config = TlsConfig::default();
 
@@ -220,7 +222,7 @@ async fn test_server_health_channel() {
         .and_then(|r| r.ok());
 
     assert!(received.is_some());
-    assert_eq!(received.unwrap().installed, true);
+    assert!(received.unwrap().installed);
 }
 
 // ===== Error Handling Tests =====
