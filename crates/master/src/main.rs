@@ -3,17 +3,22 @@
 // See: docs/monoterminal-srs.md
 
 mod auth;
+mod clipboard; // Phase 4: Bidirectional clipboard backend (ADR-020, task-74)
+mod discovery;
+mod layout; // Phase 4: Splits/Tabs layout manager (ADR-018, task-72)
 mod persistence;
 mod platform;
 mod pty;
 mod server;
 mod session;
+mod tray;
 mod ui;
 mod webrtc;
 
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use tokio::sync::broadcast;
 
@@ -21,7 +26,7 @@ use auth::{keys::load_or_generate_keypair, Ed25519AuthService, RateLimiter};
 use monoterminal_monomind_bridge::HealthStatus;
 
 /// MONOTERMINAL master daemon
-#[derive(Parser, Debug)]
+#[derive(Parser, Debug, Clone)]
 #[command(name = "monoterminal-master")]
 #[command(about = "MONOTERMINAL master daemon", long_about = None)]
 #[command(version)]
@@ -46,10 +51,26 @@ struct Args {
     /// launchd mode (macOS launch daemon)
     #[arg(long, hide = true)]
     launchd: bool,
+
+    /// Disable the system tray icon (always off in --systemd/--launchd mode)
+    #[arg(long, default_value_t = false, global = true)]
+    no_tray: bool,
+
+    /// URL opened by the tray icon's "Open Dashboard" menu item
+    #[arg(long, default_value = "http://localhost:3000", global = true)]
+    dashboard_url: String,
+
+    /// Enable WebRTC P2P remote access by connecting out to a signaling
+    /// relay at this URL (e.g. ws://relay.example.com:9000). Lets a browser
+    /// reach this daemon from outside the local network without port
+    /// forwarding — see docs/decisions/011-p2p-networking-architecture.md.
+    /// Disabled (no P2P) when omitted.
+    #[arg(long, global = true)]
+    relay_url: Option<String>,
 }
 
 /// MONOTERMINAL commands
-#[derive(Subcommand, Debug)]
+#[derive(Subcommand, Debug, Clone)]
 enum Command {
     /// Install MONOTERMINAL as a system service
     #[command(name = "install-service")]
@@ -241,16 +262,52 @@ async fn handle_service_command(command: Command) -> Result<()> {
     Ok(())
 }
 
-#[tokio::main]
-async fn main() -> Result<()> {
-    // Parse CLI arguments
+fn main() -> Result<()> {
     let args = Args::parse();
 
-    // Handle service management commands (non-daemon mode)
+    // Handle service management commands (non-daemon mode) — no tray needed.
     if let Some(command) = args.command {
-        return handle_service_command(command).await;
+        let rt = tokio::runtime::Runtime::new().context("Failed to create tokio runtime")?;
+        return rt.block_on(handle_service_command(command));
     }
 
+    // systemd/launchd run headless (no desktop session to put a tray icon
+    // in), and --no-tray lets users opt out explicitly.
+    let tray_enabled = !args.no_tray && !args.systemd && !args.launchd;
+
+    if !tray_enabled {
+        let rt = tokio::runtime::Runtime::new().context("Failed to create tokio runtime")?;
+        return rt.block_on(run_daemon(args));
+    }
+
+    // The tray icon's OS message pump must run on the main thread (required
+    // by Windows/macOS), so the actual async daemon runs on a background
+    // thread with its own tokio runtime instead.
+    let dashboard_url = args.dashboard_url.clone();
+    let bind_addr = args.bind_addr.clone();
+    let shutdown = Arc::new(AtomicBool::new(false));
+
+    let daemon_thread = std::thread::spawn(move || -> Result<()> {
+        let rt = tokio::runtime::Runtime::new().context("Failed to create tokio runtime")?;
+        rt.block_on(run_daemon(args))
+    });
+
+    tray::run(dashboard_url, bind_addr, shutdown.clone());
+
+    // "Quit" was chosen (or the tray failed to start and returned
+    // immediately) — the daemon thread runs until the process exits, so
+    // just let it keep running in the background if the tray closed for
+    // any reason other than a deliberate quit.
+    if shutdown.load(Ordering::SeqCst) {
+        std::process::exit(0);
+    }
+
+    daemon_thread
+        .join()
+        .unwrap_or_else(|_| Err(anyhow::anyhow!("Daemon thread panicked")))
+}
+
+async fn run_daemon(args: Args) -> Result<()> {
     // Initialize logging based on environment
     // SOAK_TEST_MODE=1 enables structured JSON logging to file for 24h soak tests
     // Otherwise: compact console output for normal operation
@@ -365,6 +422,42 @@ async fn main() -> Result<()> {
         server_config.dev_mode
     );
 
+    // 7b. Optionally start the WebRTC P2P signaling client (remote access
+    // without port-forwarding/VPN — see docs/decisions/011-p2p-networking-architecture.md).
+    // Dials out to a signaling relay; the relay never sees terminal traffic,
+    // only the SDP/ICE handshake needed to open a direct DataChannel.
+    let mut pairing_cache: Option<Arc<webrtc::PairingCodeCache>> = None;
+    if let Some(relay_url) = args.relay_url.clone() {
+        let signing_key = ed25519_dalek::SigningKey::from_bytes(keypair.signing_bytes());
+        let peer_id = hex::encode(signing_key.verifying_key().to_bytes());
+        let p2p_session_manager = session_manager.clone();
+        let p2p_auth_service = auth_service.clone() as Arc<dyn auth::AuthService>;
+        // A separate ClipboardManager instance from the WebSocket server's —
+        // harmless since its state is keyed per-SessionId (globally unique
+        // UUIDs), so there's no cross-talk between the two transports.
+        let p2p_clipboard_manager = Arc::new(clipboard::ClipboardManager::new());
+        let p2p_dev_mode = args.dev_mode;
+
+        // SaaS device-pairing code cache — lets the dashboard ask this daemon
+        // for a code to link it to an account, via the relay's REST API.
+        let cache = webrtc::PairingCodeCache::new(relay_url.clone(), peer_id);
+        pairing_cache = Some(cache.clone());
+
+        tracing::info!("P2P signaling enabled, relay: {}", relay_url);
+        tokio::spawn(async move {
+            webrtc::signaling_client::run(
+                relay_url,
+                Arc::new(signing_key),
+                p2p_session_manager,
+                p2p_clipboard_manager,
+                p2p_auth_service,
+                p2p_dev_mode,
+                Some(cache),
+            )
+            .await;
+        });
+    }
+
     // 8. Create WebSocket server with auth + rate limiting
     #[cfg(target_os = "linux")]
     if systemd_mode {
@@ -377,6 +470,7 @@ async fn main() -> Result<()> {
         rate_limiter,
         auth_service,
         health_tx,
+        pairing_cache,
     )?;
     tracing::info!("WebSocket server created");
 

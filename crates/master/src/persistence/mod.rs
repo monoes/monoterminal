@@ -15,6 +15,7 @@
 pub mod audit;
 pub mod backup;
 pub mod disk_monitor;
+pub mod layout; // Phase 4: Layout persistence (ADR-018, task-74 Day 4)
 pub mod migrations;
 pub mod schema;
 pub mod scrollback;

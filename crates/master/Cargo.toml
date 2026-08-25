@@ -69,8 +69,18 @@ pollster = "0.3"
 bytemuck = { version = "1.14", features = ["derive"] }
 chrono = "0.4"
 
+# System tray icon (minimal daemon status + "Open Dashboard"/"Quit")
+tray-icon = "0.19"
+open = "5"
+
 # Font rendering (Phase 1: fontdue for Windows, Phase 3: HarfBuzz for Linux/macOS)
 fontdue = "0.9"
+
+# WASM Plugin System (Phase 4 Week 3-4, ADR-019)
+# TODO: wasmer dependency blocked by virtual-net compilation errors (Week 3 Day 1)
+# Stub module structure created first, dependencies to be resolved in Day 2
+# wasmer = "=4.2.5"
+# wasmer-wasix = "0.18"
 
 # Internal workspace crates
 monoterminal-protocol = { path = "../protocol" }
@@ -79,6 +89,7 @@ monoterminal-monomind-bridge = { path = "../monomind-bridge" }
 # Windows-specific (ConPTY)
 [target.'cfg(windows)'.dependencies]
 windows = { workspace = true }
+portable-pty = "0.8"
 
 # Unix-specific (Phase 3: Unix PTY support)
 [target.'cfg(unix)'.dependencies]

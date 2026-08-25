@@ -1,0 +1,188 @@
+.pane-host {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  padding: var(--space-1);
+}
+
+.split-wrap {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 0%;
+}
+
+.split-wrap.split-row {
+  flex-direction: row;
+}
+
+.split-wrap.split-col {
+  flex-direction: column;
+}
+
+.split-child {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+}
+
+.resizer {
+  flex: 0 0 6px;
+  position: relative;
+}
+
+.resizer::after {
+  content: '';
+  position: absolute;
+  background: var(--border-default);
+  border-radius: 2px;
+  transition: background var(--duration-fast) var(--ease-out-expo);
+}
+
+.resizer-v {
+  cursor: col-resize;
+}
+.resizer-v::after {
+  top: 0;
+  bottom: 0;
+  left: 2px;
+  width: 2px;
+}
+
+.resizer-h {
+  cursor: row-resize;
+}
+.resizer-h::after {
+  left: 0;
+  right: 0;
+  top: 2px;
+  height: 2px;
+}
+
+.resizer:hover::after,
+.resizer.dragging::after {
+  background: var(--accent);
+}
+
+.pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 0%;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid transparent;
+}
+
+.pane.is-focused {
+  border-color: var(--accent);
+}
+
+.pane-head {
+  height: 28px;
+  flex-shrink: 0;
+  background: var(--surface-1);
+  border-bottom: 1px solid var(--border-default);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-1) 0 var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+}
+
+.pane-head.focused {
+  background: var(--surface-2);
+  color: var(--ink-secondary);
+}
+
+.pane-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pane-title-input {
+  flex: 1;
+  min-width: 0;
+  background: var(--surface-3);
+  border: 1px solid var(--focus-ring);
+  color: var(--ink-primary);
+  padding: 1px var(--space-1);
+  border-radius: var(--radius-sm);
+  font-size: inherit;
+  font-family: inherit;
+}
+
+.pane-actions {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  flex-shrink: 0;
+}
+
+.pane-btn {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  color: var(--ink-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.pane-btn:hover {
+  background: var(--surface-3);
+  color: var(--ink-primary);
+}
+
+.pane-btn.danger:hover {
+  background: color-mix(in oklch, var(--state-error) 22%, transparent);
+  color: var(--state-error);
+}
+
+.pane-btn:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+.pane-body {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+/* Mobile: one focused pane fills the screen, splitting is desktop-only.
+   Hiding the non-focused `.split-child` is NOT enough on its own to make
+   its sibling fill the space: `flex-grow` values below 1 (our split
+   ratios, e.g. 0.5) do not get renormalized to fill 100% just because a
+   sibling is gone — a sole flex item with `flex-grow: 0.5` still only
+   grows to half its container's size, not all of it (verified directly:
+   a lone `flex: 0.5 1 0%` item in a 400px flex row measures 200px, not
+   400px). Ratio only matters while both sides are visible, so overriding
+   it here is safe — `!important` is required since the ratio is set via
+   inline style, which otherwise beats any plain rule here. */
+@media (max-width: 768px) {
+  .split-child[data-contains-focus='false'] {
+    display: none;
+  }
+
+  .split-child[data-contains-focus='true'] {
+    flex: 1 1 100% !important;
+  }
+
+  .resizer {
+    display: none;
+  }
+
+  .split-btn {
+    display: none;
+  }
+}

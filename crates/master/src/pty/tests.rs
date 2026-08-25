@@ -56,7 +56,7 @@ mod property_tests {
                 match create_result {
                     Ok(Ok(pty)) => {
                         prop_assert!(pty.shell_pid() > 0);
-                        pty.terminate().await.ok();
+                        Box::new(pty).terminate().await.ok();
                         Ok(())
                     }
                     Ok(Err(e)) => {
@@ -113,7 +113,7 @@ mod property_tests {
                 // PTY should still be usable after resize (don't read, just verify resize works)
                 pty.write(b"echo test\r\n").await.ok();
 
-                pty.terminate().await.ok();
+                Box::new(pty).terminate().await.ok();
                 Ok(())
             });
             result?
@@ -157,7 +157,7 @@ mod property_tests {
 
         assert!(read_result.is_ok(), "Read timeout after resize burst");
 
-        pty.terminate().await.ok();
+        Box::new(pty).terminate().await.ok();
     }
 
     #[tokio::test]
@@ -188,7 +188,7 @@ mod property_tests {
         // We don't assert on the result - just that it doesn't panic
         // The error should be handled gracefully
 
-        pty.terminate().await.ok();
+        Box::new(pty).terminate().await.ok();
     }
 
     #[tokio::test]
@@ -217,7 +217,7 @@ mod property_tests {
         tokio::time::sleep(Duration::from_millis(100)).await;
 
         // Terminate the PTY (should clean up child processes)
-        pty.terminate().await.expect("Failed to terminate");
+        Box::new(pty).terminate().await.expect("Failed to terminate");
 
         // Wait a bit and check if the shell process is gone
         tokio::time::sleep(Duration::from_millis(200)).await;
@@ -247,7 +247,7 @@ mod property_tests {
 
             assert!(pty.shell_pid() > 0);
 
-            pty.terminate().await.expect("Failed to terminate");
+            Box::new(pty).terminate().await.expect("Failed to terminate");
 
             // Wait for async cleanup to complete before next iteration
             // This prevents race condition between ReadFile and CloseHandle
@@ -290,7 +290,7 @@ mod property_tests {
         }
 
         write_task.await.ok();
-        pty.terminate().await.ok();
+        Box::new(pty).terminate().await.ok();
     }
 
     #[tokio::test]
@@ -330,6 +330,6 @@ mod property_tests {
             }
         }
 
-        pty.terminate().await.ok();
+        Box::new(pty).terminate().await.ok();
     }
 }

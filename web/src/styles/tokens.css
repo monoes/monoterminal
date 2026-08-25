@@ -1,0 +1,116 @@
+/**
+ * Design tokens for the monoterminal app shell. Product register (tool, not
+ * brand surface): Restrained color strategy, fixed rem scale, one accent
+ * used only for selection/primary state.
+ *
+ * Palette is a deliberate cool slate rather than the near-zero-chroma
+ * VS Code gray it started as — every neutral carries a faint consistent
+ * tint toward the accent's own hue (255) so the surface reads as one
+ * designed material instead of default IDE chrome, while staying just as
+ * calm and low-contrast-friendly for long terminal sessions.
+ */
+
+:root {
+  /* ---- Primitives (OKLCH) ---- */
+  --p-black: oklch(0% 0 0);
+  --p-slate-950: oklch(18% 0.008 255);   /* terminal/content surface */
+  --p-slate-900: oklch(21% 0.009 255);   /* sidebar surface */
+  --p-slate-850: oklch(24% 0.010 255);   /* header surface */
+  --p-slate-800: oklch(27% 0.011 255);   /* raised surface (inputs, chips) */
+  --p-slate-700: oklch(34% 0.012 255);   /* border */
+  --p-slate-600: oklch(41% 0.013 255);   /* hover fill */
+  --p-slate-500: oklch(51% 0.014 255);   /* input border */
+  --p-slate-300: oklch(66% 0.012 255);   /* muted ink */
+  --p-slate-200: oklch(80% 0.008 255);   /* secondary ink */
+  --p-slate-100: oklch(88% 0.005 255);   /* primary ink */
+  --p-white: oklch(100% 0 0);
+
+  --p-blue-700: oklch(31% 0.09 255);    /* selection fill */
+  --p-blue-500: oklch(58% 0.14 255);    /* focus ring / accent */
+  --p-green-500: oklch(72% 0.15 155);   /* connected / success */
+  --p-red-500: oklch(60% 0.18 25);      /* error / disconnected */
+  --p-amber-500: oklch(76% 0.14 80);    /* warning */
+
+  /* ---- Semantic surfaces ---- */
+  --surface-0: var(--p-slate-950);   /* terminal content area */
+  --surface-1: var(--p-slate-900);   /* sidebar, panels */
+  --surface-2: var(--p-slate-850);   /* header, toolbars */
+  --surface-3: var(--p-slate-800);   /* inputs, raised chips */
+  --surface-overlay: color-mix(in oklch, var(--p-black) 55%, transparent);
+
+  --border-default: var(--p-slate-700);
+  --border-strong: var(--p-slate-500);
+
+  /* ---- Semantic ink ---- */
+  --ink-primary: var(--p-slate-100);
+  --ink-secondary: var(--p-slate-200);
+  --ink-muted: var(--p-slate-300);
+  --ink-on-accent: var(--p-white);
+
+  /* ---- Semantic state ---- */
+  --accent: var(--p-blue-500);
+  --accent-selected-bg: var(--p-blue-700);
+  --accent-selected-bg-hover: color-mix(in oklch, var(--p-blue-700) 85%, white 15%);
+  --state-hover-bg: color-mix(in oklch, var(--p-white) 6%, transparent);
+  --state-active-bg: color-mix(in oklch, var(--p-white) 12%, transparent);
+  --state-success: var(--p-green-500);
+  --state-error: var(--p-red-500);
+  --state-warning: var(--p-amber-500);
+  --focus-ring: var(--p-blue-500);
+
+  /* ---- Spacing scale (4px base) ---- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* ---- Radii ---- */
+  --radius-sm: 3px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-full: 999px;
+
+  /* ---- Elevation — flat surfaces are the default; shadows are reserved
+     for things that float above the layout (panels, modals, dropdowns) ---- */
+  --shadow-sm: 0 1px 2px color-mix(in oklch, var(--p-black) 30%, transparent);
+  --shadow-md: 0 8px 24px color-mix(in oklch, var(--p-black) 35%, transparent);
+  --shadow-lg: 0 24px 48px color-mix(in oklch, var(--p-black) 40%, transparent);
+
+  /* ---- Type (fixed rem scale, product register) ---- */
+  --text-xs: 0.6875rem;   /* 11px */
+  --text-sm: 0.75rem;     /* 12px */
+  --text-base: 0.8125rem; /* 13px */
+  --text-md: 0.875rem;    /* 14px */
+  --text-lg: 1rem;        /* 16px */
+  --text-xl: 1.125rem;    /* 18px */
+
+  /* ---- Touch / hit targets ---- */
+  --hit-target: 44px;
+  --hit-target-compact: 32px;
+
+  /* ---- Motion ---- */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 120ms;
+  --duration-base: 180ms;
+  --duration-slow: 240ms;
+
+  /* ---- Z-index scale ---- */
+  --z-sidebar: 10;
+  --z-header: 100;
+  --z-panel: 200;
+  --z-drawer-backdrop: 900;
+  --z-drawer: 950;
+  --z-modal: 1000;
+  --z-toast: 1100;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+    --duration-slow: 0ms;
+  }
+}

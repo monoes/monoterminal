@@ -59,9 +59,15 @@ impl TlsConfig {
         Ok(TlsAcceptor::from(Arc::new(config)))
     }
 
-    /// Build TLS acceptor for dev/test mode with in-memory self-signed certificate
-    /// WARNING: For testing only - uses hardcoded test certificate
-    #[cfg(not(any(test, debug_assertions)))]
+    /// Build TLS acceptor for dev/test mode with in-memory self-signed certificate.
+    /// WARNING: For testing only - uses hardcoded test certificate.
+    ///
+    /// Deliberately available in every build profile: `--dev-mode` is a
+    /// runtime flag the caller opts into explicitly (and which itself warns
+    /// loudly not to use in production), not a build-time concern — gating
+    /// this by `debug_assertions`/`test` previously made it work in exactly
+    /// one profile and silently error in the other depending on which way
+    /// the cfg was set, which is what caused this to regress twice.
     pub fn build_dev_acceptor() -> Result<TlsAcceptor> {
         // Generate in-memory self-signed certificate for tests
         let cert_pem = include_bytes!("../../../../certs/server.crt");
@@ -95,15 +101,6 @@ impl TlsConfig {
             .map_err(|e| ServerError::Internal(format!("Failed to configure TLS: {}", e)))?;
 
         Ok(TlsAcceptor::from(Arc::new(config)))
-    }
-
-    /// Build TLS acceptor for dev/test mode (CI/test build without cert files)
-    /// Returns error in test/debug mode - use build_acceptor() with actual cert paths
-    #[cfg(any(test, debug_assertions))]
-    pub fn build_dev_acceptor() -> Result<TlsAcceptor> {
-        Err(ServerError::Internal(
-            "build_dev_acceptor() not available in test/debug builds. Use build_acceptor() with cert paths instead.".to_string()
-        ))
     }
 }
 

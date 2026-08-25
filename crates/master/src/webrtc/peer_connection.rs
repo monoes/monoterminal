@@ -170,9 +170,17 @@ impl PeerConnection {
         Self::setup_ice_candidate_handler(pc.clone(), ice_candidates_tx.clone());
         Self::setup_connection_state_handler(pc.clone(), state.clone());
 
+        let data_channel = Arc::new(Mutex::new(None));
+
+        // Answerer never calls create_data_channel itself — the offerer
+        // (browser) creates it, so we must listen for the remote-created
+        // channel via on_data_channel instead, or `data_channel` stays None
+        // forever and `send()` always fails with DataChannelClosed.
+        Self::setup_data_channel_handler(pc.clone(), data_channel.clone(), messages_tx.clone());
+
         let conn = Self {
             peer_connection: pc,
-            data_channel: Arc::new(Mutex::new(None)),
+            data_channel,
             config,
             state,
             ice_candidates_tx,
@@ -224,37 +232,57 @@ impl PeerConnection {
     pub async fn create_data_channel(&self, label: &str) -> Result<()> {
         debug!("Creating DataChannel: {}", label);
 
-        let data_channel = self
+        let dc = self
             .peer_connection
             .create_data_channel(label, None)
             .await
             .map_err(|e| WebRtcError::DataChannelCreationFailed(e.to_string()))?;
 
-        // data_channel is already Arc<RTCDataChannel> from webrtc crate
-        let dc = data_channel;
+        Self::wire_data_channel_messages(dc.clone(), self.messages_tx.clone());
 
-        // Set up message handler
-        let messages_tx = self.messages_tx.clone();
-        let dc_clone = dc.clone();
-        dc_clone.on_message(Box::new(move |msg: WebRtcDataChannelMessage| {
-            let tx = messages_tx.clone();
-            Box::pin(async move {
-                debug!("DataChannel message received: {} bytes", msg.data.len());
-                let is_binary = msg.is_string;
-                let _ = tx
-                    .send(DataChannelMessage {
-                        data: msg.data.to_vec(),
-                        is_binary: !is_binary, // is_string=true means text, so is_binary=false
-                    })
-                    .await;
-            })
-        }));
-
-        // Store data channel (dc is already Arc<RTCDataChannel>, don't double-wrap)
         let mut guard = self.data_channel.lock().await;
         *guard = Some(dc);
 
         Ok(())
+    }
+
+    /// Set up the `ondatachannel` handler (answerer side). The offerer
+    /// creates the channel and it arrives here asynchronously — without
+    /// this, the answerer's `data_channel` field never gets populated and
+    /// `send()` always fails with `DataChannelClosed`.
+    fn setup_data_channel_handler(
+        pc: Arc<RTCPeerConnection>,
+        data_channel: Arc<Mutex<Option<Arc<RTCDataChannel>>>>,
+        messages_tx: mpsc::Sender<DataChannelMessage>,
+    ) {
+        pc.on_data_channel(Box::new(move |dc: Arc<RTCDataChannel>| {
+            let data_channel = data_channel.clone();
+            let messages_tx = messages_tx.clone();
+            Box::pin(async move {
+                debug!("Remote DataChannel received: {}", dc.label());
+                Self::wire_data_channel_messages(dc.clone(), messages_tx);
+                let mut guard = data_channel.lock().await;
+                *guard = Some(dc);
+            })
+        }));
+    }
+
+    /// Forward incoming DataChannel messages onto `messages_tx`. Shared by
+    /// both the offerer (channel it created itself) and the answerer
+    /// (channel received via `on_data_channel`).
+    fn wire_data_channel_messages(dc: Arc<RTCDataChannel>, messages_tx: mpsc::Sender<DataChannelMessage>) {
+        dc.on_message(Box::new(move |msg: WebRtcDataChannelMessage| {
+            let tx = messages_tx.clone();
+            Box::pin(async move {
+                debug!("DataChannel message received: {} bytes", msg.data.len());
+                let _ = tx
+                    .send(DataChannelMessage {
+                        data: msg.data.to_vec(),
+                        is_binary: !msg.is_string, // is_string=true means text, so is_binary=false
+                    })
+                    .await;
+            })
+        }));
     }
 
     /// Create SDP offer
@@ -433,5 +461,110 @@ mod tests {
         let sdp = result.unwrap();
         assert!(!sdp.is_empty());
         assert!(sdp.contains("v=0")); // SDP version
+    }
+
+    /// End-to-end: full offer/answer + trickle ICE exchange between two
+    /// local PeerConnections, then a DataChannel message in both
+    /// directions. This specifically exercises the `on_data_channel` fix —
+    /// before it, the answerer's `data_channel` field never got populated
+    /// (nothing installed `on_data_channel`), so `answerer.send()` always
+    /// failed with `DataChannelClosed` and the offerer never received
+    /// anything back, even though the offer/answer/ICE handshake itself
+    /// looked fine.
+    #[tokio::test]
+    async fn test_full_connection_and_data_channel_roundtrip() {
+        use tokio::time::{timeout, Duration};
+
+        let config = Arc::new(WebRtcConfig::test_config());
+
+        let (offerer, mut offerer_ice_rx, mut offerer_msg_rx) =
+            PeerConnection::new_as_offerer(config.clone()).await.unwrap();
+        let (answerer, mut answerer_ice_rx, mut answerer_msg_rx) =
+            PeerConnection::new_as_answerer(config).await.unwrap();
+        let offerer = Arc::new(offerer);
+        let answerer = Arc::new(answerer);
+
+        offerer.create_data_channel("monoterminal").await.unwrap();
+
+        let offer_sdp = offerer.create_offer().await.unwrap();
+        answerer.set_remote_offer(offer_sdp).await.unwrap();
+        let answer_sdp = answerer.create_answer().await.unwrap();
+        offerer.set_remote_answer(answer_sdp).await.unwrap();
+
+        // Trickle ICE both ways (loopback host candidates only — no STUN
+        // needed since both peers are in the same process).
+        let answerer_for_ice = answerer.clone();
+        tokio::spawn(async move {
+            while let Some(candidate) = offerer_ice_rx.recv().await {
+                let _ = answerer_for_ice.add_ice_candidate(candidate).await;
+            }
+        });
+        let offerer_for_ice = offerer.clone();
+        tokio::spawn(async move {
+            while let Some(candidate) = answerer_ice_rx.recv().await {
+                let _ = offerer_for_ice.add_ice_candidate(candidate).await;
+            }
+        });
+
+        // Wait for both sides to report Connected.
+        async fn wait_connected(pc: &PeerConnection) -> bool {
+            for _ in 0..100 {
+                if pc.state().await == PeerConnectionState::Connected {
+                    return true;
+                }
+                tokio::time::sleep(Duration::from_millis(100)).await;
+            }
+            false
+        }
+        assert!(
+            timeout(Duration::from_secs(15), wait_connected(&offerer))
+                .await
+                .unwrap_or(false),
+            "offerer never reached Connected state"
+        );
+        assert!(
+            timeout(Duration::from_secs(15), wait_connected(&answerer))
+                .await
+                .unwrap_or(false),
+            "answerer never reached Connected state"
+        );
+
+        // The DataChannel itself opens asynchronously slightly after the
+        // peer connection state does — poll send() until it stops failing
+        // with DataChannelClosed instead of asserting on the very first try.
+        let mut sent = false;
+        for _ in 0..50 {
+            if offerer.send(b"hello from offerer").await.is_ok() {
+                sent = true;
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+        assert!(sent, "offerer could never send on its DataChannel");
+
+        let received = timeout(Duration::from_secs(5), answerer_msg_rx.recv())
+            .await
+            .expect("timed out waiting for answerer to receive DataChannel message")
+            .expect("answerer message channel closed unexpectedly");
+        assert_eq!(received.data, b"hello from offerer");
+
+        // And the reverse direction — this is the part that was broken:
+        // without on_data_channel, `answerer.send()` always returned
+        // Err(DataChannelClosed) because `data_channel` was never Some.
+        let mut sent_back = false;
+        for _ in 0..50 {
+            if answerer.send(b"hello from answerer").await.is_ok() {
+                sent_back = true;
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+        assert!(sent_back, "answerer could never send on its DataChannel (on_data_channel regression)");
+
+        let received_back = timeout(Duration::from_secs(5), offerer_msg_rx.recv())
+            .await
+            .expect("timed out waiting for offerer to receive DataChannel message")
+            .expect("offerer message channel closed unexpectedly");
+        assert_eq!(received_back.data, b"hello from answerer");
     }
 }

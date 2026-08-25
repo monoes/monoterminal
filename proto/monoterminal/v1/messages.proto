@@ -26,11 +26,27 @@ message Envelope {
     MonitoringData monitoring_data = 17;
 
     // Phase 2 P2P WebRTC Messages (fields 18-30 reserved for Phase 2)
-    // Fields 18-24 reserved for future Phase 2 messages
+    // Fields 18-20 reserved for future Phase 2 messages
+    SearchResponse search_response = 21;  // Phase 4: Scrollback search
+    // Field 22 reserved
+    SearchRequest search_request = 23;    // Phase 4: Scrollback search
+    // Field 24 reserved for future Phase 2 messages
     WebRTCOffer webrtc_offer = 25;
     WebRTCAnswer webrtc_answer = 26;
     ICECandidate ice_candidate = 27;
     // Fields 28-30 reserved for P2PConnectionStatus, PeerHandshake, PeerHandshakeResponse
+
+    // Phase 4 Week 1: Splits/Tabs (ADR-018, task-69)
+    SplitPaneCommand split_pane_command = 32;
+    ClosePaneCommand close_pane_command = 33;
+    FocusPaneCommand focus_pane_command = 34;
+    LayoutUpdate layout_update = 35;
+
+    // Phase 4 Week 1: Bidirectional Clipboard (ADR-020)
+    ClipboardGetRequest clipboard_get_request = 36;
+    ClipboardGetResponse clipboard_get_response = 37;
+    ClipboardSetRequest clipboard_set_request = 38;
+    ClipboardOSC52 clipboard_osc52 = 39;
   }
 }
 
@@ -44,6 +60,10 @@ message AttachRequest {
   uint32 rows = 3;               // Terminal dimensions
   uint32 cols = 4;
   uint64 last_seen_sequence = 5; // For late-joiner sync (0 = full scrollback)
+  string session_name = 6;       // Stable logical key (e.g. "computer/workspace/terminal")
+                                  // used to find-or-create a session so multiple clients
+                                  // referring to the same logical terminal converge on one
+                                  // PTY session. Ignored when session_id is set.
 }
 
 message AttachResponse {
@@ -55,18 +75,21 @@ message AttachResponse {
 message InputData {
   bytes data = 1;         // Raw keyboard input (UTF-8)
   string auth_token = 2;  // JWT Bearer token (EdDSA signed, 15min TTL)
+  optional string pane_id = 3;  // Target pane ID (task-69, default: "pane-0" for backward compat)
 }
 
 message OutputData {
   bytes data = 1;          // PTY output chunk
   uint64 sequence = 2;     // For ordering/dedup
   CompressionType compression = 3;
+  optional string pane_id = 4;  // Which pane produced this (task-69, unset for non-paned sessions)
 }
 
 message ResizeRequest {
   uint32 rows = 1;
   uint32 cols = 2;
   string auth_token = 3;  // JWT Bearer token (EdDSA signed, 15min TTL)
+  optional string pane_id = 4;  // Target pane ID (task-69, default: attached session for back-compat)
 }
 
 message DetachRequest {
@@ -123,6 +146,19 @@ enum ErrorCode {
   RATE_LIMIT_EXCEEDED = 4;
   INVALID_REQUEST = 5;
   SERVER_ERROR = 6;
+
+  // Phase 4: Search error codes
+  INVALID_REGEX = 15;            // Regex pattern failed to compile
+  SEARCH_QUERY_EMPTY = 16;       // Search query string is empty
+
+  // Phase 4: Splits/Tabs error codes (ADR-018, task-69)
+  CANNOT_CLOSE_LAST_PANE = 30;   // Cannot close the last remaining pane
+  INVALID_PANE_ID = 31;          // Pane ID not found in layout tree
+  MAX_PANES_REACHED = 32;        // Maximum 16 panes per session limit reached
+
+  // Phase 4: Clipboard error codes (ADR-020)
+  CLIPBOARD_RATE_LIMIT_EXCEEDED = 40;  // Max 3 clipboard reads per 10 seconds
+  CLIPBOARD_ACCESS_DENIED = 41;        // User denied clipboard access permission
 }
 
 // ============================================================================
@@ -241,4 +277,120 @@ message ICECandidate {
   string candidate = 3;        // ICE candidate string
   optional string sdp_mid = 4;       // SDP media ID
   optional uint32 sdp_mline_index = 5;  // Media line index
+}
+
+// ============================================================================
+// Phase 4: Scrollback Search (Week 1, Day 2-3)
+// ============================================================================
+
+message SearchRequest {
+  string session_id = 1;        // Which session to search
+  string query = 2;             // Search text or regex pattern
+  SearchMode mode = 3;          // TEXT (literal) or REGEX
+  bool case_sensitive = 4;      // Default: false (case-insensitive)
+  bool whole_word = 5;          // Match whole words only (default: false)
+  int32 max_results = 6;        // Limit results (default: 100, max: 1000)
+  int32 start_line = 7;         // Start from line N (default: 0 = beginning)
+  int32 end_line = 8;           // End at line N (default: -1 = current line)
+}
+
+enum SearchMode {
+  SEARCH_MODE_TEXT = 0;         // Literal text search (case-sensitive or insensitive)
+  SEARCH_MODE_REGEX = 1;        // Regular expression search
+}
+
+message SearchResponse {
+  repeated SearchMatch matches = 1;  // Match results (up to max_results)
+  int32 total_matches = 2;           // Total count (may exceed matches.length if truncated)
+  bool truncated = 3;                // true if total_matches > max_results
+}
+
+message SearchMatch {
+  int32 line_number = 1;        // Absolute line number in scrollback (0-indexed)
+  string line_text = 2;         // Full line content (for xterm.js rendering)
+  int32 match_start = 3;        // Character offset where match starts (0-indexed)
+  int32 match_end = 4;          // Character offset where match ends (exclusive)
+}
+// ============================================================================
+// Phase 4 Week 1: Splits/Tabs - Pane Layout (ADR-018, task-69)
+// ============================================================================
+
+// Recursive layout tree structure
+message PaneLayout {
+  oneof pane {
+    TerminalPane terminal = 1;
+    SplitPane split = 2;
+  }
+}
+
+message TerminalPane {
+  string session_id = 1;  // References existing Session (PTY session ID)
+  bool focused = 2;       // Which pane currently has input focus
+  string pane_id = 3;     // Unique pane identifier (e.g., "pane-0", "pane-1")
+}
+
+message SplitPane {
+  enum Direction {
+    HORIZONTAL = 0;  // Left | Right split
+    VERTICAL = 1;    // Top | Bottom split
+  }
+  Direction direction = 1;
+  repeated PaneLayout children = 2;  // Child panes (recursive tree)
+  repeated float ratios = 3;          // Split ratios [0.5, 0.5] = 50/50 split
+}
+
+// Client → Master: Split an existing pane
+message SplitPaneCommand {
+  string pane_id = 1;                 // Which pane to split
+  SplitPane.Direction direction = 2;  // Horizontal or vertical
+  string new_session_shell = 3;       // Shell for new pane (e.g., "/bin/bash", "cmd.exe")
+}
+
+// Client → Master: Close a pane
+message ClosePaneCommand {
+  string pane_id = 1;  // Which pane to close (kills associated PTY session)
+}
+
+// Client → Master: Focus a pane
+message FocusPaneCommand {
+  string pane_id = 1;  // Which pane should receive keyboard input
+}
+
+// Master → Client: Layout tree update
+message LayoutUpdate {
+  PaneLayout root = 1;            // Complete layout tree (replaces client state)
+  string focused_pane_id = 2;     // Currently focused pane ID
+}
+
+// ============================================================================
+// Phase 4 Week 1: Bidirectional Clipboard (ADR-020)
+// ============================================================================
+
+// Server → Client: Request clipboard contents
+message ClipboardGetRequest {
+  string request_id = 1;        // Unique request ID for correlation
+  repeated string mime_types = 2; // Requested MIME types (priority order), e.g., ["text/plain"]
+}
+
+// Client → Server: Clipboard content response
+message ClipboardGetResponse {
+  string request_id = 1;        // Matches ClipboardGetRequest.request_id
+  string content = 2;           // Clipboard text content (empty if denied/error)
+  string mime_type = 3;         // Actual MIME type returned (e.g., "text/plain")
+  bool authorized = 4;          // User granted clipboard read permission
+  string error = 5;             // Error message if failed (empty if success)
+}
+
+// Client → Server: Client initiates clipboard write (optional, for explicit API)
+message ClipboardSetRequest {
+  string content = 1;           // Plain text clipboard content
+  bytes binary_content = 2;     // Optional: binary clipboard (images, etc.) - Phase 5+
+  string mime_type = 3;         // "text/plain", "text/html", etc.
+  uint64 timestamp = 4;         // Client timestamp (for staleness detection)
+}
+
+// Server → Client: OSC 52 clipboard write (existing behavior, now explicit protocol message)
+message ClipboardOSC52 {
+  string content = 1;           // Base64-encoded content from OSC 52 escape sequence
+  string selection = 2;         // "c" (clipboard), "p" (primary), "s" (secondary)
 }

@@ -4,7 +4,8 @@
  * Phase 3: Token Lifecycle Integration
  */
 
-import { WebSocketClient, ConnectionConfig, ConnectionState, type MessageHandler } from './websocket-client';
+import { WebSocketClient, ConnectionState } from './websocket-client';
+import type { ConnectionConfig, MessageHandler } from './websocket-client';
 import { AuthService } from './auth';
 
 export interface AuthWebSocketConfig extends Omit<ConnectionConfig, 'jwtAuth'> {

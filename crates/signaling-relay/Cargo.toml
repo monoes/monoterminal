@@ -1,0 +1,39 @@
+[package]
+name = "monoterminal-signaling-relay"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lib]
+name = "monoterminal_signaling_relay"
+path = "src/lib.rs"
+
+[[bin]]
+name = "signaling-relay"
+path = "src/main.rs"
+
+[dependencies]
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+anyhow = { workspace = true }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1.0"
+clap = { version = "4.5", features = ["derive"] }
+axum = { version = "0.7", features = ["ws"] }
+futures-util = "0.3"
+argon2 = "0.5"
+jsonwebtoken = { workspace = true }
+rusqlite = { workspace = true }
+r2d2 = { workspace = true }
+r2d2_sqlite = { workspace = true }
+rand = "0.8"
+tower-http = { version = "0.5", features = ["cors"] }
+
+[dev-dependencies]
+tokio-tungstenite = { workspace = true }
+tempfile = { workspace = true }
+reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }

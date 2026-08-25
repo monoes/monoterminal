@@ -156,6 +156,7 @@ fn bench_e2e_websocket_rtt(c: &mut Criterion) {
             rate_limiter,
             auth_service.clone(),
             health_tx,
+            None,
             startup_tx,
         )
         .expect("Failed to create server");

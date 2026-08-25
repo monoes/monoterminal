@@ -343,6 +343,7 @@ async fn start_test_server() -> (std::net::SocketAddr, tokio::task::JoinHandle<(
         Arc::new(monoterminal_master::auth::RateLimiter::new()),
         auth_service,
         health_tx,
+        None,
         startup_tx,
     )
     .expect("Failed to create server");

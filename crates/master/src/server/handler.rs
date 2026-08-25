@@ -22,6 +22,7 @@ use crate::auth::{AuthService, Claims};
 use crate::clipboard::ClipboardManager;
 use crate::session::manager::SessionManager;
 use crate::session::{ClientId, SessionId};
+use crate::webrtc::PairingCodeCache;
 use monoterminal_protocol::{envelope, Envelope, ErrorCode};
 
 /// Handle WebSocket connection with bidirectional streaming
@@ -34,6 +35,7 @@ pub async fn handle_websocket(
     clipboard_manager: Arc<ClipboardManager>,
     auth_service: Arc<dyn AuthService>,
     dev_mode: bool,
+    pairing_cache: Option<Arc<PairingCodeCache>>,
 ) -> Result<()> {
     let (mut ws_write, mut ws_read) = ws_stream.split();
     let mut sequence_number: u64 = 0;
@@ -47,6 +49,7 @@ pub async fn handle_websocket(
     // Connection state
     let mut attached_session: Option<SessionId> = None;
     let mut output_rx: Option<mpsc::Receiver<Vec<u8>>> = None;
+    let mut conn_output_tx: Option<mpsc::Sender<Vec<u8>>> = None;
 
     // Main message loop
     loop {
@@ -86,7 +89,9 @@ pub async fn handle_websocket(
                                     client_id,
                                     &mut attached_session,
                                     &mut output_rx,
+                                    &mut conn_output_tx,
                                     peer_addr,
+                                    pairing_cache.as_ref(),
                                 ).await {
                                     Ok(Some(response)) => {
                                         // Encode and send response
@@ -210,6 +215,129 @@ pub async fn handle_websocket(
     Ok(())
 }
 
+/// Handle a WebRTC DataChannel connection with the exact same protocol
+/// processing as `handle_websocket` — only the transport differs. The
+/// DataChannel is negotiated out-of-band via the signaling relay
+/// (`crate::webrtc::signaling_client`); once open, terminal traffic
+/// (Attach/Input/Output/Resize/...) flows over it using the same protobuf
+/// `Envelope` encode/decode and the same `process_message` used by the
+/// direct-WebSocket path, so all session/auth/RBAC logic stays shared.
+pub async fn handle_datachannel_session(
+    peer_connection: Arc<crate::webrtc::PeerConnection>,
+    mut messages_rx: mpsc::Receiver<crate::webrtc::peer_connection::DataChannelMessage>,
+    session_manager: Arc<SessionManager>,
+    clipboard_manager: Arc<ClipboardManager>,
+    auth_service: Arc<dyn AuthService>,
+    dev_mode: bool,
+    pairing_cache: Option<Arc<PairingCodeCache>>,
+) {
+    // P2P connections have no socket peer address — process_message only
+    // uses this for logging, so a placeholder is fine here.
+    let peer_addr: SocketAddr = "127.0.0.1:0".parse().unwrap();
+    let client_id = Uuid::new_v4();
+    let mut sequence_number: u64 = 0;
+
+    info!("DataChannel session started (client_id: {})", client_id);
+
+    let mut attached_session: Option<SessionId> = None;
+    let mut output_rx: Option<mpsc::Receiver<Vec<u8>>> = None;
+    let mut conn_output_tx: Option<mpsc::Sender<Vec<u8>>> = None;
+
+    loop {
+        tokio::select! {
+            // Receive output from PTY (if attached)
+            Some(output_data) = async {
+                match &mut output_rx {
+                    Some(rx) => rx.recv().await,
+                    None => None,
+                }
+            } => {
+                if let Err(e) = peer_connection.send(&output_data).await {
+                    error!("Failed to send output over DataChannel: {}", e);
+                    break;
+                }
+            }
+
+            // Receive message from the DataChannel
+            Some(dc_msg) = messages_rx.recv() => {
+                match Envelope::decode(&dc_msg.data[..]) {
+                    Ok(envelope) => {
+                        match process_message(
+                            envelope,
+                            &session_manager,
+                            &clipboard_manager,
+                            auth_service.as_ref(),
+                            dev_mode,
+                            client_id,
+                            &mut attached_session,
+                            &mut output_rx,
+                            &mut conn_output_tx,
+                            peer_addr,
+                            pairing_cache.as_ref(),
+                        ).await {
+                            Ok(Some(response)) => {
+                                let mut response_bytes = Vec::with_capacity(response.encoded_len());
+                                if let Err(e) = response.encode(&mut response_bytes) {
+                                    error!("Failed to encode DataChannel response: {}", e);
+                                    continue;
+                                }
+
+                                if let Err(e) = peer_connection.send(&response_bytes).await {
+                                    error!("Failed to send DataChannel response: {}", e);
+                                    break;
+                                }
+
+                                sequence_number += 1;
+                            }
+                            Ok(None) => {
+                                debug!("DataChannel message processed, no response needed");
+                            }
+                            Err(e) => {
+                                error!("Failed to process DataChannel message: {}", e);
+
+                                let error_response = create_error_envelope(sequence_number, e);
+                                let mut error_bytes = Vec::with_capacity(error_response.encoded_len());
+                                if error_response.encode(&mut error_bytes).is_ok()
+                                    && peer_connection.send(&error_bytes).await.is_err()
+                                {
+                                    error!("Failed to send DataChannel error response");
+                                    break;
+                                }
+
+                                sequence_number += 1;
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        error!("Failed to decode Protocol Buffer message from DataChannel: {}", e);
+                    }
+                }
+            }
+
+            else => {
+                debug!("DataChannel session channels closed (client_id: {})", client_id);
+                break;
+            }
+        }
+    }
+
+    if let Some(session_id) = attached_session {
+        if let Err(e) = session_manager.detach_client(session_id, client_id).await {
+            error!(
+                "Failed to detach P2P client {} from session {}: {}",
+                client_id, session_id, e
+            );
+        } else {
+            info!(
+                "P2P client {} detached from session {} on disconnect",
+                client_id, session_id
+            );
+        }
+    }
+
+    info!("DataChannel session stopped (client_id: {})", client_id);
+}
+
 /// Verify JWT authentication token
 ///
 /// SRS §3.2.2: Ed25519/JWT authentication with 15-minute access tokens
@@ -237,7 +365,14 @@ async fn process_message(
     client_id: ClientId,
     attached_session: &mut Option<SessionId>,
     output_rx: &mut Option<mpsc::Receiver<Vec<u8>>>,
+    // Kept alongside `output_rx` (not just used once at attach time) so that
+    // splitting a pane can attach the SAME connection to the new pane's
+    // session too — every pane's output then arrives pre-tagged with its
+    // pane_id (see OutputData.pane_id) over this one shared channel, without
+    // needing any dynamic multi-stream fan-in machinery in the select loop.
+    conn_output_tx: &mut Option<mpsc::Sender<Vec<u8>>>,
     peer_addr: SocketAddr,
+    pairing_cache: Option<&Arc<PairingCodeCache>>,
 ) -> Result<Option<Envelope>> {
     match envelope.message {
         Some(envelope::Message::AttachRequest(req)) => {
@@ -273,7 +408,30 @@ async fn process_message(
             };
 
             // Parse or create session_id (protocol: "UUID or empty for new session")
-            let session_id = if req.session_id.is_empty() {
+            let session_id = if !req.session_id.is_empty() {
+                // Attach to existing session
+                Uuid::parse_str(&req.session_id).map_err(|e| {
+                    ServerError::InvalidMessage(format!("Invalid session_id UUID: {}", e))
+                })?
+            } else if !req.session_name.is_empty() {
+                // Find-or-create by stable logical key, so multiple clients
+                // referring to the same logical terminal converge on one session
+                info!(
+                    "Resolving named session '{}' for {} ({}x{}, user_id={:?})",
+                    req.session_name, peer_addr, req.rows, req.cols, user_id
+                );
+                session_manager
+                    .resolve_named_session(
+                        &req.session_name,
+                        user_id.clone(),
+                        req.rows as u16,
+                        req.cols as u16,
+                    )
+                    .await
+                    .map_err(|e| {
+                        ServerError::InvalidMessage(format!("Failed to resolve session: {}", e))
+                    })?
+            } else {
                 // Create new session with requested dimensions (Phase 2: set owner from JWT)
                 info!(
                     "Creating new session for {} ({}x{}, user_id={:?})",
@@ -290,19 +448,14 @@ async fn process_message(
                     .map_err(|e| {
                         ServerError::InvalidMessage(format!("Failed to create session: {}", e))
                     })?
-            } else {
-                // Attach to existing session
-                Uuid::parse_str(&req.session_id).map_err(|e| {
-                    ServerError::InvalidMessage(format!("Invalid session_id UUID: {}", e))
-                })?
             };
 
             // Create output channel for this client
-            let (output_tx, rx) = mpsc::channel(256); // 256 messages ≈ 1MB buffer per SRS §3.1.4
+            let (client_output_tx, rx) = mpsc::channel(256); // 256 messages ≈ 1MB buffer per SRS §3.1.4
 
             // Attach client to session (Phase 2: RBAC permission check)
             let snapshot = session_manager
-                .attach_client_with_user(session_id, client_id, output_tx, user_id.clone())
+                .attach_client_with_user(session_id, client_id, client_output_tx.clone(), user_id.clone())
                 .await
                 .map_err(|e| match e {
                     crate::session::SessionError::NotFound(_) => {
@@ -311,11 +464,40 @@ async fn process_message(
                     _ => ServerError::InvalidMessage(format!("Attach failed: {}", e)),
                 })?;
 
-            // Store connection state
+            // Store connection state. `conn_output_tx` is kept (not just used
+            // once here) so that a later SplitPaneCommand can attach this
+            // same connection to a newly created pane's session too.
             *attached_session = Some(session_id);
             *output_rx = Some(rx);
+            *conn_output_tx = Some(client_output_tx.clone());
 
             info!("Client {} attached to session {}", client_id, session_id);
+
+            // Phase 4: if this workspace already has a split layout (e.g. a
+            // reconnect after panes were created), attach this connection to
+            // every other pane's session too — otherwise only pane-0's
+            // output would ever reach this client.
+            for (pane_id, other_session_id) in
+                session_manager.sibling_pane_sessions(session_id).await
+            {
+                if other_session_id == session_id {
+                    continue;
+                }
+                if let Err(e) = session_manager
+                    .attach_client_with_user(
+                        other_session_id,
+                        client_id,
+                        client_output_tx.clone(),
+                        user_id.clone(),
+                    )
+                    .await
+                {
+                    warn!(
+                        "Failed to attach client {} to sibling pane '{}' (session {}): {}",
+                        client_id, pane_id, other_session_id, e
+                    );
+                }
+            }
 
             // Encode scrollback for late-joiner sync with line numbers
             let scrollback_lines: Vec<monoterminal_protocol::Line> = snapshot
@@ -347,7 +529,7 @@ async fn process_message(
                 sequence_number: envelope.sequence_number,
                 message: Some(envelope::Message::AttachResponse(
                     monoterminal_protocol::AttachResponse {
-                        session_id: req.session_id,
+                        session_id: session_id.to_string(),
                         metadata,
                         scrollback: scrollback_lines,
                     },
@@ -388,9 +570,12 @@ async fn process_message(
             // Backward compatibility: If pane_id is None, fall back to old behavior (attached session)
             if input.pane_id.is_some() && !input.pane_id.as_ref().unwrap().is_empty() {
                 // Phase 4: Route to specified pane
+                let root_session_id = attached_session.ok_or_else(|| {
+                    ServerError::InvalidMessage("Not attached to session".to_string())
+                })?;
                 let pane_id = input.pane_id.as_deref();
                 session_manager
-                    .send_input_to_pane(pane_id, &input.data, user_id)
+                    .send_input_to_pane(root_session_id, pane_id, &input.data, user_id)
                     .await
                     .map_err(|e| ServerError::InvalidMessage(format!("Send input failed: {}", e)))?;
             } else {
@@ -436,20 +621,37 @@ async fn process_message(
             };
 
             // Ensure client is attached
-            let session_id = attached_session.ok_or_else(|| {
+            let root_session_id = attached_session.ok_or_else(|| {
                 ServerError::InvalidMessage("Not attached to session".to_string())
             })?;
 
-            // Resize session PTY (Phase 2: RBAC permission check)
-            session_manager
-                .resize_session_with_user(
-                    session_id,
-                    resize.rows as u16,
-                    resize.cols as u16,
-                    user_id,
-                )
-                .await
-                .map_err(|e| ServerError::InvalidMessage(format!("Resize failed: {}", e)))?;
+            // Phase 4: resize a specific pane (if pane_id specified), else
+            // fall back to the attached/root session (Phase 1-3 behavior).
+            // Each pane is its own independent PTY, so without pane-aware
+            // resizing every pane but the root would desync from its actual
+            // rendered size the moment the layout changes.
+            if resize.pane_id.is_some() && !resize.pane_id.as_ref().unwrap().is_empty() {
+                session_manager
+                    .resize_pane(
+                        root_session_id,
+                        resize.pane_id.as_deref(),
+                        resize.rows as u16,
+                        resize.cols as u16,
+                        user_id,
+                    )
+                    .await
+                    .map_err(|e| ServerError::InvalidMessage(format!("Resize failed: {}", e)))?;
+            } else {
+                session_manager
+                    .resize_session_with_user(
+                        root_session_id,
+                        resize.rows as u16,
+                        resize.cols as u16,
+                        user_id,
+                    )
+                    .await
+                    .map_err(|e| ServerError::InvalidMessage(format!("Resize failed: {}", e)))?;
+            }
 
             // No response needed
             Ok(None)
@@ -462,7 +664,23 @@ async fn process_message(
                 ServerError::InvalidMessage("Not attached to session".to_string())
             })?;
 
-            // Detach from session
+            // Detach from the root session and every sibling pane session
+            // this connection was also attached to (Phase 4: Splits/Tabs) —
+            // otherwise closing/reopening a workspace with panes would leak
+            // an attachment per pane on the now-abandoned sessions.
+            for (pane_id, other_session_id) in
+                session_manager.sibling_pane_sessions(session_id).await
+            {
+                if other_session_id == session_id {
+                    continue;
+                }
+                if let Err(e) = session_manager.detach_client(other_session_id, client_id).await {
+                    warn!(
+                        "Failed to detach client {} from pane '{}' (session {}): {}",
+                        client_id, pane_id, other_session_id, e
+                    );
+                }
+            }
             session_manager
                 .detach_client(session_id, client_id)
                 .await
@@ -471,6 +689,7 @@ async fn process_message(
             // Clear connection state
             *attached_session = None;
             *output_rx = None;
+            *conn_output_tx = None;
 
             info!("Client {} detached from session {}", client_id, session_id);
 
@@ -485,7 +704,11 @@ async fn process_message(
 
             // Execute monomind CLI command and return JSON response
             // Commands: "status", "agents", "memory", "orgs", etc.
-            let result = execute_monomind_command(&req.command, &req.params).await;
+            let result = if req.command == "account_pairing_code" {
+                execute_account_pairing_code(pairing_cache).await
+            } else {
+                execute_monomind_command(&req.command, &req.params).await
+            };
 
             let response = Envelope {
                 sequence_number: envelope.sequence_number,
@@ -685,21 +908,41 @@ async fn process_message(
                 None
             };
 
+            let root_session_id = attached_session.ok_or_else(|| {
+                ServerError::InvalidMessage("Not attached to session".to_string())
+            })?;
+
             // Call SessionManager to handle split (dimensions derived from existing pane's session)
-            let layout_update = session_manager
+            let result = session_manager
                 .handle_split_pane(
+                    root_session_id,
                     &cmd.pane_id,
-                    cmd.direction().into(),
+                    crate::layout::SplitDirection::from(cmd.direction()),
                     Some(cmd.new_session_shell.clone()),
-                    user_id,
+                    user_id.clone(),
                 )
                 .await
                 .map_err(|e| ServerError::InvalidMessage(format!("Split pane failed: {}", e)))?;
 
+            // Attach this connection to the new pane's session too — without
+            // this, the new pane would exist in the layout but never
+            // actually stream any terminal output to this client.
+            if let Some(tx) = conn_output_tx.as_ref() {
+                if let Err(e) = session_manager
+                    .attach_client_with_user(result.new_session_id, client_id, tx.clone(), user_id)
+                    .await
+                {
+                    warn!(
+                        "Failed to attach client {} to new pane '{}' (session {}): {}",
+                        client_id, result.new_pane_id, result.new_session_id, e
+                    );
+                }
+            }
+
             // Return LayoutUpdate to client
             let response = Envelope {
                 sequence_number: envelope.sequence_number,
-                message: Some(envelope::Message::LayoutUpdate(layout_update)),
+                message: Some(envelope::Message::LayoutUpdate(result.layout_update)),
             };
 
             Ok(Some(response))
@@ -723,9 +966,13 @@ async fn process_message(
                 None
             };
 
+            let root_session_id = attached_session.ok_or_else(|| {
+                ServerError::InvalidMessage("Not attached to session".to_string())
+            })?;
+
             // Call SessionManager to handle close
             let layout_update = session_manager
-                .handle_close_pane(&cmd.pane_id, user_id)
+                .handle_close_pane(root_session_id, &cmd.pane_id, user_id)
                 .await
                 .map_err(|e| ServerError::InvalidMessage(format!("Close pane failed: {}", e)))?;
 
@@ -750,9 +997,13 @@ async fn process_message(
                 ));
             }
 
+            let root_session_id = attached_session.ok_or_else(|| {
+                ServerError::InvalidMessage("Not attached to session".to_string())
+            })?;
+
             // Call SessionManager to handle focus
             let layout_update = session_manager
-                .handle_focus_pane(&cmd.pane_id)
+                .handle_focus_pane(root_session_id, &cmd.pane_id)
                 .await
                 .map_err(|e| ServerError::InvalidMessage(format!("Focus pane failed: {}", e)))?;
 
@@ -978,6 +1229,45 @@ async fn execute_monomind_command(
                     "error": format!("Task join failed: {}", e),
                 })
                 .to_string(),
+                ErrorCode::ServerError,
+            )
+        }
+    }
+}
+
+/// Fetch (or return the cached) SaaS device-pairing code for this daemon.
+///
+/// # Returns
+///
+/// * `(String, ErrorCode)` - (JSON response, error code). Success uses
+///   `ErrorCode::Unknown` as the "no error" sentinel, matching
+///   `execute_monomind_command`'s convention.
+async fn execute_account_pairing_code(
+    pairing_cache: Option<&Arc<PairingCodeCache>>,
+) -> (String, ErrorCode) {
+    let Some(cache) = pairing_cache else {
+        return (
+            serde_json::json!({
+                "error": "P2P is not enabled on this daemon (no --relay-url configured)"
+            })
+            .to_string(),
+            ErrorCode::ServerError,
+        );
+    };
+
+    match cache.get_or_refresh().await {
+        Ok(code) => (
+            serde_json::json!({
+                "code": code.code,
+                "expires_at": code.expires_at,
+            })
+            .to_string(),
+            ErrorCode::Unknown,
+        ),
+        Err(e) => {
+            warn!("Failed to fetch pairing code: {}", e);
+            (
+                serde_json::json!({ "error": e.to_string() }).to_string(),
                 ErrorCode::ServerError,
             )
         }

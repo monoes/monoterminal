@@ -1,15 +1,14 @@
 import { useState, useEffect } from 'react';
+import { IconClose } from './icons';
 import './MonomindPanel.css';
 import {
-  HealthStatus,
-  HealthCheckResponse,
-  UpgradeResponse,
   IssueSeverity,
   computeHealthStatus,
   formatTimestamp,
   getStatusEmoji,
   getStatusText,
 } from '../types/health';
+import type { HealthStatus, HealthCheckResponse, UpgradeResponse } from '../types/health';
 import { WebSocketClient } from '../lib/websocket-client';
 
 interface MonomindPanelProps {
@@ -29,11 +28,20 @@ interface MonomindPanelProps {
  * - ✅ WebSocket integration (task-8)
  * - ⏳ Full dashboard data (task-12)
  */
+interface PairingCode {
+  code: string;
+  expires_at: number;
+}
+
 export function MonomindPanel({ sessionId, isVisible, onClose, wsClient }: MonomindPanelProps) {
   const [healthStatus, setHealthStatus] = useState<HealthStatus>('unknown');
   const [healthData, setHealthData] = useState<HealthCheckResponse | null>(null);
   const [isChecking, setIsChecking] = useState(false);
   const [isUpgrading, setIsUpgrading] = useState(false);
+
+  const [pairingCode, setPairingCode] = useState<PairingCode | null>(null);
+  const [pairingError, setPairingError] = useState<string | null>(null);
+  const [isLoadingPairingCode, setIsLoadingPairingCode] = useState(false);
 
   useEffect(() => {
     if (isVisible && sessionId) {
@@ -41,6 +49,39 @@ export function MonomindPanel({ sessionId, isVisible, onClose, wsClient }: Monom
       checkHealth();
     }
   }, [isVisible, sessionId]);
+
+  useEffect(() => {
+    if (isVisible) {
+      fetchPairingCode();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isVisible]);
+
+  const fetchPairingCode = async () => {
+    if (!wsClient) return;
+    setIsLoadingPairingCode(true);
+    setPairingError(null);
+    try {
+      const response = await wsClient.sendDashboardRequest({
+        command: 'account_pairing_code',
+        params: {},
+      });
+      if (response.error !== 0) {
+        const parsed = JSON.parse(response.jsonData || '{}');
+        setPairingError(parsed.error || 'P2P is not configured on this computer.');
+        setPairingCode(null);
+      } else {
+        const parsed = JSON.parse(response.jsonData) as PairingCode;
+        setPairingCode(parsed);
+      }
+    } catch (error) {
+      console.error('Failed to fetch pairing code:', error);
+      setPairingError('Failed to fetch pairing code.');
+      setPairingCode(null);
+    } finally {
+      setIsLoadingPairingCode(false);
+    }
+  };
 
   const checkHealth = async () => {
     if (!wsClient) {
@@ -117,7 +158,7 @@ export function MonomindPanel({ sessionId, isVisible, onClose, wsClient }: Monom
           aria-label="Close panel"
           data-testid="close-button"
         >
-          ×
+          <IconClose width={16} height={16} />
         </button>
       </div>
 
@@ -233,6 +274,40 @@ export function MonomindPanel({ sessionId, isVisible, onClose, wsClient }: Monom
             data-testid="upgrade-button"
           >
             {isUpgrading ? 'Upgrading...' : 'Upgrade to Latest'}
+          </button>
+        </section>
+
+        {/* Account / pairing section */}
+        <section className="panel-section" data-testid="account-section">
+          <h3>Account</h3>
+          <div className="placeholder-content" data-testid="account-pairing">
+            {isLoadingPairingCode && <p className="note">Requesting pairing code...</p>}
+            {!isLoadingPairingCode && pairingCode && (
+              <>
+                <p className="note">
+                  Enter this code on your account's web app to link this computer:
+                </p>
+                <div className="pairing-code" data-testid="pairing-code">
+                  {pairingCode.code}
+                </div>
+                <p className="last-check" data-testid="pairing-code-expiry">
+                  Expires: {formatTimestamp(pairingCode.expires_at)}
+                </p>
+              </>
+            )}
+            {!isLoadingPairingCode && !pairingCode && pairingError && (
+              <p className="note" data-testid="pairing-code-error">
+                {pairingError}
+              </p>
+            )}
+          </div>
+          <button
+            className="action-btn secondary"
+            onClick={fetchPairingCode}
+            disabled={isLoadingPairingCode}
+            data-testid="refresh-pairing-code"
+          >
+            {isLoadingPairingCode ? 'Requesting...' : 'Refresh Code'}
           </button>
         </section>
 

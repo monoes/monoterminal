@@ -121,6 +121,12 @@ pub struct Session {
 
     /// Monomind detection flag (SRS §2.4.1)
     pub monomind_detected: bool,
+
+    /// Which pane this session is (e.g. "pane-0", "pane-1") if it belongs to
+    /// a split layout, so its output can be tagged for the client to route
+    /// to the right xterm instance (Phase 4: Splits/Tabs, ADR-018). `None`
+    /// for a plain, non-paned session.
+    pub pane_id: Option<String>,
     // NOTE: AbortOnDrop pattern moved to SessionContainer (Aug 2026)
     // Task JoinHandles stored in SessionContainer (output_task, monomind_task)
     // SessionContainer::Drop aborts tasks to prevent memory leaks
@@ -150,6 +156,7 @@ impl Session {
             created_at: Instant::now(),
             last_activity: Instant::now(),
             monomind_detected: false,
+            pane_id: None,
         }
     }
 

@@ -9,7 +9,9 @@ pub mod config;
 pub mod error;
 pub mod handshake;
 pub mod ice;
+pub mod pairing;
 pub mod peer_connection;
+pub mod signaling_client;
 pub mod transport;
 
 #[cfg(test)]
@@ -18,6 +20,7 @@ mod tests;
 pub use config::WebRtcConfig;
 pub use handshake::{HandshakeVerifier, PeerHandshake};
 pub use ice::IceCandidateGatherer;
+pub use pairing::{PairingCode, PairingCodeCache};
 pub use peer_connection::{PeerConnection, PeerConnectionState};
 pub use transport::DualTransport;
 

@@ -1,11 +1,14 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Terminal } from './components/Terminal';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AuthGate } from './components/AuthGate';
+import { Sidebar } from './components/Sidebar';
+import { WorkspaceSession } from './components/WorkspaceSession';
+import type { WorkspacePanes, WorkspaceSessionHandle } from './components/WorkspaceSession';
 import { MobileKeyboard } from './components/MobileKeyboard';
 import { MonomindPanel } from './components/MonomindPanel';
-import { MonomindSuggestion } from './components/MonomindSuggestion';
-import { ConnectionStatus } from './components/ConnectionStatus';
 import { InstallPrompt } from './components/InstallPrompt';
-import { WebSocketClient, ConnectionState, DetectionResponse } from './lib/websocket-client';
+import { IconClose, IconMenu, IconPanel, IconPrompt } from './components/icons';
+import { WebSocketClient } from './lib/websocket-client';
+import { useWorkspace } from './state/WorkspaceContext';
 import './App.css';
 
 // Detect if running on mobile
@@ -14,125 +17,47 @@ const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/
 );
 
 function App() {
-  const [connectionState, setConnectionState] = useState<ConnectionState>(
-    ConnectionState.DISCONNECTED
-  );
-  const [wsClient] = useState(
-    () =>
-      new WebSocketClient({
-        url: import.meta.env.VITE_WS_URL || 'wss://localhost:5000',
-        autoReconnect: true,
-        reconnectInterval: 3000,
-        maxReconnectAttempts: 5,
-      })
-  );
+  const { computers, workspaces, activeWorkspaceId } = useWorkspace();
   const [showMonomindPanel, setShowMonomindPanel] = useState(false);
-  const [sessionId, setSessionId] = useState<string>();
-  const [detectionData, setDetectionData] = useState<DetectionResponse | null>(null);
-  const [showSuggestion, setShowSuggestion] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const sessionRefs = useRef<Map<string, WorkspaceSessionHandle | null>>(new Map());
+  const [panesByWorkspace, setPanesByWorkspace] = useState<Map<string, WorkspacePanes>>(new Map());
 
-  // Terminal data handler
-  const handleTerminalData = useCallback(
-    (data: string) => {
-      wsClient.sendInput(data);
-    },
-    [wsClient]
+  const handleSelectPane = useCallback((workspaceId: string, paneId: string) => {
+    sessionRefs.current.get(workspaceId)?.focusPane(paneId);
+  }, []);
+
+  const activeWorkspace = useMemo(
+    () => workspaces.find((w) => w.id === activeWorkspaceId),
+    [workspaces, activeWorkspaceId]
+  );
+  const activeComputer = useMemo(
+    () => computers.find((c) => c.id === activeWorkspace?.computerId),
+    [computers, activeWorkspace]
   );
 
-  // Handle terminal resize
-  const handleTerminalResize = useCallback(
-    (cols: number, rows: number) => {
-      wsClient.resize(rows, cols);
-    },
-    [wsClient]
-  );
+  const [monomindClient, setMonomindClient] = useState<WebSocketClient | null>(null);
 
-  // Mobile keyboard key handler
+  useEffect(() => {
+    if (!activeComputer) return;
+    const client = new WebSocketClient({
+      url: activeComputer.wsUrl,
+      autoReconnect: true,
+      reconnectInterval: 3000,
+      maxReconnectAttempts: 5,
+    });
+    client.connect();
+    setMonomindClient(client);
+    return () => client.disconnect();
+  }, [activeComputer]);
+
   const handleMobileKey = useCallback(
     (key: string) => {
-      handleTerminalData(key);
+      if (!activeWorkspaceId) return;
+      sessionRefs.current.get(activeWorkspaceId)?.sendInputToFocused(key);
     },
-    [handleTerminalData]
+    [activeWorkspaceId]
   );
-
-  // Monomind suggestion handlers
-  const handleSuggestionDismiss = () => {
-    setShowSuggestion(false);
-    // TODO: Send dismiss request to backend to create .monoterminal-dismiss file
-    // This will be implemented when backend dismiss API is ready
-  };
-
-  const handleSuggestionOpenDashboard = () => {
-    setShowSuggestion(false);
-    setShowMonomindPanel(true);
-  };
-
-  // WebSocket message handlers
-  useEffect(() => {
-    wsClient.setHandlers({
-      onAttachResponse: async (response) => {
-        console.log('Attached to session:', response.sessionId);
-        setSessionId(response.sessionId);
-
-        // Render scrollback (last 10k lines per SRS §3.1.1)
-        response.scrollback.forEach((line) => {
-          const decoder = new TextDecoder();
-          const text = decoder.decode(line.data);
-          (window as any).terminal?.write(text);
-        });
-
-        // Per SRS §2.4.1: Run detection on session attach
-        try {
-          const detection = await wsClient.sendDetectionRequest({
-            projectDir: response.metadata.workingDir || '',
-          });
-          setDetectionData(detection);
-
-          // Show suggestion if found and not dismissed
-          if (detection.found && detection.suggestInstall && !detection.dismissFileExists) {
-            setShowSuggestion(true);
-          }
-        } catch (error) {
-          console.error('Detection request failed:', error);
-        }
-      },
-      onOutputData: (data) => {
-        // Decode and write terminal output
-        const decoder = new TextDecoder();
-        const text = decoder.decode(data.data);
-        (window as any).terminal?.write(text);
-      },
-      onErrorResponse: (error) => {
-        console.error('Server error:', error.code, error.message);
-        // TODO: Show error UI
-      },
-    });
-  }, [wsClient]);
-
-  // Connection state listener and auto-attach
-  useEffect(() => {
-    const unsubscribe = wsClient.onStateChange((state) => {
-      setConnectionState(state);
-
-      // Auto-attach to session when connected
-      if (state === ConnectionState.CONNECTED) {
-        // Get terminal dimensions
-        const cols = (window as any).terminal?.cols || 80;
-        const rows = (window as any).terminal?.rows || 24;
-
-        // Attach to session (empty sessionId = create new)
-        wsClient.attach('', rows, cols);
-      }
-    });
-
-    // Auto-connect on mount
-    wsClient.connect();
-
-    return () => {
-      unsubscribe();
-      wsClient.disconnect();
-    };
-  }, [wsClient]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -149,14 +74,23 @@ function App() {
   }, []);
 
   return (
-    <div className="app">
-      {/* Header with connection status and controls */}
+    <AuthGate>
+    <div className="app app-with-sidebar">
+      {/* Header with controls */}
       <header className="app-header">
         <div className="header-left">
+          <button
+            className="sidebar-toggle-btn"
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Open sidebar"
+            title="Open sidebar"
+          >
+            <IconMenu width={20} height={20} />
+          </button>
           <h1>MONOTERMINAL</h1>
-        </div>
-        <div className="header-center">
-          <ConnectionStatus state={connectionState} onReconnect={() => wsClient.connect()} />
+          {activeWorkspace && (
+            <span className="active-terminal-label">{activeWorkspace.name}</span>
+          )}
         </div>
         <div className="header-right">
           <button
@@ -166,35 +100,70 @@ function App() {
             title="Toggle Monomind panel (Ctrl+M)"
             data-testid="dashboard-toggle"
           >
-            {showMonomindPanel ? '✗' : '☰'}
+            {showMonomindPanel ? <IconClose width={17} height={17} /> : <IconPanel width={17} height={17} />}
           </button>
         </div>
       </header>
 
-      {/* Monomind detection suggestion banner */}
-      {showSuggestion && detectionData && (
-        <MonomindSuggestion
-          bannerText={detectionData.bannerText || 'Monomind project detected!'}
-          monomindRoot={detectionData.monomindRoot}
-          onDismiss={handleSuggestionDismiss}
-          onOpenDashboard={handleSuggestionOpenDashboard}
+      <div className="app-body">
+        <Sidebar
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          panesByWorkspace={panesByWorkspace}
+          onSelectPane={handleSelectPane}
         />
-      )}
 
-      {/* Main terminal area */}
-      <main className={`app-main ${showMonomindPanel ? 'panel-open' : ''}`}>
-        <div className="terminal-container">
-          <Terminal onData={handleTerminalData} onResize={handleTerminalResize} />
-        </div>
+        {/* Main terminal area */}
+        <main className={`app-main ${showMonomindPanel ? 'panel-open' : ''}`}>
+          <div className="terminal-container">
+            {workspaces.length === 0 ? (
+              <div className="no-terminals">
+                <IconPrompt width={28} height={28} />
+                <p>No terminal open</p>
+                <span>Use the sidebar to add a computer and a workspace.</span>
+              </div>
+            ) : (
+              // Every workspace is mounted (hidden via CSS when not active),
+              // not unmounted, so its connection and panes keep running in
+              // the background while another workspace is shown — matching
+              // real terminal multiplexers, where switching views never
+              // kills the underlying sessions.
+              workspaces.map((workspace) => {
+                const computer = computers.find((c) => c.id === workspace.computerId);
+                if (!computer) return null;
+                // Derived from names, not a local random id, so the same
+                // workspace opened from another browser/device/tab attaches
+                // to the same live layout (see resolve_named_session).
+                const sessionKey = `${computer.name}/${workspace.name}`;
+                return (
+                  <WorkspaceSession
+                    key={workspace.id}
+                    ref={(handle) => {
+                      sessionRefs.current.set(workspace.id, handle);
+                    }}
+                    computer={computer}
+                    workspaceId={workspace.id}
+                    visible={workspace.id === activeWorkspaceId}
+                    sessionKey={sessionKey}
+                    onPanesChange={(panes) =>
+                      setPanesByWorkspace((m) => new Map(m).set(workspace.id, panes))
+                    }
+                  />
+                );
+              })
+            )}
+          </div>
 
-        {/* Monomind panel */}
-        <MonomindPanel
-          sessionId={sessionId}
-          isVisible={showMonomindPanel}
-          onClose={() => setShowMonomindPanel(false)}
-          wsClient={wsClient}
-        />
-      </main>
+          {/* Monomind panel */}
+          {monomindClient && (
+            <MonomindPanel
+              isVisible={showMonomindPanel}
+              onClose={() => setShowMonomindPanel(false)}
+              wsClient={monomindClient}
+            />
+          )}
+        </main>
+      </div>
 
       {/* Mobile keyboard (hidden on desktop) */}
       {isMobile && <MobileKeyboard onKey={handleMobileKey} />}
@@ -202,6 +171,7 @@ function App() {
       {/* PWA Install Prompt (SRS §2.2: 2 visits + 5 min engagement) */}
       <InstallPrompt />
     </div>
+    </AuthGate>
   );
 }
 

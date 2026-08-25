@@ -5,7 +5,7 @@ pub struct Envelope {
     pub sequence_number: u64,
     #[prost(
         oneof = "envelope::Message",
-        tags = "2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 25, 26, 27"
+        tags = "2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 21, 23, 25, 26, 27, 32, 33, 34, 35, 36, 37, 38, 39"
     )]
     pub message: ::core::option::Option<envelope::Message>,
 }
@@ -46,7 +46,17 @@ pub mod envelope {
         #[prost(message, tag = "17")]
         MonitoringData(super::MonitoringData),
         /// Phase 2 P2P WebRTC Messages (fields 18-30 reserved for Phase 2)
-        /// Fields 18-24 reserved for future Phase 2 messages
+        /// Fields 18-20 reserved for future Phase 2 messages
+        ///
+        /// Phase 4: Scrollback search
+        #[prost(message, tag = "21")]
+        SearchResponse(super::SearchResponse),
+        /// Field 22 reserved
+        ///
+        /// Phase 4: Scrollback search
+        #[prost(message, tag = "23")]
+        SearchRequest(super::SearchRequest),
+        /// Field 24 reserved for future Phase 2 messages
         #[prost(message, tag = "25")]
         WebrtcOffer(super::WebRtcOffer),
         #[prost(message, tag = "26")]
@@ -54,6 +64,24 @@ pub mod envelope {
         /// Fields 28-30 reserved for P2PConnectionStatus, PeerHandshake, PeerHandshakeResponse
         #[prost(message, tag = "27")]
         IceCandidate(super::IceCandidate),
+        /// Phase 4 Week 1: Splits/Tabs (ADR-018, task-69)
+        #[prost(message, tag = "32")]
+        SplitPaneCommand(super::SplitPaneCommand),
+        #[prost(message, tag = "33")]
+        ClosePaneCommand(super::ClosePaneCommand),
+        #[prost(message, tag = "34")]
+        FocusPaneCommand(super::FocusPaneCommand),
+        #[prost(message, tag = "35")]
+        LayoutUpdate(super::LayoutUpdate),
+        /// Phase 4 Week 1: Bidirectional Clipboard (ADR-020)
+        #[prost(message, tag = "36")]
+        ClipboardGetRequest(super::ClipboardGetRequest),
+        #[prost(message, tag = "37")]
+        ClipboardGetResponse(super::ClipboardGetResponse),
+        #[prost(message, tag = "38")]
+        ClipboardSetRequest(super::ClipboardSetRequest),
+        #[prost(message, tag = "39")]
+        ClipboardOsc52(super::ClipboardOsc52),
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -72,6 +100,9 @@ pub struct AttachRequest {
     /// For late-joiner sync (0 = full scrollback)
     #[prost(uint64, tag = "5")]
     pub last_seen_sequence: u64,
+    /// Stable logical key (e.g. "computer/workspace/terminal")
+    #[prost(string, tag = "6")]
+    pub session_name: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct AttachResponse {
@@ -91,6 +122,9 @@ pub struct InputData {
     /// JWT Bearer token (EdDSA signed, 15min TTL)
     #[prost(string, tag = "2")]
     pub auth_token: ::prost::alloc::string::String,
+    /// Target pane ID (task-69, default: "pane-0" for backward compat)
+    #[prost(string, optional, tag = "3")]
+    pub pane_id: ::core::option::Option<::prost::alloc::string::String>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct OutputData {
@@ -102,6 +136,9 @@ pub struct OutputData {
     pub sequence: u64,
     #[prost(enumeration = "CompressionType", tag = "3")]
     pub compression: i32,
+    /// Which pane produced this (task-69, unset for non-paned sessions)
+    #[prost(string, optional, tag = "4")]
+    pub pane_id: ::core::option::Option<::prost::alloc::string::String>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ResizeRequest {
@@ -112,6 +149,9 @@ pub struct ResizeRequest {
     /// JWT Bearer token (EdDSA signed, 15min TTL)
     #[prost(string, tag = "3")]
     pub auth_token: ::prost::alloc::string::String,
+    /// Target pane ID (task-69, default: attached session for back-compat)
+    #[prost(string, optional, tag = "4")]
+    pub pane_id: ::core::option::Option<::prost::alloc::string::String>,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct DetachRequest {
@@ -356,6 +396,232 @@ pub struct IceCandidate {
     #[prost(uint32, optional, tag = "5")]
     pub sdp_mline_index: ::core::option::Option<u32>,
 }
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SearchRequest {
+    /// Which session to search
+    #[prost(string, tag = "1")]
+    pub session_id: ::prost::alloc::string::String,
+    /// Search text or regex pattern
+    #[prost(string, tag = "2")]
+    pub query: ::prost::alloc::string::String,
+    /// TEXT (literal) or REGEX
+    #[prost(enumeration = "SearchMode", tag = "3")]
+    pub mode: i32,
+    /// Default: false (case-insensitive)
+    #[prost(bool, tag = "4")]
+    pub case_sensitive: bool,
+    /// Match whole words only (default: false)
+    #[prost(bool, tag = "5")]
+    pub whole_word: bool,
+    /// Limit results (default: 100, max: 1000)
+    #[prost(int32, tag = "6")]
+    pub max_results: i32,
+    /// Start from line N (default: 0 = beginning)
+    #[prost(int32, tag = "7")]
+    pub start_line: i32,
+    /// End at line N (default: -1 = current line)
+    #[prost(int32, tag = "8")]
+    pub end_line: i32,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SearchResponse {
+    /// Match results (up to max_results)
+    #[prost(message, repeated, tag = "1")]
+    pub matches: ::prost::alloc::vec::Vec<SearchMatch>,
+    /// Total count (may exceed matches.length if truncated)
+    #[prost(int32, tag = "2")]
+    pub total_matches: i32,
+    /// true if total_matches > max_results
+    #[prost(bool, tag = "3")]
+    pub truncated: bool,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SearchMatch {
+    /// Absolute line number in scrollback (0-indexed)
+    #[prost(int32, tag = "1")]
+    pub line_number: i32,
+    /// Full line content (for xterm.js rendering)
+    #[prost(string, tag = "2")]
+    pub line_text: ::prost::alloc::string::String,
+    /// Character offset where match starts (0-indexed)
+    #[prost(int32, tag = "3")]
+    pub match_start: i32,
+    /// Character offset where match ends (exclusive)
+    #[prost(int32, tag = "4")]
+    pub match_end: i32,
+}
+/// Recursive layout tree structure
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct PaneLayout {
+    #[prost(oneof = "pane_layout::Pane", tags = "1, 2")]
+    pub pane: ::core::option::Option<pane_layout::Pane>,
+}
+/// Nested message and enum types in `PaneLayout`.
+pub mod pane_layout {
+    #[derive(Clone, PartialEq, ::prost::Oneof)]
+    pub enum Pane {
+        #[prost(message, tag = "1")]
+        Terminal(super::TerminalPane),
+        #[prost(message, tag = "2")]
+        Split(super::SplitPane),
+    }
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct TerminalPane {
+    /// References existing Session (PTY session ID)
+    #[prost(string, tag = "1")]
+    pub session_id: ::prost::alloc::string::String,
+    /// Which pane currently has input focus
+    #[prost(bool, tag = "2")]
+    pub focused: bool,
+    /// Unique pane identifier (e.g., "pane-0", "pane-1")
+    #[prost(string, tag = "3")]
+    pub pane_id: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SplitPane {
+    #[prost(enumeration = "split_pane::Direction", tag = "1")]
+    pub direction: i32,
+    /// Child panes (recursive tree)
+    #[prost(message, repeated, tag = "2")]
+    pub children: ::prost::alloc::vec::Vec<PaneLayout>,
+    /// Split ratios \[0.5, 0.5\] = 50/50 split
+    #[prost(float, repeated, tag = "3")]
+    pub ratios: ::prost::alloc::vec::Vec<f32>,
+}
+/// Nested message and enum types in `SplitPane`.
+pub mod split_pane {
+    #[derive(
+        Clone,
+        Copy,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash,
+        PartialOrd,
+        Ord,
+        ::prost::Enumeration
+    )]
+    #[repr(i32)]
+    pub enum Direction {
+        /// Left | Right split
+        Horizontal = 0,
+        /// Top | Bottom split
+        Vertical = 1,
+    }
+    impl Direction {
+        /// String value of the enum field names used in the ProtoBuf definition.
+        ///
+        /// The values are not transformed in any way and thus are considered stable
+        /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+        pub fn as_str_name(&self) -> &'static str {
+            match self {
+                Self::Horizontal => "HORIZONTAL",
+                Self::Vertical => "VERTICAL",
+            }
+        }
+        /// Creates an enum from field names used in the ProtoBuf definition.
+        pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+            match value {
+                "HORIZONTAL" => Some(Self::Horizontal),
+                "VERTICAL" => Some(Self::Vertical),
+                _ => None,
+            }
+        }
+    }
+}
+/// Client → Master: Split an existing pane
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SplitPaneCommand {
+    /// Which pane to split
+    #[prost(string, tag = "1")]
+    pub pane_id: ::prost::alloc::string::String,
+    /// Horizontal or vertical
+    #[prost(enumeration = "split_pane::Direction", tag = "2")]
+    pub direction: i32,
+    /// Shell for new pane (e.g., "/bin/bash", "cmd.exe")
+    #[prost(string, tag = "3")]
+    pub new_session_shell: ::prost::alloc::string::String,
+}
+/// Client → Master: Close a pane
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ClosePaneCommand {
+    /// Which pane to close (kills associated PTY session)
+    #[prost(string, tag = "1")]
+    pub pane_id: ::prost::alloc::string::String,
+}
+/// Client → Master: Focus a pane
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct FocusPaneCommand {
+    /// Which pane should receive keyboard input
+    #[prost(string, tag = "1")]
+    pub pane_id: ::prost::alloc::string::String,
+}
+/// Master → Client: Layout tree update
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct LayoutUpdate {
+    /// Complete layout tree (replaces client state)
+    #[prost(message, optional, tag = "1")]
+    pub root: ::core::option::Option<PaneLayout>,
+    /// Currently focused pane ID
+    #[prost(string, tag = "2")]
+    pub focused_pane_id: ::prost::alloc::string::String,
+}
+/// Server → Client: Request clipboard contents
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ClipboardGetRequest {
+    /// Unique request ID for correlation
+    #[prost(string, tag = "1")]
+    pub request_id: ::prost::alloc::string::String,
+    /// Requested MIME types (priority order), e.g., \["text/plain"\]
+    #[prost(string, repeated, tag = "2")]
+    pub mime_types: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+}
+/// Client → Server: Clipboard content response
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ClipboardGetResponse {
+    /// Matches ClipboardGetRequest.request_id
+    #[prost(string, tag = "1")]
+    pub request_id: ::prost::alloc::string::String,
+    /// Clipboard text content (empty if denied/error)
+    #[prost(string, tag = "2")]
+    pub content: ::prost::alloc::string::String,
+    /// Actual MIME type returned (e.g., "text/plain")
+    #[prost(string, tag = "3")]
+    pub mime_type: ::prost::alloc::string::String,
+    /// User granted clipboard read permission
+    #[prost(bool, tag = "4")]
+    pub authorized: bool,
+    /// Error message if failed (empty if success)
+    #[prost(string, tag = "5")]
+    pub error: ::prost::alloc::string::String,
+}
+/// Client → Server: Client initiates clipboard write (optional, for explicit API)
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ClipboardSetRequest {
+    /// Plain text clipboard content
+    #[prost(string, tag = "1")]
+    pub content: ::prost::alloc::string::String,
+    /// Optional: binary clipboard (images, etc.) - Phase 5+
+    #[prost(bytes = "vec", tag = "2")]
+    pub binary_content: ::prost::alloc::vec::Vec<u8>,
+    /// "text/plain", "text/html", etc.
+    #[prost(string, tag = "3")]
+    pub mime_type: ::prost::alloc::string::String,
+    /// Client timestamp (for staleness detection)
+    #[prost(uint64, tag = "4")]
+    pub timestamp: u64,
+}
+/// Server → Client: OSC 52 clipboard write (existing behavior, now explicit protocol message)
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ClipboardOsc52 {
+    /// Base64-encoded content from OSC 52 escape sequence
+    #[prost(string, tag = "1")]
+    pub content: ::prost::alloc::string::String,
+    /// "c" (clipboard), "p" (primary), "s" (secondary)
+    #[prost(string, tag = "2")]
+    pub selection: ::prost::alloc::string::String,
+}
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
 pub enum CompressionType {
@@ -392,6 +658,26 @@ pub enum ErrorCode {
     RateLimitExceeded = 4,
     InvalidRequest = 5,
     ServerError = 6,
+    /// Phase 4: Search error codes
+    ///
+    /// Regex pattern failed to compile
+    InvalidRegex = 15,
+    /// Search query string is empty
+    SearchQueryEmpty = 16,
+    /// Phase 4: Splits/Tabs error codes (ADR-018, task-69)
+    ///
+    /// Cannot close the last remaining pane
+    CannotCloseLastPane = 30,
+    /// Pane ID not found in layout tree
+    InvalidPaneId = 31,
+    /// Maximum 16 panes per session limit reached
+    MaxPanesReached = 32,
+    /// Phase 4: Clipboard error codes (ADR-020)
+    ///
+    /// Max 3 clipboard reads per 10 seconds
+    ClipboardRateLimitExceeded = 40,
+    /// User denied clipboard access permission
+    ClipboardAccessDenied = 41,
 }
 impl ErrorCode {
     /// String value of the enum field names used in the ProtoBuf definition.
@@ -407,6 +693,13 @@ impl ErrorCode {
             Self::RateLimitExceeded => "RATE_LIMIT_EXCEEDED",
             Self::InvalidRequest => "INVALID_REQUEST",
             Self::ServerError => "SERVER_ERROR",
+            Self::InvalidRegex => "INVALID_REGEX",
+            Self::SearchQueryEmpty => "SEARCH_QUERY_EMPTY",
+            Self::CannotCloseLastPane => "CANNOT_CLOSE_LAST_PANE",
+            Self::InvalidPaneId => "INVALID_PANE_ID",
+            Self::MaxPanesReached => "MAX_PANES_REACHED",
+            Self::ClipboardRateLimitExceeded => "CLIPBOARD_RATE_LIMIT_EXCEEDED",
+            Self::ClipboardAccessDenied => "CLIPBOARD_ACCESS_DENIED",
         }
     }
     /// Creates an enum from field names used in the ProtoBuf definition.
@@ -419,6 +712,13 @@ impl ErrorCode {
             "RATE_LIMIT_EXCEEDED" => Some(Self::RateLimitExceeded),
             "INVALID_REQUEST" => Some(Self::InvalidRequest),
             "SERVER_ERROR" => Some(Self::ServerError),
+            "INVALID_REGEX" => Some(Self::InvalidRegex),
+            "SEARCH_QUERY_EMPTY" => Some(Self::SearchQueryEmpty),
+            "CANNOT_CLOSE_LAST_PANE" => Some(Self::CannotCloseLastPane),
+            "INVALID_PANE_ID" => Some(Self::InvalidPaneId),
+            "MAX_PANES_REACHED" => Some(Self::MaxPanesReached),
+            "CLIPBOARD_RATE_LIMIT_EXCEEDED" => Some(Self::ClipboardRateLimitExceeded),
+            "CLIPBOARD_ACCESS_DENIED" => Some(Self::ClipboardAccessDenied),
             _ => None,
         }
     }
@@ -448,6 +748,34 @@ impl IssueSeverity {
             "INFO" => Some(Self::Info),
             "WARNING" => Some(Self::Warning),
             "ERROR" => Some(Self::Error),
+            _ => None,
+        }
+    }
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum SearchMode {
+    /// Literal text search (case-sensitive or insensitive)
+    Text = 0,
+    /// Regular expression search
+    Regex = 1,
+}
+impl SearchMode {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Self::Text => "SEARCH_MODE_TEXT",
+            Self::Regex => "SEARCH_MODE_REGEX",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "SEARCH_MODE_TEXT" => Some(Self::Text),
+            "SEARCH_MODE_REGEX" => Some(Self::Regex),
             _ => None,
         }
     }
