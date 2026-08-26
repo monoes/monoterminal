@@ -4,6 +4,7 @@ members = [
     "crates/master",
     "crates/protocol",
     "crates/monomind-bridge",
+    "crates/signaling-relay",
 ]
 exclude = [
     "web",  # Node.js/TypeScript frontend - not a Rust crate

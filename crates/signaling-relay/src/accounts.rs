@@ -9,7 +9,7 @@ use rusqlite::OptionalExtension;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
-use crate::auth::{self, AuthUser};
+use crate::auth::AuthUser;
 use crate::SharedState;
 
 fn now_secs() -> i64 {
@@ -21,102 +21,6 @@ fn now_secs() -> i64 {
 
 fn err(status: StatusCode, message: &str) -> (StatusCode, Json<Value>) {
     (status, Json(json!({ "error": message })))
-}
-
-#[derive(Deserialize)]
-pub struct SignupRequest {
-    email: String,
-    password: String,
-}
-
-#[derive(Serialize)]
-struct UserView {
-    id: i64,
-    email: String,
-}
-
-pub async fn signup(
-    State(state): State<Arc<SharedState>>,
-    Json(req): Json<SignupRequest>,
-) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
-    if req.email.is_empty() || !req.email.contains('@') {
-        return Err(err(StatusCode::BAD_REQUEST, "email must be non-empty and contain '@'"));
-    }
-    if req.password.len() < 8 {
-        return Err(err(StatusCode::BAD_REQUEST, "password must be at least 8 characters"));
-    }
-
-    let password_hash = auth::hash_password(&req.password)
-        .map_err(|_| err(StatusCode::INTERNAL_SERVER_ERROR, "failed to process password"))?;
-
-    let conn = state
-        .db
-        .get_conn()
-        .map_err(|_| err(StatusCode::INTERNAL_SERVER_ERROR, "database unavailable"))?;
-
-    let created_at = now_secs();
-    let insert_result = conn.execute(
-        "INSERT INTO users (email, password_hash, created_at) VALUES (?1, ?2, ?3)",
-        rusqlite::params![req.email, password_hash, created_at],
-    );
-
-    let user_id = match insert_result {
-        Ok(_) => conn.last_insert_rowid(),
-        Err(rusqlite::Error::SqliteFailure(e, _))
-            if e.code == rusqlite::ErrorCode::ConstraintViolation =>
-        {
-            return Err(err(StatusCode::CONFLICT, "email already registered"));
-        }
-        Err(_) => return Err(err(StatusCode::INTERNAL_SERVER_ERROR, "failed to create user")),
-    };
-
-    let session = auth::issue_session(&state.jwt_signing_key, user_id, &req.email)
-        .map_err(|_| err(StatusCode::INTERNAL_SERVER_ERROR, "failed to issue session"))?;
-
-    Ok(Json(json!({
-        "token": session,
-        "user": UserView { id: user_id, email: req.email },
-    })))
-}
-
-#[derive(Deserialize)]
-pub struct LoginRequest {
-    email: String,
-    password: String,
-}
-
-pub async fn login(
-    State(state): State<Arc<SharedState>>,
-    Json(req): Json<LoginRequest>,
-) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
-    let conn = state
-        .db
-        .get_conn()
-        .map_err(|_| err(StatusCode::INTERNAL_SERVER_ERROR, "database unavailable"))?;
-
-    let row: Option<(i64, String)> = conn
-        .query_row(
-            "SELECT id, password_hash FROM users WHERE email = ?1",
-            rusqlite::params![req.email],
-            |row| Ok((row.get(0)?, row.get(1)?)),
-        )
-        .optional()
-        .map_err(|_| err(StatusCode::INTERNAL_SERVER_ERROR, "database error"))?;
-
-    let invalid = || err(StatusCode::UNAUTHORIZED, "invalid email or password");
-
-    let (user_id, password_hash) = row.ok_or_else(invalid)?;
-    if !auth::verify_password(&req.password, &password_hash) {
-        return Err(invalid());
-    }
-
-    let session = auth::issue_session(&state.jwt_signing_key, user_id, &req.email)
-        .map_err(|_| err(StatusCode::INTERNAL_SERVER_ERROR, "failed to issue session"))?;
-
-    Ok(Json(json!({
-        "token": session,
-        "user": UserView { id: user_id, email: req.email },
-    })))
 }
 
 #[derive(Deserialize)]
@@ -210,7 +114,7 @@ pub async fn link_computer(
     )
     .map_err(|_| err(StatusCode::INTERNAL_SERVER_ERROR, "failed to consume code"))?;
 
-    let existing: Option<(i64, i64)> = conn
+    let existing: Option<(i64, String)> = conn
         .query_row(
             "SELECT id, user_id FROM linked_computers WHERE peer_id = ?1",
             rusqlite::params![peer_id],

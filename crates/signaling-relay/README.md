@@ -14,6 +14,21 @@ cargo run -p monoterminal-signaling-relay -- --bind-addr 0.0.0.0:9000
 
 `--bind-addr` defaults to `0.0.0.0:9000` if omitted.
 
+Account login is delegated to monoes.me via OAuth 2.0 (authorization code +
+PKCE) — this relay is a confidential client and never sees a password. Set
+these env vars before starting:
+
+- `MONOES_BASE_URL` — the monoes.me origin, e.g. `https://monoes.me`
+- `MONOES_OAUTH_CLIENT_ID` / `MONOES_OAUTH_CLIENT_SECRET` — from a one-time
+  `POST {MONOES_BASE_URL}/api/auth/oauth2/register` call (see the OAuth
+  integration plan for the exact request body)
+- `RELAY_PUBLIC_URL` — this relay's externally-reachable origin, used to build
+  the `redirect_uri`
+- `RELAY_ALLOWED_RETURN_ORIGINS` — comma-separated allowlist of web-app
+  origins the login flow is permitted to redirect back to
+- `JWT_SECRET` — signing key for the relay's own session JWTs (unrelated to
+  the OAuth client secret above)
+
 ## Deploy via Docker
 
 Build from the workspace root (the Dockerfile needs the full workspace as build context):

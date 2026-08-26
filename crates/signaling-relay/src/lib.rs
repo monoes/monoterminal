@@ -2,6 +2,7 @@ mod accounts;
 mod auth;
 mod db;
 mod handler;
+mod oauth;
 mod protocol;
 mod state;
 
@@ -15,8 +16,9 @@ use axum::Router;
 use tokio::sync::Mutex;
 use tower_http::cors::{Any, CorsLayer};
 
-pub use auth::load_or_generate_signing_key;
+pub use auth::{issue_session, load_or_generate_signing_key};
 pub use db::Database;
+pub use oauth::OAuthConfig;
 pub use state::AppState;
 
 /// In-memory rolling-window rate limiter for the pairing-codes endpoint —
@@ -55,6 +57,7 @@ pub struct SharedState {
     pub db: Arc<Database>,
     pub jwt_signing_key: Arc<Vec<u8>>,
     pub pairing_rate_limiter: PairingRateLimiter,
+    pub oauth: OAuthConfig,
 }
 
 static TEST_DB_COUNTER: AtomicU64 = AtomicU64::new(0);
@@ -76,6 +79,7 @@ pub fn build_router() -> Router {
         db,
         jwt_signing_key: Arc::new(key),
         pairing_rate_limiter: PairingRateLimiter::default(),
+        oauth: OAuthConfig::for_tests(),
     });
     build_router_with_state(shared)
 }
@@ -93,8 +97,8 @@ pub fn build_router_with_state(state: Arc<SharedState>) -> Router {
 
     Router::new()
         .route("/", get(handler::ws_handler))
-        .route("/api/signup", post(accounts::signup))
-        .route("/api/login", post(accounts::login))
+        .route("/api/oauth/start", get(oauth::start))
+        .route("/api/oauth/callback", get(oauth::callback))
         .route("/api/pairing-codes", post(accounts::create_pairing_code))
         .route("/api/link", post(accounts::link_computer))
         .route("/api/computers", get(accounts::list_computers))

@@ -1,9 +1,6 @@
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use argon2::password_hash::rand_core::OsRng;
-use argon2::password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString};
-use argon2::Argon2;
 use axum::extract::FromRequestParts;
 use axum::http::request::Parts;
 use axum::http::{header, StatusCode};
@@ -24,26 +21,9 @@ pub struct Claims {
     pub exp: usize,
 }
 
-pub fn hash_password(password: &str) -> anyhow::Result<String> {
-    let salt = SaltString::generate(&mut OsRng);
-    let argon2 = Argon2::default();
-    let hash = argon2
-        .hash_password(password.as_bytes(), &salt)
-        .map_err(|e| anyhow::anyhow!("failed to hash password: {e}"))?;
-    Ok(hash.to_string())
-}
-
-pub fn verify_password(password: &str, hash: &str) -> bool {
-    let parsed_hash = match PasswordHash::new(hash) {
-        Ok(h) => h,
-        Err(_) => return false,
-    };
-    Argon2::default()
-        .verify_password(password.as_bytes(), &parsed_hash)
-        .is_ok()
-}
-
-pub fn issue_session(signing_key: &[u8], user_id: i64, email: &str) -> anyhow::Result<String> {
+/// Identity now comes from monoes.me (see `oauth.rs`) — this only issues and
+/// verifies the relay's own short-lived session JWT after that exchange.
+pub fn issue_session(signing_key: &[u8], user_id: &str, email: &str) -> anyhow::Result<String> {
     let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
     let claims = Claims {
         sub: user_id.to_string(),
@@ -81,7 +61,7 @@ pub fn load_or_generate_signing_key() -> Vec<u8> {
 }
 
 pub struct AuthUser {
-    pub user_id: i64,
+    pub user_id: String,
     pub email: String,
 }
 
@@ -105,10 +85,9 @@ impl FromRequestParts<Arc<SharedState>> for AuthUser {
             .ok_or_else(unauthorized)?;
 
         let claims = verify_session(&shared.jwt_signing_key, credential).map_err(|_| unauthorized())?;
-        let user_id: i64 = claims.sub.parse().map_err(|_| unauthorized())?;
 
         Ok(AuthUser {
-            user_id,
+            user_id: claims.sub,
             email: claims.email,
         })
     }
