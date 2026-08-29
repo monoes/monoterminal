@@ -29,7 +29,9 @@ use crate::SharedState;
 /// How long an in-flight `state`/PKCE pair is honored before it's rejected.
 const STATE_TTL_SECONDS: i64 = 10 * 60;
 
-const OAUTH_SCOPE: &str = "openid profile email community:read community:write";
+// Identity only — the relay never calls monoes.me's community API, so it
+// has no business requesting community:read/community:write.
+const OAUTH_SCOPE: &str = "openid profile email";
 
 pub struct OAuthConfig {
     monoes_base_url: String,
