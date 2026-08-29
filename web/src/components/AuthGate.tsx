@@ -7,7 +7,7 @@ interface AuthGateProps {
   children: ReactNode;
 }
 
-const DEFAULT_BASE_URL_PLACEHOLDER = 'https://accounts.example.com';
+const CONFIGURED_BASE_URL = import.meta.env.VITE_ACCOUNTS_URL || '';
 
 export function AuthGate({ children }: AuthGateProps) {
   const [loggedIn, setLoggedIn] = useState(() => consumeAuthFromFragment() || getStoredAuth() !== null);
@@ -22,9 +22,16 @@ export function AuthGate({ children }: AuthGateProps) {
 
   async function handleSignIn() {
     setError(null);
+
+    const effectiveBaseUrl = baseUrl.trim() || CONFIGURED_BASE_URL;
+    if (!effectiveBaseUrl) {
+      setError('No accounts server configured. Enter one above.');
+      return;
+    }
+
     setSubmitting(true);
     try {
-      await startLogin(baseUrl.trim() || DEFAULT_BASE_URL_PLACEHOLDER);
+      await startLogin(effectiveBaseUrl);
       // startLogin navigates away on success; nothing further runs here.
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.');
@@ -43,13 +50,15 @@ export function AuthGate({ children }: AuthGateProps) {
             <span>Accounts server URL</span>
             <input
               type="text"
-              placeholder={DEFAULT_BASE_URL_PLACEHOLDER}
+              placeholder={CONFIGURED_BASE_URL || 'https://accounts.example.com'}
               value={baseUrl}
               onChange={(e) => setBaseUrl(e.target.value)}
               autoComplete="url"
             />
             <span className="auth-field-help">
-              Where your account is hosted. Leave blank to use the default.
+              {CONFIGURED_BASE_URL
+                ? 'Where your account is hosted. Leave blank to use the default.'
+                : 'Where your account is hosted.'}
             </span>
           </label>
 
