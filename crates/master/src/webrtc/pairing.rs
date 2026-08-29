@@ -100,6 +100,12 @@ impl PairingCodeCache {
         })
     }
 
+    /// This daemon's peer_id (Ed25519 pubkey hex) — a pure local read, no
+    /// network call, so it's safe to expose over the dashboard command path.
+    pub fn peer_id(&self) -> &str {
+        &self.peer_id
+    }
+
     /// Returns the cached pairing code if still valid, otherwise fetches and
     /// caches a new one.
     pub async fn get_or_refresh(&self) -> Result<PairingCode> {

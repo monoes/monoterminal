@@ -37,6 +37,7 @@ export function Sidebar({ isOpen, onClose, panesByWorkspace, onSelectPane }: Sid
     activeComputerId,
     activeWorkspaceId,
     addComputer,
+    addLinkedComputer,
     removeComputer,
     renameComputer,
     addWorkspace,
@@ -89,6 +90,24 @@ export function Sidebar({ isOpen, onClose, panesByWorkspace, onSelectPane }: Sid
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [addingComputer, newComputerMode]);
+
+  // Auto-discover computers already linked to this account so they show up
+  // in the sidebar without the user having to open "Add Computer" — that
+  // flow stays for linking a genuinely new device. AuthGate only mounts
+  // this component after login succeeds, so a plain mount-time check is
+  // sufficient here.
+  useEffect(() => {
+    if (auth) refreshLinkedComputers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!auth) return;
+    for (const c of linkedComputers) {
+      addLinkedComputer(c.name || `Computer ${c.id}`, c.peer_id, toRelayWsUrl(auth.baseUrl));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linkedComputers]);
 
   function handlePickLinkedComputer(c: LinkedComputer) {
     if (!auth) return;

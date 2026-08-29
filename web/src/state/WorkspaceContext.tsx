@@ -45,6 +45,11 @@ export type NewComputerConnection =
 
 interface WorkspaceContextValue extends PersistedState {
   addComputer: (name: string, connection: NewComputerConnection) => string;
+  /** Silently adds a P2P computer discovered via the account's linked
+   * computers list — unlike `addComputer`, does not change
+   * `activeComputerId`, so background discovery never steals focus from
+   * whatever the user is currently looking at. */
+  addLinkedComputer: (name: string, peerId: string, relayUrl: string) => void;
   removeComputer: (id: string) => void;
   renameComputer: (id: string, name: string) => void;
   addWorkspace: (computerId: string, name?: string) => string;
@@ -128,6 +133,21 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
           activeComputerId: id,
         }));
         return id;
+      },
+
+      addLinkedComputer: (name, peerId, relayUrl) => {
+        setState((s) => {
+          if (s.computers.some((c) => c.peerId === peerId)) return s;
+          const computer: ComputerConfig = {
+            id: makeId(),
+            name,
+            mode: 'p2p',
+            wsUrl: '',
+            peerId,
+            relayUrl,
+          };
+          return { ...s, computers: [...s.computers, computer] };
+        });
       },
 
       removeComputer: (id) => {

@@ -706,6 +706,8 @@ async fn process_message(
             // Commands: "status", "agents", "memory", "orgs", etc.
             let result = if req.command == "account_pairing_code" {
                 execute_account_pairing_code(pairing_cache).await
+            } else if req.command == "account_peer_id" {
+                execute_account_peer_id(pairing_cache)
             } else {
                 execute_monomind_command(&req.command, &req.params).await
             };
@@ -1233,6 +1235,33 @@ async fn execute_monomind_command(
             )
         }
     }
+}
+
+/// Return this daemon's peer_id (Ed25519 pubkey hex) — a pure local read, so
+/// this is synchronous unlike `execute_account_pairing_code`. Lets a browser
+/// that's already directly, authentically connected to this daemon check
+/// whether it's already linked to the caller's account before asking for a
+/// pairing code.
+///
+/// # Returns
+///
+/// * `(String, ErrorCode)` - (JSON response, error code), same convention as
+///   `execute_account_pairing_code`.
+fn execute_account_peer_id(pairing_cache: Option<&Arc<PairingCodeCache>>) -> (String, ErrorCode) {
+    let Some(cache) = pairing_cache else {
+        return (
+            serde_json::json!({
+                "error": "P2P is not enabled on this daemon (no --relay-url configured)"
+            })
+            .to_string(),
+            ErrorCode::ServerError,
+        );
+    };
+
+    (
+        serde_json::json!({ "peer_id": cache.peer_id() }).to_string(),
+        ErrorCode::Unknown,
+    )
 }
 
 /// Fetch (or return the cached) SaaS device-pairing code for this daemon.
