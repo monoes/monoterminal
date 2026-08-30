@@ -444,17 +444,45 @@ async fn run_daemon(args: Args) -> Result<()> {
         pairing_cache = Some(cache.clone());
 
         tracing::info!("P2P signaling enabled, relay: {}", relay_url);
+        let signing_key = Arc::new(signing_key);
         tokio::spawn(async move {
-            webrtc::signaling_client::run(
-                relay_url,
-                Arc::new(signing_key),
-                p2p_session_manager,
-                p2p_clipboard_manager,
-                p2p_auth_service,
-                p2p_dev_mode,
-                Some(cache),
-            )
-            .await;
+            // `signaling_client::run` already reconnects forever on any
+            // ordinary connection error — it should never return. If it
+            // ever does (a bug, or a panic unwinding out of this task), the
+            // task would otherwise die silently with no further log output,
+            // permanently and invisibly disabling P2P for the rest of the
+            // process's life. Respawn it instead, so a bug in the
+            // negotiation path degrades to "P2P reconnects every 5s" rather
+            // than "P2P is dead until the daemon is restarted by hand".
+            loop {
+                let relay_url = relay_url.clone();
+                let signing_key = signing_key.clone();
+                let session_manager = p2p_session_manager.clone();
+                let clipboard_manager = p2p_clipboard_manager.clone();
+                let auth_service = p2p_auth_service.clone();
+                let cache = cache.clone();
+
+                let result = tokio::spawn(async move {
+                    webrtc::signaling_client::run(
+                        relay_url,
+                        signing_key,
+                        session_manager,
+                        clipboard_manager,
+                        auth_service,
+                        p2p_dev_mode,
+                        Some(cache),
+                    )
+                    .await;
+                })
+                .await;
+
+                if let Err(join_err) = result {
+                    tracing::error!("P2P signaling task panicked: {} — restarting in 5s", join_err);
+                } else {
+                    tracing::error!("P2P signaling task exited unexpectedly — restarting in 5s");
+                }
+                tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+            }
         });
     }
 
