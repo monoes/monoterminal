@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useWorkspace } from '../state/WorkspaceContext';
 import { IconClose, IconFolder, IconMonitor, IconPlus, IconPrompt } from './icons';
 import {
@@ -38,6 +38,7 @@ export function Sidebar({ isOpen, onClose, panesByWorkspace, onSelectPane }: Sid
     activeWorkspaceId,
     addComputer,
     addLinkedComputer,
+    isFirstRun,
     removeComputer,
     renameComputer,
     addWorkspace,
@@ -108,6 +109,23 @@ export function Sidebar({ isOpen, onClose, panesByWorkspace, onSelectPane }: Sid
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [linkedComputers]);
+
+  // On a device that's never used the app before, the seeded "This Machine"
+  // (mode: 'direct', wsUrl pointing at localhost) is a meaningless
+  // placeholder — nothing is actually listening there on, say, a phone.
+  // Switch to the first account-linked computer once it appears so logging
+  // in actually shows something reachable, instead of leaving the user
+  // stuck on a dead default. Only ever fires once per session, and never on
+  // a device with pre-existing state worth protecting.
+  const firstRunAutoSelectDone = useRef(false);
+  useEffect(() => {
+    if (!isFirstRun || firstRunAutoSelectDone.current || linkedComputers.length === 0) return;
+    const match = computers.find((c) => c.peerId === linkedComputers[0].peer_id);
+    if (match) {
+      firstRunAutoSelectDone.current = true;
+      setActiveComputerId(match.id);
+    }
+  }, [isFirstRun, linkedComputers, computers, setActiveComputerId]);
 
   function handlePickLinkedComputer(c: LinkedComputer) {
     if (!auth) return;

@@ -50,6 +50,12 @@ interface WorkspaceContextValue extends PersistedState {
    * `activeComputerId`, so background discovery never steals focus from
    * whatever the user is currently looking at. */
   addLinkedComputer: (name: string, peerId: string, relayUrl: string) => void;
+  /** True only for the very first render on a device that's never used the
+   * app before (no persisted state at all yet) — the seeded "This Machine"
+   * default at that point is a meaningless localhost placeholder, not a
+   * real prior session worth protecting. Used to decide whether
+   * account-discovered computers should also become the active one. */
+  isFirstRun: boolean;
   removeComputer: (id: string) => void;
   renameComputer: (id: string, name: string) => void;
   addWorkspace: (computerId: string, name?: string) => string;
@@ -104,6 +110,7 @@ function loadState(): PersistedState {
 const WorkspaceContext = createContext<WorkspaceContextValue | null>(null);
 
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
+  const [isFirstRun] = useState(() => localStorage.getItem(STORAGE_KEY) === null);
   const [state, setState] = useState<PersistedState>(loadState);
 
   useEffect(() => {
@@ -113,6 +120,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const value = useMemo<WorkspaceContextValue>(
     () => ({
       ...state,
+      isFirstRun,
 
       addComputer: (name, connection) => {
         const id = makeId();
@@ -215,7 +223,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       setActiveComputerId: (id) => setState((s) => ({ ...s, activeComputerId: id })),
       setActiveWorkspaceId: (id) => setState((s) => ({ ...s, activeWorkspaceId: id })),
     }),
-    [state]
+    [state, isFirstRun]
   );
 
   return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;
