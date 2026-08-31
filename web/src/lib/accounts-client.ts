@@ -59,6 +59,17 @@ export function toRelayWsUrl(baseUrl: string): string {
   return trimmed;
 }
 
+/** Inverse of toRelayWsUrl — recovers the accounts HTTP base URL from the
+ * relay WebSocket URL a WebRtcClient was configured with, so TURN
+ * credentials can be fetched without requiring a logged-in session (the
+ * endpoint is unauthenticated, keyed by peer_id only — see turn.rs). */
+export function toAccountsHttpUrl(relayWsUrl: string): string {
+  const trimmed = trimBaseUrl(relayWsUrl);
+  if (trimmed.startsWith('wss://')) return 'https://' + trimmed.slice('wss://'.length);
+  if (trimmed.startsWith('ws://')) return 'http://' + trimmed.slice('ws://'.length);
+  return trimmed;
+}
+
 export function getStoredAuth(): StoredAuth | null {
   const jwt = localStorage.getItem(STORAGE_KEY_JWT);
   const baseUrl = localStorage.getItem(STORAGE_KEY_BASE_URL);
@@ -151,6 +162,26 @@ export async function listComputers(): Promise<{ computers: LinkedComputer[] }> 
     headers: { Authorization: `Bearer ${auth.token}` },
   });
   return parseJsonOrThrow<{ computers: LinkedComputer[] }>(res);
+}
+
+export interface TurnCredentials {
+  urls: string[];
+  username: string;
+  credential: string;
+  expires_at: number;
+}
+
+/** Unauthenticated — mirrors the relay's own trust model for this endpoint
+ * (see crates/signaling-relay/src/turn.rs): keyed by peer_id only, rate
+ * limited server-side, no Bearer token required. */
+export async function getTurnCredentials(
+  baseUrl: string,
+  peerId: string
+): Promise<TurnCredentials> {
+  const res = await fetch(
+    `${trimBaseUrl(baseUrl)}/api/turn-credentials?peer_id=${encodeURIComponent(peerId)}`
+  );
+  return parseJsonOrThrow<TurnCredentials>(res);
 }
 
 export async function unlinkComputer(id: number): Promise<{ ok: true }> {

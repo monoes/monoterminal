@@ -2,8 +2,8 @@ use std::sync::Arc;
 
 use clap::Parser;
 use monoterminal_signaling_relay::{
-    build_router_with_state, load_or_generate_signing_key, AppState, Database, OAuthConfig,
-    PairingRateLimiter, SharedState,
+    build_router_with_state, load_or_generate_signing_key, load_or_generate_turn_secret,
+    AppState, Database, OAuthConfig, PairingRateLimiter, SharedState,
 };
 
 /// MONOTERMINAL WebRTC signaling relay
@@ -29,12 +29,16 @@ async fn main() -> anyhow::Result<()> {
 
     let db = Arc::new(Database::new(&args.db_path)?);
     let oauth = OAuthConfig::from_env()?;
+    let turn_server_host = std::env::var("TURN_SERVER_HOST")
+        .map_err(|_| anyhow::anyhow!("missing required env var TURN_SERVER_HOST"))?;
     let shared = Arc::new(SharedState {
         relay: AppState::new(),
         db,
         jwt_signing_key: Arc::new(load_or_generate_signing_key()),
         pairing_rate_limiter: PairingRateLimiter::default(),
         oauth,
+        turn_shared_secret: load_or_generate_turn_secret(),
+        turn_server_host,
     });
 
     let router = build_router_with_state(shared);

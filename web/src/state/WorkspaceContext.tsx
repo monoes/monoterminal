@@ -135,10 +135,13 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
                 peerId: connection.peerId,
                 relayUrl: connection.relayUrl,
               };
+        const workspaceId = makeId();
         setState((s) => ({
           ...s,
           computers: [...s.computers, computer],
+          workspaces: [...s.workspaces, { id: workspaceId, computerId: id, name: 'Default' }],
           activeComputerId: id,
+          activeWorkspaceId: workspaceId,
         }));
         return id;
       },
@@ -220,7 +223,20 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         }));
       },
 
-      setActiveComputerId: (id) => setState((s) => ({ ...s, activeComputerId: id })),
+      setActiveComputerId: (id) =>
+        setState((s) => {
+          const existing = s.workspaces.find((w) => w.computerId === id);
+          if (existing) {
+            return { ...s, activeComputerId: id, activeWorkspaceId: existing.id };
+          }
+          const workspaceId = makeId();
+          return {
+            ...s,
+            activeComputerId: id,
+            activeWorkspaceId: workspaceId,
+            workspaces: [...s.workspaces, { id: workspaceId, computerId: id, name: 'Default' }],
+          };
+        }),
       setActiveWorkspaceId: (id) => setState((s) => ({ ...s, activeWorkspaceId: id })),
     }),
     [state, isFirstRun]

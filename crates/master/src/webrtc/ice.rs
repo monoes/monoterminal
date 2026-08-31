@@ -9,6 +9,7 @@ use std::time::{Duration, Instant};
 use tokio::sync::mpsc;
 use tracing::{debug, info, warn};
 use webrtc::ice_transport::ice_candidate::{RTCIceCandidate, RTCIceCandidateInit};
+use webrtc::ice_transport::ice_credential_type::RTCIceCredentialType;
 use webrtc::ice_transport::ice_server::RTCIceServer;
 
 /// ICE candidate (trickle ICE protocol)
@@ -93,7 +94,7 @@ impl IceCandidateGatherer {
                 urls: turn_config.urls.clone(),
                 username: turn_config.username.clone(),
                 credential: turn_config.credential.clone(),
-                ..Default::default()
+                credential_type: RTCIceCredentialType::Password,
             });
         }
 

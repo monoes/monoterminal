@@ -2,8 +2,9 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 
 use monoterminal_signaling_relay::{
-    build_router_with_state, issue_session, load_or_generate_signing_key, AppState, Database,
-    OAuthConfig, PairingRateLimiter, SharedState,
+    build_router_with_state, issue_session, load_or_generate_signing_key,
+    load_or_generate_turn_secret, AppState, Database, OAuthConfig, PairingRateLimiter,
+    SharedState,
 };
 
 static PORT_HINT: AtomicU64 = AtomicU64::new(0);
@@ -30,6 +31,8 @@ async fn spawn_server() -> TestServer {
         jwt_signing_key: signing_key.clone(),
         pairing_rate_limiter: PairingRateLimiter::default(),
         oauth: OAuthConfig::for_tests(),
+        turn_shared_secret: load_or_generate_turn_secret(),
+        turn_server_host: "127.0.0.1:3478".to_string(),
     });
 
     let router = build_router_with_state(shared);
