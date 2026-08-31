@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" width="480" height="480">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0d1410"/>
+      <stop offset="100%" stop-color="#050805"/>
+    </radialGradient>
+    <radialGradient id="headFur" cx="40%" cy="35%" r="60%">
+      <stop offset="0%" stop-color="#5a3a22"/>
+      <stop offset="60%" stop-color="#3c2614"/>
+      <stop offset="100%" stop-color="#20140a"/>
+    </radialGradient>
+    <radialGradient id="facePatch" cx="50%" cy="40%" r="55%">
+      <stop offset="0%" stop-color="#e8c496"/>
+      <stop offset="50%" stop-color="#c99a68"/>
+      <stop offset="100%" stop-color="#9c7048"/>
+    </radialGradient>
+    <radialGradient id="eyeGlow" cx="38%" cy="35%" r="55%">
+      <stop offset="0%" stop-color="#c8ffe6"/>
+      <stop offset="45%" stop-color="#33ff99"/>
+      <stop offset="100%" stop-color="#00b368"/>
+    </radialGradient>
+    <radialGradient id="earInner" cx="50%" cy="40%" r="55%">
+      <stop offset="0%" stop-color="#6a4428"/>
+      <stop offset="100%" stop-color="#3a2410"/>
+    </radialGradient>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Outer ring -->
+  <circle cx="240" cy="240" r="238" fill="none" stroke="#33ff99" stroke-width="1.5" opacity="0.35"/>
+  <!-- Background -->
+  <circle cx="240" cy="240" r="235" fill="url(#bg)"/>
+
+  <!-- Faint bottom terminal glow -->
+  <ellipse cx="240" cy="430" rx="130" ry="28" fill="#33ff99" opacity="0.08"/>
+
+  <!-- LEFT EAR -->
+  <circle cx="82" cy="210" r="52" fill="url(#headFur)"/>
+  <circle cx="82" cy="210" r="36" fill="url(#earInner)"/>
+  <circle cx="82" cy="210" r="20" fill="#241408"/>
+
+  <!-- RIGHT EAR -->
+  <circle cx="398" cy="210" r="52" fill="url(#headFur)"/>
+  <circle cx="398" cy="210" r="36" fill="url(#earInner)"/>
+  <circle cx="398" cy="210" r="20" fill="#241408"/>
+
+  <!-- HEAD -->
+  <ellipse cx="240" cy="222" rx="138" ry="145" fill="url(#headFur)"/>
+
+  <!-- Brow ridge shadow -->
+  <ellipse cx="240" cy="168" rx="80" ry="18" fill="#140a04" opacity="0.5"/>
+
+  <!-- FACE PATCH -->
+  <ellipse cx="240" cy="268" rx="90" ry="100" fill="url(#facePatch)"/>
+  <ellipse cx="228" cy="240" rx="30" ry="20" fill="#f5e0c0" opacity="0.12"/>
+
+  <!-- EYE SOCKETS -->
+  <circle cx="196" cy="202" r="30" fill="#0a0e0a"/>
+  <circle cx="284" cy="202" r="30" fill="#0a0e0a"/>
+
+  <!-- GLOWING TERMINAL EYES (square CRT-style, not round) -->
+  <rect x="181" y="187" width="30" height="24" rx="4" fill="url(#eyeGlow)" filter="url(#glow)"/>
+  <rect x="269" y="187" width="30" height="24" rx="4" fill="url(#eyeGlow)" filter="url(#glow)"/>
+  <rect x="188" y="193" width="8" height="6" fill="#eafff5" opacity="0.9"/>
+  <rect x="276" y="193" width="8" height="6" fill="#eafff5" opacity="0.9"/>
+
+  <!-- NOSE -->
+  <ellipse cx="222" cy="270" rx="8" ry="6" fill="#5a3018"/>
+  <ellipse cx="258" cy="270" rx="8" ry="6" fill="#5a3018"/>
+
+  <!-- MOUTH -->
+  <path d="M 205 305 Q 240 328 275 305" stroke="#5a3018" stroke-width="5" fill="none" stroke-linecap="round"/>
+
+  <!-- TERMINAL CURSOR CHIN ACCENT -->
+  <rect x="222" y="336" width="36" height="10" rx="1" fill="#33ff99" opacity="0.85" filter="url(#glow)"/>
+</svg>

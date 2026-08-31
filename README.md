@@ -1,197 +1,192 @@
-# MONOTERMINAL
+<p align="center">
+  <img src="assets/banner.svg" alt="MONOTERMINAL" width="800" />
+</p>
 
-**Next-generation terminal emulator for the distributed computing era**
+<div align="center">
 
-[![CI](https://github.com/monoterminal/monoterminal/workflows/Pull%20Request%20Checks/badge.svg)](https://github.com/monoterminal/monoterminal/actions)
-[![codecov](https://codecov.io/gh/monoterminal/monoterminal/branch/main/graph/badge.svg)](https://codecov.io/gh/monoterminal/monoterminal)
-[![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](LICENSE)
+<img src="assets/logo.svg" width="140" alt="MONOTERMINAL monkey mascot"/>
+
+# monoterminal
+
+**One terminal daemon. Every device. No port-forwarding.**
+
+Run a single persistent shell on any machine and reach it from a browser,
+anywhere — over a direct connection on your LAN, or peer-to-peer through a
+signaling relay with automatic TURN fallback when NAT gets in the way.
+
+[![License](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-33ff99?style=flat-square)](Cargo.toml)
+[![Rust](https://img.shields.io/badge/rust-1.70%2B-orange?style=flat-square&logo=rust&logoColor=white)](https://www.rust-lang.org)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-333?style=flat-square)](#platform-support)
+[![Protocol](https://img.shields.io/badge/wire-Protobuf%20%2B%20TLS%201.3-33ff99?style=flat-square)](proto/monoterminal)
+
+</div>
+
+---
 
 ## What is MONOTERMINAL?
 
-MONOTERMINAL enables you to:
+MONOTERMINAL is a **master daemon + web client** pair: the daemon owns a real
+PTY session on whatever machine it runs on, and any browser — desktop or
+mobile — can attach to it, type into it, split it, and watch it keep running
+after the tab closes.
 
-- **Run a single master terminal** on any platform (Windows, Linux, macOS) as a persistent daemon
-- **Connect from any device** (desktop, mobile, web) to access and control terminal sessions
-- **Share sessions peer-to-peer** without centralized infrastructure
-- **Collaborate in real-time** with multiple users attached to the same session
-- **Persist sessions across disconnections** with automatic reconnection and state recovery
-
-Unlike traditional terminal multiplexers (tmux, screen) limited to local or SSH-based access, MONOTERMINAL provides a modern, network-transparent terminal architecture suitable for remote work, mobile development, and collaborative debugging.
-
-## Phase 1: Windows + Web (Current)
-
-**Status:** 🚧 In Development - Sprint 0
-
-**Current Phase Goal:** Prove the complete architecture on Windows + Web client before platform expansion.
-
-### Features (Phase 1)
-
-- ✅ Master daemon — **Windows only** (ConPTY, Windows Service)
-- ✅ Master's local terminal UI (egui + wgpu, DirectX 12)
-- ✅ **Web client (PWA)** — desktop *and* mobile browsers
-- ✅ Direct connection: WebSocket + TLS 1.3 + Ed25519/JWT auth
-- ✅ Session creation, attach/detach, in-memory scrollback (10k lines)
-- ✅ **Monomind integration** — per-session detection, embedded dashboard, health check
-
-### Platform Support
-
-| Platform | Status | Target |
-|----------|--------|--------|
-| **Windows** | 🚧 Phase 1 | Windows 10 1809+ (ConPTY) |
-| **Web (Desktop)** | 🚧 Phase 1 | Chrome 90+, Firefox 88+, Safari 14+ |
-| **Web (Mobile)** | 🚧 Phase 1 | Android Chrome, iOS Safari |
-| **Linux** | 📅 Phase 3 | Ubuntu 22.04+, Debian 11+, Fedora 38+ |
-| **macOS** | 📅 Phase 3 | macOS 12+ (Monterey) |
-
-## Quick Start
-
-### Prerequisites (Windows)
-
-- Windows 10 1809+ or Windows 11
-- Rust (stable) via [rustup](https://rustup.rs)
-- MSVC Build Tools 2022 (Visual Studio Installer → "Desktop development with C++")
-- Protocol Buffers compiler: `winget install protocolbuffers.protoc`
-- Node.js LTS: `winget install OpenJS.NodeJS.LTS`
-
-### Build from Source
-
-```powershell
-# Clone repository
-git clone https://github.com/monoterminal/monoterminal.git
-cd monoterminal
-
-# Build protocol types
-cargo build -p monoterminal-protocol
-
-# Build master daemon
-cargo build --release
-
-# Run master daemon (generates Ed25519 identity on first run)
-cargo run --bin monoterminal
-# → Ed25519 keypair auto-generated at ~/.monoterminal/identity.key
-
-# Set up web client
-cd web
-npm install
-npm run dev
+```
+you, from any browser ──── direct WebSocket (LAN) ────► daemon on your Mac/PC/box
+                     └──── WebRTC P2P via relay ────►    (same daemon, reached
+                           (TURN fallback if needed)      from anywhere)
 ```
 
-**Note:** On first run, the master daemon automatically generates an Ed25519 keypair for authentication. The private key is stored at `~/.monoterminal/identity.key` with `0600` permissions (owner-only access).
+- 🖥️ **One daemon, many attachers** — the same named session is shared across
+  every client that attaches to it; splitting a pane in one browser tab shows
+  up in another
+- 🌐 **Two ways in** — a direct WebSocket for same-network access, or a
+  WebRTC `DataChannel` negotiated through a signaling relay for anywhere
+  access, with STUN/TURN handling restrictive NATs automatically
+- 🔐 **TLS 1.3 + Ed25519** — every connection is encrypted and every daemon
+  has a persistent Ed25519 identity; production runs self-provision their own
+  certificate on first start
+- 📦 **A real system service** — install as a macOS `launchd` daemon or Linux
+  `systemd` unit with one command; runs under a dedicated service account,
+  survives reboots, restarts on crash
+- 🧩 **Splits, panes, and scrollback** — a server-owned layout tree (not just
+  one terminal per connection), with scrollback persisted to SQLite so a
+  reattach doesn't start blank
+- 🐒 **Monomind-aware** — per-session project health checks surface straight
+  in the terminal UI
 
-See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for detailed setup instructions and [web/docs/AUTH_FLOW.md](web/docs/AUTH_FLOW.md) for authentication details.
+## Platform support
+
+| Platform | PTY backend | Service install |
+|---|---|---|
+| **macOS** | Unix PTY (`portable-pty`) | `launchd` (`sudo monoterminal install-service`) |
+| **Linux** | Unix PTY (`portable-pty`) | `systemd` (`Type=notify` readiness) |
+| **Windows** | ConPTY | Windows Service |
+
+## Quick start
+
+### Prerequisites
+
+- Rust (stable) via [rustup](https://rustup.rs)
+- Node.js 18+ (for the web client)
+- `protoc` (Protocol Buffers compiler)
+
+### Run the daemon
+
+```bash
+git clone https://github.com/monoes/monoterminal.git
+cd monoterminal
+
+# Dev mode: skips TLS cert bootstrap and Ed25519 challenge-response,
+# binds 127.0.0.1:54321. Never use this outside local testing.
+cargo run -p monoterminal-master -- --dev-mode
+```
+
+On a real (non-dev) run, the daemon self-provisions a TLS certificate and an
+Ed25519 identity key on first start — no manual setup required. Port 5000
+was the original default; it's now **54321**, since macOS's AirPlay Receiver
+silently claims 5000 on every stock Mac.
+
+### Install as a system service (macOS/Linux)
+
+```bash
+cargo build --release -p monoterminal-master
+sudo ./target/release/monoterminal install-service
+
+# check on it
+sudo launchctl list | grep monoterminal      # macOS
+systemctl status monoterminal                # Linux
+
+# remove it
+sudo ./target/release/monoterminal uninstall-service
+```
+
+This copies the binary to `/usr/local/bin`, creates a dedicated `_monoterminal`
+service account (macOS) with no usable home directory, and runs the daemon
+under it — identity key, TLS cert, and data all live under the platform's
+system data directory instead of a user's home.
+
+### Run the web client
+
+```bash
+cd web
+npm install
+npm run dev          # http://127.0.0.1:3000, proxies /ws to the daemon
+```
+
+### Reach it from anywhere (WebRTC P2P)
+
+Point the daemon at a signaling relay and it'll register itself so a browser
+elsewhere can find and connect to it without any port forwarding:
+
+```bash
+cargo run -p monoterminal-master -- --relay-url wss://relay.example.com
+```
+
+Run your own relay with `crates/signaling-relay` — see its
+[README](crates/signaling-relay/README.md) for OAuth login setup, Docker, and
+systemd deployment, and TURN credential minting for restrictive NATs.
 
 ## Architecture
 
 ```
-┌──────────────┐         WebSocket         ┌─────────────────┐
-│ Web Client   │────────(TLS 1.3)─────────►│ Master Daemon   │
-│ (React+PWA)  │     Protocol Buffers      │ (Rust)          │
-│              │◄──────────────────────────┤                 │
-│ xterm.js     │                           │ ConPTY Manager  │
-│ WebGL render │                           │ wgpu Renderer   │
-└──────────────┘                           │ Session Mux     │
-                                            │ SQLite Store    │
-                                            └─────────────────┘
+┌────────────────┐   direct WebSocket (TLS 1.3)   ┌──────────────────────┐
+│  Web Client     │◄───────────────────────────────┤   Master Daemon      │
+│  (React + PWA)  │        Protobuf Envelope        │   (Rust)             │
+│  xterm.js       │                                 │                      │
+└───────┬─────────┘                                 │  PTY (ConPTY/Unix)   │
+        │                                            │  Session Manager    │
+        │  WebRTC DataChannel (STUN/TURN)             │  Layout (splits)    │
+        ▼                                            │  SQLite scrollback  │
+┌────────────────┐    Offer/Answer/ICE (JSON)        │  Ed25519 + JWT auth │
+│ Signaling Relay │◄───────────────────────────────►│                      │
+│ (axum, stateless│                                 └──────────────────────┘
+│  once P2P is up)│
+└────────────────┘
 ```
 
-**Key Technologies:**
+**Key crates** (`crates/`):
 
-- **Master:** Rust + wgpu (DirectX 12) + egui + ConPTY (Windows)
-- **Client:** React 18 + Vite + xterm.js + WebGL
-- **Protocol:** WebSocket + Protocol Buffers + TLS 1.3 + zstd compression
-- **Auth:** Ed25519 SSH keys + JWT tokens
-- **Storage:** SQLite + zstd compression
+- `master` — the daemon: PTY backends, session/layout management, TLS + auth,
+  WebSocket server, WebRTC signaling client
+- `protocol` — the Protobuf `Envelope` wire format shared by every transport
+- `signaling-relay` — the P2P pairing/TURN-credential relay (axum), deployable
+  standalone via Docker or systemd
+- `monomind-bridge` — project health checks surfaced in the terminal UI
 
 ## Documentation
 
-- **[Software Requirements Specification](docs/monoterminal-srs.md)** — Complete technical specification
-- **[Development Guide](docs/DEVELOPMENT.md)** — Setup and workflow
-- **[Architecture Decision Records](docs/decisions/)** — Key technical decisions
+- [Architecture Decision Records](docs/decisions/) — the reasoning behind the
+  transport, auth, and NAT-traversal design
+- [Development Guide](docs/DEVELOPMENT.md) — full setup and workflow
+- [`crates/signaling-relay/README.md`](crates/signaling-relay/README.md) —
+  running your own P2P relay
 
 ## Development
 
-### Running Tests
-
-```powershell
+```bash
 # All tests
-cargo test --all-features
+cargo test --workspace
 
-# Specific crate
-cargo test -p monoterminal-protocol
+# One crate
+cargo test -p monoterminal-master
 
-# With coverage
-cargo tarpaulin --out Html --all-features
-```
-
-### Code Quality
-
-```powershell
-# Format
+# Format + lint
 cargo fmt --all
-
-# Lint
 cargo clippy --all-features --all-targets -- -D warnings
 
-# CI checks (locally)
-cargo fmt --all -- --check
-cargo clippy --all-features -- -D warnings
-cargo test --all-features
+# Web client
+cd web && npm run type-check && npm test
 ```
-
-## Roadmap
-
-### Phase 1: Windows + Web (Months 1-3) — **CURRENT**
-
-- Windows master daemon with ConPTY
-- Web client (PWA) for desktop and mobile browsers
-- Direct WebSocket connections with TLS 1.3
-- Basic session management
-- Monomind integration
-
-### Phase 2: Collaboration & Persistence (Months 4-6)
-
-- P2P networking (WebRTC)
-- Multi-session management
-- SQLite persistence
-- Multi-client attach (collaboration)
-- Compression (zstd)
-
-### Phase 3: Platform Expansion (Months 7-9)
-
-- Linux master (systemd)
-- macOS master (launchd)
-- Cross-platform CI matrix
-- apt/rpm (Linux), Homebrew (macOS) distribution
-
-### Phase 4: Enterprise Readiness (Months 10+)
-
-- SSO integration
-- Audit logging
-- RBAC
-- Split panes/tabs
-- Plugin system
-
-## Contributing
-
-**Current Status:** Not accepting contributions yet (Sprint 0 - foundation phase)
-
-Once Phase 1 MVP is complete, we'll open up for contributions. Stay tuned!
 
 ## License
 
-Licensed under either of:
-
-- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
-- MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
-
-at your option.
+Dual-licensed under [MIT](https://opensource.org/licenses/MIT) or
+[Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0), at your option.
 
 ## Support
 
-- **Issues:** [GitHub Issues](https://github.com/monoterminal/monoterminal/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/monoterminal/monoterminal/discussions)
-- **Documentation:** [monoterminal-srs.md](docs/monoterminal-srs.md)
+- **Issues:** [GitHub Issues](https://github.com/monoes/monoterminal/issues)
 
 ---
 
-**Built with ❤️ for developers who live in the terminal**
+<p align="center"><sub>Built for developers who live in the terminal — and everywhere else they carry a browser.</sub></p>
