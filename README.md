@@ -1,10 +1,10 @@
 <p align="center">
-  <img src="assets/banner.svg" alt="MONOTERMINAL" width="800" />
+  <img src="assets/banner.png" alt="MONOTERMINAL" width="600" />
 </p>
 
 <div align="center">
 
-<img src="assets/logo.svg" width="140" alt="MONOTERMINAL monkey mascot"/>
+<img src="assets/logo.png" width="160" alt="MONOTERMINAL monkey mascot"/>
 
 # monoterminal
 
