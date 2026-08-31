@@ -23,12 +23,13 @@ mod server_tests {
     fn test_server_config_default() {
         let config = ServerConfig::default();
 
-        // Phase 1: local only - 127.0.0.1:5000
+        // Phase 1: local only - 127.0.0.1:54321 (not 5000: macOS AirPlay
+        // Receiver claims that port by default)
         assert_eq!(
             config.bind_addr.ip(),
             IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1))
         );
-        assert_eq!(config.bind_addr.port(), 5000);
+        assert_eq!(config.bind_addr.port(), 54321);
 
         // SRS §2.3.4: 1000 concurrent connections max
         assert_eq!(config.max_connections, 1000);

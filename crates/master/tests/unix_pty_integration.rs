@@ -20,11 +20,12 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::mpsc;
+use uuid::Uuid;
 
 /// Test: Create PTY session via SessionManager
 #[tokio::test]
 async fn test_session_manager_create_unix_pty() {
-    let manager = SessionManager::new("/bin/sh".to_string(), None, None);
+    let manager = SessionManager::new(Some("/bin/sh".to_string()));
 
     let session_id = manager
         .create_session(Some(PathBuf::from("/tmp")), 24, 80)
@@ -32,7 +33,7 @@ async fn test_session_manager_create_unix_pty() {
         .expect("Failed to create session");
 
     // Verify session exists
-    let sessions = manager.list_sessions();
+    let sessions = manager.list_sessions().await;
     assert!(
         sessions.contains(&session_id),
         "Session should be listed after creation"
@@ -40,7 +41,7 @@ async fn test_session_manager_create_unix_pty() {
 
     // Cleanup
     manager
-        .kill_session(&session_id)
+        .kill_session(session_id)
         .await
         .expect("Failed to kill session");
 }
@@ -48,7 +49,7 @@ async fn test_session_manager_create_unix_pty() {
 /// Test: Full lifecycle - create, attach, write, read, terminate
 #[tokio::test]
 async fn test_session_manager_full_lifecycle() {
-    let manager = SessionManager::new("/bin/sh".to_string(), None, None);
+    let manager = SessionManager::new(Some("/bin/sh".to_string()));
 
     // Create session
     let session_id = manager
@@ -60,14 +61,15 @@ async fn test_session_manager_full_lifecycle() {
     let (output_tx, mut output_rx) = mpsc::channel(100);
 
     // Attach client
-    let client_id = manager
-        .attach_client(&session_id, output_tx)
+    let client_id = Uuid::new_v4();
+    manager
+        .attach_client(session_id, client_id, output_tx)
         .await
         .expect("Failed to attach client");
 
     // Write command
     manager
-        .send_input(&session_id, b"echo hello\n")
+        .send_input(session_id, b"echo hello\n")
         .await
         .expect("Failed to send input");
 
@@ -87,18 +89,18 @@ async fn test_session_manager_full_lifecycle() {
 
     // Detach client
     manager
-        .detach_client(&session_id, &client_id)
+        .detach_client(session_id, client_id)
         .await
         .expect("Failed to detach client");
 
     // Kill session
     manager
-        .kill_session(&session_id)
+        .kill_session(session_id)
         .await
         .expect("Failed to kill session");
 
     // Verify session removed
-    let sessions = manager.list_sessions();
+    let sessions = manager.list_sessions().await;
     assert!(
         !sessions.contains(&session_id),
         "Session should be removed after kill"
@@ -108,7 +110,7 @@ async fn test_session_manager_full_lifecycle() {
 /// Test: Resize operation through SessionManager
 #[tokio::test]
 async fn test_session_manager_resize() {
-    let manager = SessionManager::new("/bin/sh".to_string(), None, None);
+    let manager = SessionManager::new(Some("/bin/sh".to_string()));
 
     let session_id = manager
         .create_session(Some(PathBuf::from("/tmp")), 24, 80)
@@ -117,18 +119,18 @@ async fn test_session_manager_resize() {
 
     // Resize should not error
     manager
-        .resize_session(&session_id, 30, 100)
+        .resize_session(session_id, 30, 100)
         .await
         .expect("Failed to resize session");
 
     manager
-        .resize_session(&session_id, 40, 120)
+        .resize_session(session_id, 40, 120)
         .await
         .expect("Failed to resize session again");
 
     // Cleanup
     manager
-        .kill_session(&session_id)
+        .kill_session(session_id)
         .await
         .expect("Failed to kill session");
 }
@@ -136,7 +138,7 @@ async fn test_session_manager_resize() {
 /// Test: Multiple clients attached to same session
 #[tokio::test]
 async fn test_session_manager_multiple_clients() {
-    let manager = SessionManager::new("/bin/sh".to_string(), None, None);
+    let manager = SessionManager::new(Some("/bin/sh".to_string()));
 
     let session_id = manager
         .create_session(Some(PathBuf::from("/tmp")), 24, 80)
@@ -147,19 +149,22 @@ async fn test_session_manager_multiple_clients() {
     let (output_tx1, mut output_rx1) = mpsc::channel(100);
     let (output_tx2, mut output_rx2) = mpsc::channel(100);
 
-    let client_id1 = manager
-        .attach_client(&session_id, output_tx1)
+    let client_id1 = Uuid::new_v4();
+    let client_id2 = Uuid::new_v4();
+
+    manager
+        .attach_client(session_id, client_id1, output_tx1)
         .await
         .expect("Failed to attach client 1");
 
-    let client_id2 = manager
-        .attach_client(&session_id, output_tx2)
+    manager
+        .attach_client(session_id, client_id2, output_tx2)
         .await
         .expect("Failed to attach client 2");
 
     // Write command
     manager
-        .send_input(&session_id, b"echo test\n")
+        .send_input(session_id, b"echo test\n")
         .await
         .expect("Failed to send input");
 
@@ -184,15 +189,15 @@ async fn test_session_manager_multiple_clients() {
 
     // Cleanup
     manager
-        .detach_client(&session_id, &client_id1)
+        .detach_client(session_id, client_id1)
         .await
         .expect("Failed to detach client 1");
     manager
-        .detach_client(&session_id, &client_id2)
+        .detach_client(session_id, client_id2)
         .await
         .expect("Failed to detach client 2");
     manager
-        .kill_session(&session_id)
+        .kill_session(session_id)
         .await
         .expect("Failed to kill session");
 }
@@ -202,7 +207,7 @@ async fn test_session_manager_multiple_clients() {
 async fn test_session_manager_with_persistence() {
     // This test requires persistence layer integration
     // For now, verify basic creation works with None database
-    let manager = SessionManager::new("/bin/sh".to_string(), None, None);
+    let manager = SessionManager::new(Some("/bin/sh".to_string()));
 
     let session_id = manager
         .create_session_with_user(
@@ -215,12 +220,12 @@ async fn test_session_manager_with_persistence() {
         .expect("Failed to create session with user");
 
     // Verify session exists
-    let sessions = manager.list_sessions();
+    let sessions = manager.list_sessions().await;
     assert!(sessions.contains(&session_id));
 
     // Cleanup
     manager
-        .kill_session(&session_id)
+        .kill_session(session_id)
         .await
         .expect("Failed to kill session");
 }
@@ -309,7 +314,7 @@ async fn test_unix_pty_working_dir_via_session_manager() {
 /// Test: Concurrent operations (write + resize)
 #[tokio::test]
 async fn test_session_manager_concurrent_operations() {
-    let manager = Arc::new(SessionManager::new("/bin/sh".to_string(), None, None));
+    let manager = Arc::new(SessionManager::new(Some("/bin/sh".to_string())));
 
     let session_id = manager
         .create_session(Some(PathBuf::from("/tmp")), 24, 80)
@@ -317,18 +322,18 @@ async fn test_session_manager_concurrent_operations() {
         .expect("Failed to create session");
 
     let (output_tx, _output_rx) = mpsc::channel(100);
-    let _client_id = manager
-        .attach_client(&session_id, output_tx)
+    let client_id = Uuid::new_v4();
+    manager
+        .attach_client(session_id, client_id, output_tx)
         .await
         .expect("Failed to attach client");
 
     // Spawn concurrent operations
     let manager1 = manager.clone();
-    let session_id1 = session_id.clone();
     let write_task = tokio::spawn(async move {
         for i in 0..10 {
             manager1
-                .send_input(&session_id1, format!("echo test{}\n", i).as_bytes())
+                .send_input(session_id, format!("echo test{}\n", i).as_bytes())
                 .await
                 .expect("Failed to send input");
             tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
@@ -336,11 +341,10 @@ async fn test_session_manager_concurrent_operations() {
     });
 
     let manager2 = manager.clone();
-    let session_id2 = session_id.clone();
     let resize_task = tokio::spawn(async move {
-        for i in 0..10 {
+        for i in 0..10u16 {
             manager2
-                .resize_session(&session_id2, 24 + i, 80 + i)
+                .resize_session(session_id, 24 + i, 80 + i)
                 .await
                 .expect("Failed to resize");
             tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
@@ -353,7 +357,7 @@ async fn test_session_manager_concurrent_operations() {
 
     // Cleanup
     manager
-        .kill_session(&session_id)
+        .kill_session(session_id)
         .await
         .expect("Failed to kill session");
 }

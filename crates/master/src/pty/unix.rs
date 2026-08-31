@@ -256,7 +256,7 @@ impl PtyBackend for UnixPtyBackend {
         }
 
         // Spawn child process with slave PTY
-        let mut child = pty_pair
+        let child = pty_pair
             .slave
             .spawn_command(cmd)
             .map_err(|e| PtyError::CreateFailed(format!("spawn_command failed: {}", e)))?;
@@ -364,8 +364,14 @@ impl PtyBackend for UnixPtyBackend {
 
 impl Drop for UnixPtyBackend {
     fn drop(&mut self) {
-        // Best-effort cleanup
-        if let Ok(mut child) = self.child.lock() {
+        // Best-effort cleanup. Must use try_lock(), not lock(): terminate()'s
+        // spawn_blocking wait task (see terminate()) can outlive its 5s
+        // tokio::time::timeout (spawn_blocking work can't be cancelled) and
+        // keep holding this same Mutex indefinitely while blocked in
+        // Child::wait(). A blocking lock() here would then deadlock forever
+        // against that orphaned thread instead of just skipping a redundant
+        // kill (terminate() already sent one).
+        if let Ok(mut child) = self.child.try_lock() {
             let _ = child.kill();
         }
         tracing::debug!("Unix PTY dropped: pid={}", self.shell_pid);

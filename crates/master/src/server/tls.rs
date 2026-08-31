@@ -39,6 +39,87 @@ impl TlsConfig {
         }
     }
 
+    /// Get a `TlsConfig` for `dir`, generating a self-signed certificate
+    /// there first if one doesn't already exist.
+    ///
+    /// Outside of `--dev-mode` (which uses a hardcoded, compiled-in test
+    /// cert), production runs had no certificate provisioning at all: the
+    /// default `cert_path`/`key_path` are the relative path `certs/`, which
+    /// only resolves when the process's cwd happens to be the source
+    /// checkout. Any real deployment — an installed service, or even just
+    /// `monoterminal-master` run from an arbitrary directory — would fail
+    /// at startup with "Failed to open cert file certs/server.crt: No such
+    /// file or directory" and never get a chance to serve anything. This
+    /// makes every such case self-sufficient: point it at a real directory
+    /// (see `platform::paths::system_cert_dir`/`user_cert_dir`) and it
+    /// creates what it needs on first run, matching how `gen-tls-cert.ps1`
+    /// bootstraps the dev certificate.
+    #[allow(clippy::result_large_err)]
+    pub fn ensure_self_signed(dir: &Path) -> Result<Self> {
+        let cert_path = dir.join("server.crt");
+        let key_path = dir.join("server.key");
+
+        if !cert_path.exists() || !key_path.exists() {
+            std::fs::create_dir_all(dir).map_err(|e| {
+                ServerError::Internal(format!(
+                    "Failed to create TLS cert directory {}: {}",
+                    dir.display(),
+                    e
+                ))
+            })?;
+
+            let cert = rcgen::generate_simple_self_signed(vec![
+                "localhost".to_string(),
+                "127.0.0.1".to_string(),
+            ])
+            .map_err(|e| {
+                ServerError::Internal(format!("Failed to generate self-signed certificate: {}", e))
+            })?;
+
+            let cert_pem = cert.serialize_pem().map_err(|e| {
+                ServerError::Internal(format!("Failed to serialize certificate: {}", e))
+            })?;
+            let key_pem = cert.serialize_private_key_pem();
+
+            std::fs::write(&cert_path, cert_pem).map_err(|e| {
+                ServerError::Internal(format!(
+                    "Failed to write certificate {}: {}",
+                    cert_path.display(),
+                    e
+                ))
+            })?;
+            std::fs::write(&key_path, &key_pem).map_err(|e| {
+                ServerError::Internal(format!(
+                    "Failed to write private key {}: {}",
+                    key_path.display(),
+                    e
+                ))
+            })?;
+
+            // Private key: owner read/write only (0600 — Unix only, matches
+            // the identity key's permission convention; not meaningful on
+            // Windows, whose ACL model set_permissions doesn't map to).
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                std::fs::set_permissions(&key_path, std::fs::Permissions::from_mode(0o600))
+                    .map_err(|e| {
+                        ServerError::Internal(format!(
+                            "Failed to set private key permissions: {}",
+                            e
+                        ))
+                    })?;
+            }
+
+            tracing::info!(
+                "Generated self-signed TLS certificate: {}",
+                cert_path.display()
+            );
+        }
+
+        Ok(Self::new(cert_path, key_path))
+    }
+
     /// Build TLS acceptor with TLS 1.3 only
     #[allow(clippy::result_large_err)]
     pub fn build_acceptor(&self) -> Result<TlsAcceptor> {

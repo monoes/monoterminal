@@ -22,7 +22,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use tokio::sync::broadcast;
 
-use auth::{keys::load_or_generate_keypair, Ed25519AuthService, RateLimiter};
+use auth::{keys::load_or_generate_keypair_at, Ed25519AuthService, RateLimiter};
 use monoterminal_monomind_bridge::HealthStatus;
 
 /// MONOTERMINAL master daemon
@@ -41,7 +41,13 @@ struct Args {
     dev_mode: bool,
 
     /// Server bind address
-    #[arg(long, default_value = "127.0.0.1:5000", global = true)]
+    ///
+    /// Port 5000 (the old default) is claimed by macOS's AirPlay Receiver by
+    /// default on every stock Mac, so the daemon would silently fail to bind
+    /// unless the user disabled AirPlay Receiver or passed --bind-addr
+    /// explicitly. 54321 is in IANA's private/dynamic range (49152-65535),
+    /// which no registered service is allowed to use.
+    #[arg(long, default_value = "127.0.0.1:54321", global = true)]
     bind_addr: String,
 
     /// systemd mode (Type=notify readiness signaling)
@@ -146,48 +152,49 @@ async fn handle_service_command(command: Command) -> Result<()> {
         } => {
             require_root()?;
 
-            // Interactive prompts for data/user removal (if not already specified)
-            let confirm_remove_data = if remove_data {
-                true
-            } else {
-                print!(
-                    "\nData directory: {}\nRemove data directory? [y/N]: ",
-                    platform::paths::data_dir().display()
-                );
-                read_confirmation()
-            };
+            // Linux: userdel-based removal lives here (systemd::uninstall_service
+            // doesn't remove the user itself), so these prompts and the
+            // subsequent cleanup are this platform's only removal path.
+            #[cfg(target_os = "linux")]
+            {
+                let confirm_remove_data = if remove_data {
+                    true
+                } else {
+                    print!(
+                        "\nData directory: {}\nRemove data directory? [y/N]: ",
+                        platform::paths::data_dir().display()
+                    );
+                    read_confirmation()
+                };
 
-            let confirm_remove_user = if remove_user {
-                true
-            } else {
-                print!("\nService user: monoterminal\nRemove service user? [y/N]: ");
-                read_confirmation()
-            };
+                let confirm_remove_user = if remove_user {
+                    true
+                } else {
+                    print!("\nService user: monoterminal\nRemove service user? [y/N]: ");
+                    read_confirmation()
+                };
 
-            uninstall_service()?;
+                uninstall_service()?;
 
-            // Post-uninstall cleanup based on user confirmation
-            if confirm_remove_data {
-                println!("\nRemoving data directory...");
-                let data_dir = platform::paths::data_dir();
-                if data_dir.exists() {
-                    std::fs::remove_dir_all(&data_dir).context(format!(
-                        "Failed to remove data directory: {}",
-                        data_dir.display()
-                    ))?;
-                    println!("✓ Data directory removed: {}", data_dir.display());
+                if confirm_remove_data {
+                    println!("\nRemoving data directory...");
+                    let data_dir = platform::paths::data_dir();
+                    if data_dir.exists() {
+                        std::fs::remove_dir_all(&data_dir).context(format!(
+                            "Failed to remove data directory: {}",
+                            data_dir.display()
+                        ))?;
+                        println!("✓ Data directory removed: {}", data_dir.display());
+                    }
+                } else {
+                    println!(
+                        "\nData directory preserved: {}",
+                        platform::paths::data_dir().display()
+                    );
                 }
-            } else {
-                println!(
-                    "\nData directory preserved: {}",
-                    platform::paths::data_dir().display()
-                );
-            }
 
-            if confirm_remove_user {
-                println!("\nRemoving service user...");
-                #[cfg(target_os = "linux")]
-                {
+                if confirm_remove_user {
+                    println!("\nRemoving service user...");
                     let status = std::process::Command::new("userdel")
                         .arg("monoterminal")
                         .status();
@@ -198,13 +205,23 @@ async fn handle_service_command(command: Command) -> Result<()> {
                             "Warning: Failed to remove service user (may need manual cleanup)"
                         ),
                     }
+                } else {
+                    println!("\nService user preserved: monoterminal");
                 }
-                #[cfg(not(target_os = "linux"))]
-                {
-                    println!("User removal not implemented for this platform");
-                }
-            } else {
-                println!("\nService user preserved: monoterminal");
+            }
+
+            // macOS (launchd) and Windows: the platform-specific
+            // uninstall_service() already prompts for data/log directory and
+            // service-user removal, and actually performs it (e.g. launchd.rs
+            // uses dscl to remove the service user/group). Duplicating that
+            // here — as this match arm used to — produced two conflicting
+            // sets of prompts per run and, on macOS, a misleading "User
+            // removal not implemented for this platform" message printed
+            // *after* the user had already been removed by the platform impl.
+            #[cfg(not(target_os = "linux"))]
+            {
+                let _ = (remove_data, remove_user); // not yet wired into these platforms' prompts
+                uninstall_service()?;
             }
         }
 
@@ -379,7 +396,12 @@ async fn run_daemon(args: Args) -> Result<()> {
         platform::service::sd_notify::notify_status("Loading Ed25519 keypair...")?;
     }
 
-    let keypair = load_or_generate_keypair().context("Failed to load Ed25519 keypair")?;
+    // Running as an installed system service: the service account's home
+    // directory is intentionally unusable for storage (see
+    // load_or_generate_keypair_at's docs), so store the identity key
+    // system-wide instead of under a per-user home.
+    let keypair = load_or_generate_keypair_at(args.launchd || args.systemd)
+        .context("Failed to load Ed25519 keypair")?;
     tracing::info!("Ed25519 keypair loaded");
 
     // 2. Create authentication service (Ed25519 + JWT)
@@ -413,6 +435,21 @@ async fn run_daemon(args: Args) -> Result<()> {
     {
         server_config.bind_addr = args.bind_addr.parse().context("Invalid bind address")?;
         server_config.dev_mode = args.dev_mode;
+    }
+
+    // --dev-mode uses a hardcoded compiled-in test certificate and never
+    // touches the filesystem (see TlsConfig::build_dev_acceptor); everything
+    // else needs a real certificate to exist somewhere. Same system-vs-user
+    // split as the identity key: a service account has no usable home
+    // directory to fall back to.
+    if !server_config.dev_mode {
+        let cert_dir = if args.launchd || args.systemd {
+            platform::paths::system_cert_dir()
+        } else {
+            platform::paths::user_cert_dir()
+        };
+        server_config.tls = server::TlsConfig::ensure_self_signed(&cert_dir)
+            .context("Failed to provision TLS certificate")?;
     }
 
     tracing::info!(

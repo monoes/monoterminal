@@ -8,14 +8,19 @@ Installation:
   sudo cp com.monoterminal.master.plist /Library/LaunchDaemons/
   sudo chmod 644 /Library/LaunchDaemons/com.monoterminal.master.plist
   sudo chown root:wheel /Library/LaunchDaemons/com.monoterminal.master.plist
-  sudo launchctl load /Library/LaunchDaemons/com.monoterminal.master.plist
+  sudo launchctl bootstrap system /Library/LaunchDaemons/com.monoterminal.master.plist
+
+  Note: `launchctl load`/`unload` are the legacy pre-10.11 API — on modern
+  macOS they're an unreliable compatibility shim that commonly fails with a
+  bare "Input/output error" for LaunchDaemons. `bootstrap`/`bootout` are the
+  real, currently-supported equivalents.
 
 Status:
   sudo launchctl list | grep monoterminal
   sudo tail -f /Library/Logs/MONOTERMINAL/stdout.log
 
 Uninstall:
-  sudo launchctl unload /Library/LaunchDaemons/com.monoterminal.master.plist
+  sudo launchctl bootout system/com.monoterminal.master
   sudo rm /Library/LaunchDaemons/com.monoterminal.master.plist
 -->
 <plist version="1.0">

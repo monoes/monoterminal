@@ -8,7 +8,7 @@
 // Platforms: Ubuntu (.deb), Debian (.deb), Fedora (.rpm), macOS (Homebrew)
 
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 // =============================================================================
@@ -376,7 +376,7 @@ fn test_pkg_006_config_file_locations() {
 
     #[cfg(unix)]
     let config_paths = vec![
-        "/etc/monoterminal/config.toml",
+        PathBuf::from("/etc/monoterminal/config.toml"),
         dirs::home_dir().expect("No home").join(".monoterminal/config.toml"),
     ];
 

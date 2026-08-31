@@ -42,18 +42,23 @@ impl TestWsClient {
     #[allow(dead_code)]
     pub async fn connect(&mut self) -> Result<()> {
         let (stream, _response) = if self.accept_invalid_certs {
-            // Create TLS connector that accepts invalid certificates (for testing only)
-            use native_tls::TlsConnector;
-            let tls_connector = TlsConnector::builder()
-                .danger_accept_invalid_certs(true)
-                .danger_accept_invalid_hostnames(true)
-                .build()?;
+            // Use rustls (not native-tls) to accept the server's self-signed
+            // dev cert: the server is TLS 1.3-only (see server/tls.rs), and
+            // native-tls's macOS backend (Security.framework/Secure
+            // Transport) caps out at TLS 1.2, so it can never complete this
+            // handshake on macOS ("bad protocol version"). rustls is a pure
+            // Rust TLS stack with no such OS-backend cap, so it works
+            // identically on every platform.
+            let tls_config = rustls022::ClientConfig::builder()
+                .dangerous()
+                .with_custom_certificate_verifier(std::sync::Arc::new(NoCertVerification))
+                .with_no_client_auth();
 
             connect_async_tls_with_config(
                 &self.url,
                 None,
                 false,
-                Some(Connector::NativeTls(tls_connector)),
+                Some(Connector::Rustls(std::sync::Arc::new(tls_config))),
             )
             .await?
         } else {
@@ -123,6 +128,7 @@ impl TestWsClient {
             rows,
             cols,
             last_seen_sequence: 0,
+            session_name: String::new(),
         };
 
         let envelope = monoterminal_protocol::Envelope {
@@ -161,6 +167,7 @@ impl TestWsClient {
 
         let input_data = monoterminal_protocol::InputData {
             data: data.to_vec(),
+            pane_id: None,
             auth_token: jwt_bearer.to_owned(),
         };
 
@@ -186,6 +193,7 @@ impl TestWsClient {
         let resize_req = monoterminal_protocol::ResizeRequest {
             rows,
             cols,
+            pane_id: None,
             auth_token: jwt_bearer.to_owned(),
         };
 
@@ -224,6 +232,49 @@ impl TestWsClient {
         self.send_binary(buf).await?;
 
         Ok(())
+    }
+}
+
+/// Accepts any server certificate — mirrors native-tls's
+/// `danger_accept_invalid_certs(true)` for connecting to the self-signed dev
+/// TLS cert. Test-only: never use for a real connection.
+#[derive(Debug)]
+struct NoCertVerification;
+
+impl rustls022::client::danger::ServerCertVerifier for NoCertVerification {
+    fn verify_server_cert(
+        &self,
+        _end_entity: &rustls022::pki_types::CertificateDer<'_>,
+        _intermediates: &[rustls022::pki_types::CertificateDer<'_>],
+        _server_name: &rustls022::pki_types::ServerName<'_>,
+        _ocsp_response: &[u8],
+        _now: rustls022::pki_types::UnixTime,
+    ) -> Result<rustls022::client::danger::ServerCertVerified, rustls022::Error> {
+        Ok(rustls022::client::danger::ServerCertVerified::assertion())
+    }
+
+    fn verify_tls12_signature(
+        &self,
+        _message: &[u8],
+        _cert: &rustls022::pki_types::CertificateDer<'_>,
+        _dss: &rustls022::DigitallySignedStruct,
+    ) -> Result<rustls022::client::danger::HandshakeSignatureValid, rustls022::Error> {
+        Ok(rustls022::client::danger::HandshakeSignatureValid::assertion())
+    }
+
+    fn verify_tls13_signature(
+        &self,
+        _message: &[u8],
+        _cert: &rustls022::pki_types::CertificateDer<'_>,
+        _dss: &rustls022::DigitallySignedStruct,
+    ) -> Result<rustls022::client::danger::HandshakeSignatureValid, rustls022::Error> {
+        Ok(rustls022::client::danger::HandshakeSignatureValid::assertion())
+    }
+
+    fn supported_verify_schemes(&self) -> Vec<rustls022::SignatureScheme> {
+        rustls022::crypto::ring::default_provider()
+            .signature_verification_algorithms
+            .supported_schemes()
     }
 }
 

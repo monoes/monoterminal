@@ -278,7 +278,7 @@ fn test_server_config_debug() {
     let config = ServerConfig::default();
     let debug_str = format!("{:?}", config);
 
-    assert!(debug_str.contains("127.0.0.1:5000"));
+    assert!(debug_str.contains("127.0.0.1:54321"));
     assert!(debug_str.contains("max_connections"));
     assert!(debug_str.contains("rate_limit_per_minute"));
 }

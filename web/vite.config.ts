@@ -78,7 +78,7 @@ export default defineConfig({
     host: '127.0.0.1',
     proxy: {
       '/ws': {
-        target: 'ws://localhost:5000',
+        target: 'ws://localhost:54321',
         ws: true,
       },
     },

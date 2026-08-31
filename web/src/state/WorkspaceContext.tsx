@@ -81,7 +81,7 @@ function defaultState(): PersistedState {
         id: computerId,
         name: 'This Machine',
         mode: 'direct',
-        wsUrl: import.meta.env.VITE_WS_URL || 'wss://localhost:5000',
+        wsUrl: import.meta.env.VITE_WS_URL || 'wss://localhost:54321',
       },
     ],
     workspaces: [{ id: workspaceId, computerId, name: 'Default' }],

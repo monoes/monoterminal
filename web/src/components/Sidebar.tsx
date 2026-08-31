@@ -52,7 +52,7 @@ export function Sidebar({ isOpen, onClose, panesByWorkspace, onSelectPane }: Sid
   const [addingComputer, setAddingComputer] = useState(false);
   const [newComputerName, setNewComputerName] = useState('');
   const [newComputerMode, setNewComputerMode] = useState<'direct' | 'p2p'>('direct');
-  const [newComputerUrl, setNewComputerUrl] = useState('wss://localhost:5000');
+  const [newComputerUrl, setNewComputerUrl] = useState('wss://localhost:54321');
   const [newComputerPeerId, setNewComputerPeerId] = useState('');
   const [newComputerRelayUrl, setNewComputerRelayUrl] = useState('');
 
@@ -173,7 +173,7 @@ export function Sidebar({ isOpen, onClose, panesByWorkspace, onSelectPane }: Sid
     }
 
     setNewComputerName('');
-    setNewComputerUrl('wss://localhost:5000');
+    setNewComputerUrl('wss://localhost:54321');
     setNewComputerPeerId('');
     setNewComputerRelayUrl('');
     setAddingComputer(false);
@@ -313,7 +313,7 @@ export function Sidebar({ isOpen, onClose, panesByWorkspace, onSelectPane }: Sid
             </div>
             {newComputerMode === 'direct' ? (
               <input
-                placeholder="wss://host:5000"
+                placeholder="wss://host:54321"
                 value={newComputerUrl}
                 onChange={(e) => setNewComputerUrl(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddComputer()}

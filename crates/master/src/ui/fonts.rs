@@ -5,7 +5,8 @@
 //!
 //! Target: <1ms glyph lookup (per SRS §2.1.1)
 
-use anyhow::{Context, Result};
+use anyhow::Context;
+use anyhow::Result;
 use fontdue::{Font, FontSettings};
 use std::path::PathBuf;
 
@@ -55,31 +56,39 @@ impl FontManager {
 
     /// Load system monospace font with fallback chain
     /// Windows: C:\Windows\Fonts\consola.ttf (Consolas)
+    /// macOS: SF Mono → Menlo → Monaco
+    /// Linux: DejaVu Sans Mono → Liberation Mono → Noto Sans Mono
     fn load_system_font() -> Result<Vec<u8>> {
         #[cfg(target_os = "windows")]
-        {
-            // Try Consolas first (best Windows monospace font)
-            let consolas_path = PathBuf::from(r"C:\Windows\Fonts\consola.ttf");
-            if consolas_path.exists() {
-                tracing::info!("Loading Consolas font");
-                return std::fs::read(&consolas_path).context("Failed to read Consolas font");
-            }
+        let candidates: &[&str] = &[r"C:\Windows\Fonts\consola.ttf", r"C:\Windows\Fonts\cour.ttf"];
 
-            // Fallback: Courier New
-            let courier_path = PathBuf::from(r"C:\Windows\Fonts\cour.ttf");
-            if courier_path.exists() {
-                tracing::warn!("Consolas not found, falling back to Courier New");
-                return std::fs::read(&courier_path).context("Failed to read Courier New font");
-            }
+        #[cfg(target_os = "macos")]
+        let candidates: &[&str] = &[
+            "/System/Library/Fonts/SFNSMono.ttf",
+            "/System/Library/Fonts/Menlo.ttc",
+            "/System/Library/Fonts/Monaco.ttf",
+        ];
 
-            anyhow::bail!("No suitable monospace font found in C:\\Windows\\Fonts");
+        #[cfg(all(unix, not(target_os = "macos")))]
+        let candidates: &[&str] = &[
+            "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
+            "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf",
+            "/usr/share/fonts/truetype/noto/NotoSansMono-Regular.ttf",
+        ];
+
+        for candidate in candidates {
+            let path = PathBuf::from(candidate);
+            if path.exists() {
+                tracing::info!("Loading system font: {}", candidate);
+                return std::fs::read(&path)
+                    .with_context(|| format!("Failed to read font: {}", candidate));
+            }
         }
 
-        #[cfg(not(target_os = "windows"))]
-        {
-            // Phase 3: Linux/macOS font loading
-            anyhow::bail!("Non-Windows font loading not yet implemented (Phase 3)")
-        }
+        anyhow::bail!(
+            "No suitable monospace font found (tried: {})",
+            candidates.join(", ")
+        );
     }
 
     /// Rasterize a glyph to bitmap

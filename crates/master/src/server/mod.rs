@@ -53,8 +53,12 @@ pub struct ServerConfig {
 impl Default for ServerConfig {
     fn default() -> Self {
         Self {
-            // Phase 1: local only - 127.0.0.1:5000 per eng-director
-            bind_addr: "127.0.0.1:5000".parse().unwrap(),
+            // Phase 1: local only. Not 5000 — macOS's AirPlay Receiver
+            // claims that port by default on every stock Mac, so the
+            // daemon would fail to bind out of the box; 54321 is in IANA's
+            // private/dynamic range (49152-65535), unclaimable by any
+            // registered service.
+            bind_addr: "127.0.0.1:54321".parse().unwrap(),
             tls: TlsConfig::default(),
             max_connections: 1000,
             rate_limit_per_minute: 100,
