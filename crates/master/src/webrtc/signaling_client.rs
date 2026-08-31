@@ -144,6 +144,21 @@ async fn run_once(
 
     let mut negotiation: Option<Negotiation> = None;
 
+    // Detects a "zombie" relay connection: the TCP socket can go dead
+    // (network blip, idle proxy timeout, sleep/wake) without either side
+    // ever observing a close or a read error, leaving the daemon
+    // "registered" against a link that no longer carries traffic — the
+    // relay then reports any browser's Connect as paired, but nothing the
+    // daemon sends ever arrives. Pinging on an interval and tracking the
+    // last time *anything* was received (including the relay's own
+    // pings/pongs) lets a stale connection be detected and torn down so
+    // the outer reconnect loop in `run()` can establish a fresh one,
+    // instead of requiring a manual daemon restart.
+    const PING_INTERVAL: Duration = Duration::from_secs(15);
+    const STALE_TIMEOUT: Duration = Duration::from_secs(45);
+    let mut last_activity = tokio::time::Instant::now();
+    let mut ping_interval = tokio::time::interval(PING_INTERVAL);
+
     loop {
         tokio::select! {
             // Messages from the relay
@@ -153,11 +168,19 @@ async fn run_once(
                     Some(Err(e)) => return Err(anyhow::anyhow!("relay socket error: {}", e)),
                     None => return Ok(()), // relay closed the connection
                 };
+                last_activity = tokio::time::Instant::now();
 
                 let text = match msg {
                     WsMessage::Text(t) => t,
                     WsMessage::Close(_) => return Ok(()),
-                    _ => continue, // ignore ping/pong/binary — relay only speaks JSON text
+                    WsMessage::Ping(payload) => {
+                        // tungstenite doesn't auto-reply on a split stream —
+                        // reply ourselves so the relay (or any proxy in
+                        // front of it) sees this connection as alive.
+                        let _ = write.send(WsMessage::Pong(payload)).await;
+                        continue;
+                    }
+                    _ => continue, // ignore pong/binary — relay only speaks JSON text
                 };
 
                 let relay_msg: RelayMessage = match serde_json::from_str(&text) {
@@ -282,6 +305,21 @@ async fn run_once(
             } => {
                 let msg: RelayMessage = candidate.into();
                 write.send(WsMessage::Text(serde_json::to_string(&msg)?)).await?;
+            }
+
+            // Keepalive: probe the connection on an interval, and give up
+            // on it (triggering a reconnect) if nothing at all has been
+            // heard back since well before the last couple of probes.
+            _ = ping_interval.tick() => {
+                if last_activity.elapsed() > STALE_TIMEOUT {
+                    return Err(anyhow::anyhow!(
+                        "relay connection stale — no activity in {}s, reconnecting",
+                        last_activity.elapsed().as_secs()
+                    ));
+                }
+                if let Err(e) = write.send(WsMessage::Ping(Vec::new())).await {
+                    return Err(anyhow::anyhow!("failed to send keepalive ping: {}", e));
+                }
             }
         }
 
