@@ -13,6 +13,7 @@ pub mod pairing;
 pub mod peer_connection;
 pub mod signaling_client;
 pub mod transport;
+pub mod turn;
 
 #[cfg(test)]
 mod tests;

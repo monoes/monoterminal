@@ -166,6 +166,47 @@ pub fn log_dir() -> PathBuf {
     user_data_dir().join("logs")
 }
 
+/// Get the log directory for a system-wide launchd/systemd service.
+///
+/// `log_dir()` is per-user by design (honors `$HOME`/XDG so an interactive
+/// CLI run logs next to the invoking user's other app data) — but `sudo`
+/// preserves the invoking user's `$HOME` by default, so calling `log_dir()`
+/// while generating a system service's launchd plist bakes in *that user's*
+/// home directory. The resulting service then runs as an unprivileged
+/// service account (e.g. `_monoterminal`) with no write access there, and
+/// `install-service` ends up creating and chowning a stray directory inside
+/// a regular human user's home folder. System services must always use the
+/// fixed system-wide log location, independent of whichever user happened
+/// to run the installer.
+#[cfg(target_os = "macos")]
+pub fn system_log_dir() -> PathBuf {
+    PathBuf::from("/Library/Logs/MONOTERMINAL")
+}
+
+#[cfg(target_os = "linux")]
+pub fn system_log_dir() -> PathBuf {
+    PathBuf::from("/var/log/monoterminal")
+}
+
+/// TLS certificate directory for a system-wide service install.
+///
+/// Same reasoning as `system_log_dir()`: a service account has no usable
+/// home directory, so certs must live under the system-wide data dir, not
+/// wherever a relative `certs/` path or per-user dir happens to resolve to.
+pub fn system_cert_dir() -> PathBuf {
+    data_dir().join("certs")
+}
+
+/// TLS certificate directory for an interactive (non-service) run.
+///
+/// Distinct from the bare relative `certs/` default used by `TlsConfig`
+/// (which only resolves correctly when the cwd happens to be the source
+/// checkout) — this always resolves to a real, writable, per-user location
+/// regardless of cwd, mirroring `user_data_dir()`.
+pub fn user_cert_dir() -> PathBuf {
+    user_data_dir().join("certs")
+}
+
 /// Get SQLite database path for session persistence
 ///
 /// Returns the full path to the session database file.

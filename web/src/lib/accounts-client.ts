@@ -10,7 +10,7 @@ const STORAGE_KEY_BASE_URL = 'monoterminal.auth.baseUrl';
 const STORAGE_KEY_EMAIL = 'monoterminal.auth.email';
 
 export interface AuthUser {
-  id: number;
+  id: string;
   email: string;
 }
 
@@ -59,6 +59,17 @@ export function toRelayWsUrl(baseUrl: string): string {
   return trimmed;
 }
 
+/** Inverse of toRelayWsUrl — recovers the accounts HTTP base URL from the
+ * relay WebSocket URL a WebRtcClient was configured with, so TURN
+ * credentials can be fetched without requiring a logged-in session (the
+ * endpoint is unauthenticated, keyed by peer_id only — see turn.rs). */
+export function toAccountsHttpUrl(relayWsUrl: string): string {
+  const trimmed = trimBaseUrl(relayWsUrl);
+  if (trimmed.startsWith('wss://')) return 'https://' + trimmed.slice('wss://'.length);
+  if (trimmed.startsWith('ws://')) return 'http://' + trimmed.slice('ws://'.length);
+  return trimmed;
+}
+
 export function getStoredAuth(): StoredAuth | null {
   const jwt = localStorage.getItem(STORAGE_KEY_JWT);
   const baseUrl = localStorage.getItem(STORAGE_KEY_BASE_URL);
@@ -79,34 +90,48 @@ export function logout(): void {
   localStorage.removeItem(STORAGE_KEY_EMAIL);
 }
 
-export async function signup(
-  baseUrl: string,
-  email: string,
-  password: string
-): Promise<{ token: string; user: AuthUser }> {
-  const res = await fetch(`${trimBaseUrl(baseUrl)}/api/signup`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
-  });
-  const data = await parseJsonOrThrow<{ token: string; user: AuthUser }>(res);
-  persistAuth(baseUrl, data.token, data.user.email);
-  return data;
+/**
+ * Starts the browser OAuth redirect flow against monoes.me: asks the relay
+ * for an authorize URL (it holds the client secret and PKCE state), then
+ * navigates the browser there. Call this from a click handler — it's a full
+ * page navigation, not a fetch you await.
+ */
+export async function startLogin(baseUrl: string): Promise<void> {
+  const returnTo = window.location.origin + window.location.pathname;
+  const res = await fetch(
+    `${trimBaseUrl(baseUrl)}/api/oauth/start?return_to=${encodeURIComponent(returnTo)}`
+  );
+  const data = await parseJsonOrThrow<{ authorize_url: string }>(res);
+  localStorage.setItem(STORAGE_KEY_BASE_URL, trimBaseUrl(baseUrl));
+  window.location.assign(data.authorize_url);
 }
 
-export async function login(
-  baseUrl: string,
-  email: string,
-  password: string
-): Promise<{ token: string; user: AuthUser }> {
-  const res = await fetch(`${trimBaseUrl(baseUrl)}/api/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
-  });
-  const data = await parseJsonOrThrow<{ token: string; user: AuthUser }>(res);
-  persistAuth(baseUrl, data.token, data.user.email);
-  return data;
+/**
+ * After `/api/oauth/callback` redirects back here, the relay session JWT and
+ * email are in the URL fragment (never a query param — see
+ * crates/signaling-relay/src/oauth.rs for why). Consumes and strips it.
+ * Returns true if a session was picked up.
+ */
+export function consumeAuthFromFragment(): boolean {
+  if (!window.location.hash) return false;
+
+  const params = new URLSearchParams(window.location.hash.slice(1));
+  const token = params.get('monoterminal_token');
+  const email = params.get('email');
+  if (!token || !email) return false;
+
+  const baseUrl = localStorage.getItem(STORAGE_KEY_BASE_URL);
+  if (!baseUrl) return false;
+
+  persistAuth(baseUrl, token, email);
+
+  params.delete('monoterminal_token');
+  params.delete('email');
+  const remaining = params.toString();
+  const cleanUrl =
+    window.location.pathname + window.location.search + (remaining ? `#${remaining}` : '');
+  window.history.replaceState(null, '', cleanUrl);
+  return true;
 }
 
 function requireAuth(): StoredAuth {
@@ -137,6 +162,26 @@ export async function listComputers(): Promise<{ computers: LinkedComputer[] }> 
     headers: { Authorization: `Bearer ${auth.token}` },
   });
   return parseJsonOrThrow<{ computers: LinkedComputer[] }>(res);
+}
+
+export interface TurnCredentials {
+  urls: string[];
+  username: string;
+  credential: string;
+  expires_at: number;
+}
+
+/** Unauthenticated — mirrors the relay's own trust model for this endpoint
+ * (see crates/signaling-relay/src/turn.rs): keyed by peer_id only, rate
+ * limited server-side, no Bearer token required. */
+export async function getTurnCredentials(
+  baseUrl: string,
+  peerId: string
+): Promise<TurnCredentials> {
+  const res = await fetch(
+    `${trimBaseUrl(baseUrl)}/api/turn-credentials?peer_id=${encodeURIComponent(peerId)}`
+  );
+  return parseJsonOrThrow<TurnCredentials>(res);
 }
 
 export async function unlinkComputer(id: number): Promise<{ ok: true }> {

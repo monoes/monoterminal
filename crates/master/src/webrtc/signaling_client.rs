@@ -184,7 +184,24 @@ async fn run_once(
 
                     RelayMessage::PeerConnectRequest => {
                         info!("Incoming P2P connection request");
-                        let config = Arc::new(WebRtcConfig::default());
+                        // Best-effort: if the relay's TURN endpoint is
+                        // unreachable, fall back to STUN-only rather than
+                        // failing the connection outright — matches today's
+                        // behavior exactly when TURN isn't configured.
+                        let turn_servers =
+                            match crate::webrtc::turn::fetch_turn_credentials(relay_url, peer_id)
+                                .await
+                            {
+                                Ok(turn) => Some(turn),
+                                Err(e) => {
+                                    warn!("Failed to fetch TURN credentials, falling back to STUN-only: {}", e);
+                                    None
+                                }
+                            };
+                        let config = Arc::new(WebRtcConfig {
+                            turn_servers,
+                            ..Default::default()
+                        });
                         match PeerConnection::new_as_answerer(config).await {
                             Ok((pc, ice_rx, messages_rx)) => {
                                 negotiation = Some(Negotiation {
@@ -232,9 +249,25 @@ async fn run_once(
                     }
 
                     RelayMessage::PeerDisconnected => {
-                        info!("Remote peer disconnected before/after negotiation");
-                        if let Some(neg) = negotiation.take() {
-                            let _ = neg.pc.close().await;
+                        // The browser closes its signaling-relay socket the
+                        // instant its DataChannel opens (the relay's job is
+                        // done once P2P takes over) — the relay reports
+                        // that same-socket closure as "peer disconnected"
+                        // regardless of whether negotiation succeeded. Only
+                        // tear down the PeerConnection if it never actually
+                        // reached Connected; otherwise this races the just
+                        // established DataChannel session and kills it.
+                        let already_connected = match &negotiation {
+                            Some(neg) => neg.pc.state().await == PeerConnectionState::Connected,
+                            None => false,
+                        };
+                        if already_connected {
+                            debug!("Signaling relay disconnected after successful negotiation — ignoring");
+                        } else {
+                            info!("Remote peer disconnected before negotiation completed");
+                            if let Some(neg) = negotiation.take() {
+                                let _ = neg.pc.close().await;
+                            }
                         }
                     }
                 }

@@ -19,7 +19,9 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:report": "playwright show-report",
     "generate-icons": "node scripts/generate-pwa-icons.js",
-    "pwa:check": "echo 'PWA manifest and service worker configured. Run build and check Application tab in DevTools.'"
+    "pwa:check": "echo 'PWA manifest and service worker configured. Run build and check Application tab in DevTools.'",
+    "cf:build": "vite build",
+    "deploy": "npm run cf:build && wrangler deploy"
   },
   "dependencies": {
     "@noble/ed25519": "^2.1.0",
@@ -54,6 +56,7 @@
     "vite": "^5.0.0",
     "vite-plugin-pwa": "^1.3.0",
     "vitest": "^4.1.10",
-    "workbox-window": "^7.0.0"
+    "workbox-window": "^7.0.0",
+    "wrangler": "^4.127.0"
   }
 }

@@ -1,12 +1,18 @@
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 
-use monoterminal_signaling_relay::{build_router_with_state, load_or_generate_signing_key, AppState, Database, PairingRateLimiter, SharedState};
+use monoterminal_signaling_relay::{
+    build_router_with_state, issue_session, load_or_generate_signing_key,
+    load_or_generate_turn_secret, AppState, Database, OAuthConfig, PairingRateLimiter,
+    SharedState,
+};
 
 static PORT_HINT: AtomicU64 = AtomicU64::new(0);
 
 struct TestServer {
     base_url: String,
+    db: Arc<Database>,
+    signing_key: Arc<Vec<u8>>,
     _db_dir: tempfile::TempDir,
 }
 
@@ -18,11 +24,15 @@ async fn spawn_server() -> TestServer {
     ));
 
     let db = Arc::new(Database::new(&db_path).expect("db init"));
+    let signing_key = Arc::new(load_or_generate_signing_key());
     let shared = Arc::new(SharedState {
         relay: AppState::new(),
-        db,
-        jwt_signing_key: Arc::new(load_or_generate_signing_key()),
+        db: db.clone(),
+        jwt_signing_key: signing_key.clone(),
         pairing_rate_limiter: PairingRateLimiter::default(),
+        oauth: OAuthConfig::for_tests(),
+        turn_shared_secret: load_or_generate_turn_secret(),
+        turn_server_host: "127.0.0.1:3478".to_string(),
     });
 
     let router = build_router_with_state(shared);
@@ -35,6 +45,8 @@ async fn spawn_server() -> TestServer {
 
     TestServer {
         base_url: format!("http://{}", addr),
+        db,
+        signing_key,
         _db_dir: db_dir,
     }
 }
@@ -43,91 +55,39 @@ fn client() -> reqwest::Client {
     reqwest::Client::new()
 }
 
-fn extract_credential(body: &serde_json::Value) -> String {
-    body.get("token").and_then(|v| v.as_str()).unwrap().to_string()
-}
-
-async fn signup(server: &TestServer, email: &str, password: &str) -> serde_json::Value {
-    client()
-        .post(format!("{}/api/signup", server.base_url))
-        .json(&serde_json::json!({"email": email, "password": password}))
-        .send()
-        .await
-        .unwrap()
-        .json()
-        .await
-        .unwrap()
-}
-
-#[tokio::test]
-async fn signup_login_and_authenticated_route_work() {
-    let server = spawn_server().await;
-
-    let signup_resp = client()
-        .post(format!("{}/api/signup", server.base_url))
-        .json(&serde_json::json!({"email": "alice@example.com", "password": "hunter22"}))
-        .send()
-        .await
-        .unwrap();
-    assert_eq!(signup_resp.status(), 200);
-    let signup_body: serde_json::Value = signup_resp.json().await.unwrap();
-    let cred_a = extract_credential(&signup_body);
-    assert_eq!(signup_body["user"]["email"], "alice@example.com");
-
-    let login_resp = client()
-        .post(format!("{}/api/login", server.base_url))
-        .json(&serde_json::json!({"email": "alice@example.com", "password": "hunter22"}))
-        .send()
-        .await
-        .unwrap();
-    assert_eq!(login_resp.status(), 200);
-    let login_body: serde_json::Value = login_resp.json().await.unwrap();
-    let cred_b = extract_credential(&login_body);
-
-    for credential in [cred_a, cred_b] {
-        let resp = client()
-            .get(format!("{}/api/computers", server.base_url))
-            .bearer_auth(&credential)
-            .send()
-            .await
-            .unwrap();
-        assert_eq!(resp.status(), 200);
-    }
+/// Stands in for a completed OAuth login: inserts the user row that the real
+/// `/api/oauth/callback` would have upserted after talking to monoes.me, then
+/// issues the same relay session JWT it would hand back. `user_id` mirrors
+/// the `sub` claim monoes.me would supply.
+fn login_as(server: &TestServer, user_id: &str, email: &str) -> String {
+    let conn = server.db.get_conn().unwrap();
+    conn.execute(
+        "INSERT INTO users (id, email, created_at) VALUES (?1, ?2, 0)
+         ON CONFLICT(id) DO UPDATE SET email = excluded.email",
+        rusqlite::params![user_id, email],
+    )
+    .unwrap();
+    issue_session(&server.signing_key, user_id, email).unwrap()
 }
 
 #[tokio::test]
-async fn duplicate_signup_is_rejected() {
+async fn authenticated_session_can_hit_computers_route() {
     let server = spawn_server().await;
-    signup(&server, "bob@example.com", "password1").await;
+    let credential = login_as(&server, "monoes-user-alice", "alice@example.com");
 
     let resp = client()
-        .post(format!("{}/api/signup", server.base_url))
-        .json(&serde_json::json!({"email": "bob@example.com", "password": "password2"}))
+        .get(format!("{}/api/computers", server.base_url))
+        .bearer_auth(&credential)
         .send()
         .await
         .unwrap();
-    assert_eq!(resp.status(), 409);
-}
-
-#[tokio::test]
-async fn login_with_wrong_password_is_rejected() {
-    let server = spawn_server().await;
-    signup(&server, "carol@example.com", "correcthorse").await;
-
-    let resp = client()
-        .post(format!("{}/api/login", server.base_url))
-        .json(&serde_json::json!({"email": "carol@example.com", "password": "wrongpassword"}))
-        .send()
-        .await
-        .unwrap();
-    assert_eq!(resp.status(), 401);
+    assert_eq!(resp.status(), 200);
 }
 
 #[tokio::test]
 async fn pairing_code_link_and_list_flow() {
     let server = spawn_server().await;
-    let signup_body = signup(&server, "dave@example.com", "password1").await;
-    let credential = extract_credential(&signup_body);
+    let credential = login_as(&server, "monoes-user-dave", "dave@example.com");
 
     let code_resp = client()
         .post(format!("{}/api/pairing-codes", server.base_url))
@@ -166,8 +126,7 @@ async fn pairing_code_link_and_list_flow() {
 #[tokio::test]
 async fn consumed_or_expired_code_is_rejected() {
     let server = spawn_server().await;
-    let signup_body = signup(&server, "erin@example.com", "password1").await;
-    let credential = extract_credential(&signup_body);
+    let credential = login_as(&server, "monoes-user-erin", "erin@example.com");
 
     let code_resp = client()
         .post(format!("{}/api/pairing-codes", server.base_url))
@@ -213,8 +172,7 @@ async fn consumed_or_expired_code_is_rejected() {
 async fn linking_peer_already_owned_by_another_user_is_rejected() {
     let server = spawn_server().await;
 
-    let owner = signup(&server, "frank@example.com", "password1").await;
-    let owner_cred = extract_credential(&owner);
+    let owner_cred = login_as(&server, "monoes-user-frank", "frank@example.com");
 
     let code_resp = client()
         .post(format!("{}/api/pairing-codes", server.base_url))
@@ -235,8 +193,7 @@ async fn linking_peer_already_owned_by_another_user_is_rejected() {
     assert_eq!(link_resp.status(), 200);
 
     // Someone else requests a fresh code for the SAME peer_id and tries to link it.
-    let intruder = signup(&server, "gina@example.com", "password1").await;
-    let intruder_cred = extract_credential(&intruder);
+    let intruder_cred = login_as(&server, "monoes-user-gina", "gina@example.com");
 
     let code_resp2 = client()
         .post(format!("{}/api/pairing-codes", server.base_url))
@@ -260,10 +217,8 @@ async fn linking_peer_already_owned_by_another_user_is_rejected() {
 #[tokio::test]
 async fn delete_computer_removes_it_and_rejects_other_users() {
     let server = spawn_server().await;
-    let user_a = signup(&server, "henry@example.com", "password1").await;
-    let cred_a = extract_credential(&user_a);
-    let user_b = signup(&server, "irene@example.com", "password1").await;
-    let cred_b = extract_credential(&user_b);
+    let cred_a = login_as(&server, "monoes-user-henry", "henry@example.com");
+    let cred_b = login_as(&server, "monoes-user-irene", "irene@example.com");
 
     let code_resp = client()
         .post(format!("{}/api/pairing-codes", server.base_url))

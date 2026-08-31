@@ -45,6 +45,17 @@ export type NewComputerConnection =
 
 interface WorkspaceContextValue extends PersistedState {
   addComputer: (name: string, connection: NewComputerConnection) => string;
+  /** Silently adds a P2P computer discovered via the account's linked
+   * computers list — unlike `addComputer`, does not change
+   * `activeComputerId`, so background discovery never steals focus from
+   * whatever the user is currently looking at. */
+  addLinkedComputer: (name: string, peerId: string, relayUrl: string) => void;
+  /** True only for the very first render on a device that's never used the
+   * app before (no persisted state at all yet) — the seeded "This Machine"
+   * default at that point is a meaningless localhost placeholder, not a
+   * real prior session worth protecting. Used to decide whether
+   * account-discovered computers should also become the active one. */
+  isFirstRun: boolean;
   removeComputer: (id: string) => void;
   renameComputer: (id: string, name: string) => void;
   addWorkspace: (computerId: string, name?: string) => string;
@@ -99,6 +110,7 @@ function loadState(): PersistedState {
 const WorkspaceContext = createContext<WorkspaceContextValue | null>(null);
 
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
+  const [isFirstRun] = useState(() => localStorage.getItem(STORAGE_KEY) === null);
   const [state, setState] = useState<PersistedState>(loadState);
 
   useEffect(() => {
@@ -108,6 +120,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const value = useMemo<WorkspaceContextValue>(
     () => ({
       ...state,
+      isFirstRun,
 
       addComputer: (name, connection) => {
         const id = makeId();
@@ -122,12 +135,30 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
                 peerId: connection.peerId,
                 relayUrl: connection.relayUrl,
               };
+        const workspaceId = makeId();
         setState((s) => ({
           ...s,
           computers: [...s.computers, computer],
+          workspaces: [...s.workspaces, { id: workspaceId, computerId: id, name: 'Default' }],
           activeComputerId: id,
+          activeWorkspaceId: workspaceId,
         }));
         return id;
+      },
+
+      addLinkedComputer: (name, peerId, relayUrl) => {
+        setState((s) => {
+          if (s.computers.some((c) => c.peerId === peerId)) return s;
+          const computer: ComputerConfig = {
+            id: makeId(),
+            name,
+            mode: 'p2p',
+            wsUrl: '',
+            peerId,
+            relayUrl,
+          };
+          return { ...s, computers: [...s.computers, computer] };
+        });
       },
 
       removeComputer: (id) => {
@@ -192,10 +223,23 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         }));
       },
 
-      setActiveComputerId: (id) => setState((s) => ({ ...s, activeComputerId: id })),
+      setActiveComputerId: (id) =>
+        setState((s) => {
+          const existing = s.workspaces.find((w) => w.computerId === id);
+          if (existing) {
+            return { ...s, activeComputerId: id, activeWorkspaceId: existing.id };
+          }
+          const workspaceId = makeId();
+          return {
+            ...s,
+            activeComputerId: id,
+            activeWorkspaceId: workspaceId,
+            workspaces: [...s.workspaces, { id: workspaceId, computerId: id, name: 'Default' }],
+          };
+        }),
       setActiveWorkspaceId: (id) => setState((s) => ({ ...s, activeWorkspaceId: id })),
     }),
-    [state]
+    [state, isFirstRun]
   );
 
   return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;

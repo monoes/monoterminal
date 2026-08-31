@@ -7,7 +7,8 @@ import { MobileKeyboard } from './components/MobileKeyboard';
 import { MonomindPanel } from './components/MonomindPanel';
 import { InstallPrompt } from './components/InstallPrompt';
 import { IconClose, IconMenu, IconPanel, IconPrompt } from './components/icons';
-import { WebSocketClient } from './lib/websocket-client';
+import { ConnectionState, WebSocketClient } from './lib/websocket-client';
+import { getStoredAuth, linkComputer, listComputers } from './lib/accounts-client';
 import { useWorkspace } from './state/WorkspaceContext';
 import './App.css';
 
@@ -50,6 +51,53 @@ function App() {
     setMonomindClient(client);
     return () => client.disconnect();
   }, [activeComputer]);
+
+  // Auto-link this machine to the logged-in monoes.me account the first
+  // time we get a direct, authenticated connection to its daemon — opening
+  // that connection already proves this is the user's machine, and being
+  // logged in proves which account, so no manual pairing code is needed
+  // (unlike linking a genuinely different device, which still requires one).
+  const autoLinkAttempted = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!monomindClient || !activeComputer || activeComputer.mode !== 'direct') return;
+    if (!getStoredAuth()) return;
+
+    const attemptAutoLink = () => {
+      if (autoLinkAttempted.current.has(activeComputer.id)) return;
+      autoLinkAttempted.current.add(activeComputer.id);
+
+      (async () => {
+        try {
+          const peerIdResp = await monomindClient.sendDashboardRequest({ command: 'account_peer_id' });
+          if (peerIdResp.error !== 0) return; // P2P not enabled on this daemon
+          const { peer_id: peerId } = JSON.parse(peerIdResp.jsonData) as { peer_id: string };
+
+          const { computers: linked } = await listComputers();
+          if (linked.some((c) => c.peer_id === peerId)) return; // already linked
+
+          const codeResp = await monomindClient.sendDashboardRequest({ command: 'account_pairing_code' });
+          if (codeResp.error !== 0) return;
+          const { code } = JSON.parse(codeResp.jsonData) as { code: string };
+
+          await linkComputer(code, activeComputer.name);
+        } catch (err) {
+          console.warn('Auto-link of this machine failed (will retry next load):', err);
+        }
+      })();
+    };
+
+    // The listener only fires on future transitions, so check the current
+    // state too — the client may have already reached CONNECTED between
+    // being created (previous effect) and this effect attaching a listener.
+    if (monomindClient.getState() === ConnectionState.CONNECTED) {
+      attemptAutoLink();
+    }
+    const unsubscribe = monomindClient.onStateChange((state) => {
+      if (state === ConnectionState.CONNECTED) attemptAutoLink();
+    });
+
+    return unsubscribe;
+  }, [monomindClient, activeComputer]);
 
   const handleMobileKey = useCallback(
     (key: string) => {

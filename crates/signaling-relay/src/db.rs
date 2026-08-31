@@ -37,17 +37,34 @@ impl Database {
 
         {
             let conn = pool.get().context("failed to get connection from pool")?;
+
+            // Pre-OAuth installs have an integer-keyed `users` table with a
+            // local password hash. Identity now comes from monoes.me
+            // (TEXT ids), so those rows and their FKs are no longer
+            // meaningful — rebuild rather than migrate in place.
+            let schema_version: i64 =
+                conn.query_row("PRAGMA user_version", [], |row| row.get(0))?;
+            if schema_version < 1 {
+                conn.execute_batch(
+                    "PRAGMA foreign_keys = OFF;
+                     DROP TABLE IF EXISTS linked_computers;
+                     DROP TABLE IF EXISTS users;
+                     PRAGMA user_version = 1;
+                     PRAGMA foreign_keys = ON;",
+                )
+                .context("failed to migrate to OAuth-backed schema")?;
+            }
+
             conn.execute_batch(
                 "CREATE TABLE IF NOT EXISTS users (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    email TEXT NOT NULL UNIQUE,
-                    password_hash TEXT NOT NULL,
+                    id TEXT PRIMARY KEY,
+                    email TEXT NOT NULL,
                     created_at INTEGER NOT NULL
                 );
 
                 CREATE TABLE IF NOT EXISTS linked_computers (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id INTEGER NOT NULL REFERENCES users(id),
+                    user_id TEXT NOT NULL REFERENCES users(id),
                     peer_id TEXT NOT NULL UNIQUE,
                     name TEXT NOT NULL,
                     linked_at INTEGER NOT NULL,
@@ -59,6 +76,13 @@ impl Database {
                     peer_id TEXT NOT NULL,
                     expires_at INTEGER NOT NULL,
                     consumed INTEGER NOT NULL DEFAULT 0
+                );
+
+                CREATE TABLE IF NOT EXISTS oauth_states (
+                    state TEXT PRIMARY KEY,
+                    code_verifier TEXT NOT NULL,
+                    return_to TEXT NOT NULL,
+                    created_at INTEGER NOT NULL
                 );",
             )
             .context("failed to initialize schema")?;

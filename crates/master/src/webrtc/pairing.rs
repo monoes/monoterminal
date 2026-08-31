@@ -30,8 +30,9 @@ struct PairingCodeRequest<'a> {
 
 /// Converts a signaling relay URL (`ws://` or `wss://`, as used for the
 /// WebSocket signaling connection) to the equivalent `http://`/`https://`
-/// base URL for REST calls, keeping host:port and path unchanged.
-fn relay_url_to_http(relay_url: &str) -> String {
+/// base URL for REST calls, keeping host:port and path unchanged. Shared
+/// with the TURN-credential fetch in this same module.
+pub(crate) fn relay_url_to_http(relay_url: &str) -> String {
     if let Some(rest) = relay_url.strip_prefix("wss://") {
         format!("https://{}", rest)
     } else if let Some(rest) = relay_url.strip_prefix("ws://") {
@@ -98,6 +99,12 @@ impl PairingCodeCache {
             peer_id,
             current: RwLock::new(None),
         })
+    }
+
+    /// This daemon's peer_id (Ed25519 pubkey hex) — a pure local read, no
+    /// network call, so it's safe to expose over the dashboard command path.
+    pub fn peer_id(&self) -> &str {
+        &self.peer_id
     }
 
     /// Returns the cached pairing code if still valid, otherwise fetches and

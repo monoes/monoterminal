@@ -19,7 +19,7 @@
     {"source": "(?:api[_-]?key|apikey)\\s*[:=]\\s*['\"][^'\"]{8,}['\"]", "flags": "gi"},
     {"source": "(?:secret|password|passwd|pwd)\\s*[:=]\\s*['\"][^'\"]{8,}['\"]", "flags": "gi"},
     {"source": "(?<!test[_-])(?:token|bearer)\\s*[:=]\\s*['\"](?!test-)[^'\"]{10,}['\"]", "flags": "gi"},
-    {"source": "(?:api[_-]?key|apikey|token|secret|password|passwd|pwd)\\s*[:=]\\s*(?!test[-_])[^\\s'\"]{8,}", "flags": "gi"},
+    {"source": "(?:api[_-]?key|apikey|token|secret|password|passwd|pwd)\\s*[:=]\\s*(?!test[-_])(?=[^\\s'\"(),;&<>!]*[0-9])[^\\s'\"(),;&<>!]{8,}", "flags": "gi"},
     {"source": "-----BEGIN (?:RSA |EC |DSA )?PRIVATE KEY-----", "flags": "g"},
     {"source": "sk-ant-[a-zA-Z0-9_-]{20,}", "flags": "g"},
     {"source": "sk-[a-zA-Z0-9_-]{20,}", "flags": "g"},

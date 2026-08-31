@@ -7,11 +7,11 @@
 use anyhow::{bail, Context, Result};
 use std::fs;
 use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
 
 use super::ServiceStatus;
-use crate::platform::paths::{data_dir, log_dir};
+use crate::platform::paths::{data_dir, system_log_dir};
 
 /// Service label (reverse-DNS format)
 const SERVICE_LABEL: &str = "com.monoterminal.master";
@@ -133,7 +133,7 @@ pub fn uninstall_service() -> Result<()> {
 
     // 4. Interactive prompt for data directory removal
     let data_dir_path = data_dir();
-    let log_dir_path = log_dir();
+    let log_dir_path = system_log_dir();
 
     print!(
         "\nData directory: {}\nRemove data directory? [y/N]: ",
@@ -281,48 +281,50 @@ fn create_service_user() -> Result<()> {
 
     // Create user with dscl
     // Note: macOS system accounts use underscore prefix and UID < 500
-    let commands = vec![
+    let user_path = format!("/Users/{}", SERVICE_USER);
+    let uid_str = next_uid.to_string();
+    let commands: Vec<Vec<String>> = vec![
         // Create user record
-        vec![".", "-create", &format!("/Users/{}", SERVICE_USER)],
+        vec![".".to_string(), "-create".to_string(), user_path.clone()],
         // Set real name
         vec![
-            ".",
-            "-create",
-            &format!("/Users/{}", SERVICE_USER),
-            "RealName",
-            "MONOTERMINAL Master Daemon",
+            ".".to_string(),
+            "-create".to_string(),
+            user_path.clone(),
+            "RealName".to_string(),
+            "MONOTERMINAL Master Daemon".to_string(),
         ],
         // Set UID
         vec![
-            ".",
-            "-create",
-            &format!("/Users/{}", SERVICE_USER),
-            "UniqueID",
-            &next_uid.to_string(),
+            ".".to_string(),
+            "-create".to_string(),
+            user_path.clone(),
+            "UniqueID".to_string(),
+            uid_str.clone(),
         ],
         // Set primary group ID (same as UID)
         vec![
-            ".",
-            "-create",
-            &format!("/Users/{}", SERVICE_USER),
-            "PrimaryGroupID",
-            &next_uid.to_string(),
+            ".".to_string(),
+            "-create".to_string(),
+            user_path.clone(),
+            "PrimaryGroupID".to_string(),
+            uid_str.clone(),
         ],
         // Set shell to /usr/bin/false (no login)
         vec![
-            ".",
-            "-create",
-            &format!("/Users/{}", SERVICE_USER),
-            "UserShell",
-            "/usr/bin/false",
+            ".".to_string(),
+            "-create".to_string(),
+            user_path.clone(),
+            "UserShell".to_string(),
+            "/usr/bin/false".to_string(),
         ],
         // Set NFSHomeDirectory
         vec![
-            ".",
-            "-create",
-            &format!("/Users/{}", SERVICE_USER),
-            "NFSHomeDirectory",
-            "/var/empty",
+            ".".to_string(),
+            "-create".to_string(),
+            user_path.clone(),
+            "NFSHomeDirectory".to_string(),
+            "/var/empty".to_string(),
         ],
     ];
 
@@ -337,26 +339,36 @@ fn create_service_user() -> Result<()> {
         }
     }
 
-    // Create group with same GID
-    let group_commands = vec![
-        vec![".", "-create", &format!("/Groups/{}", SERVICE_GROUP)],
-        vec![
-            ".",
-            "-create",
-            &format!("/Groups/{}", SERVICE_GROUP),
-            "PrimaryGroupID",
-            &next_uid.to_string(),
-        ],
-    ];
+    // Create group with same GID — skip if it already exists (e.g. left over
+    // from a previous install that failed partway through after creating the
+    // user but before/while creating the group). Without this check, a
+    // partial prior failure makes install-service permanently non-idempotent:
+    // every retry hits eDSRecordAlreadyExists on the bare `-create` here.
+    let group_path = format!("/Groups/{}", SERVICE_GROUP);
+    let group_check = Command::new("dscl").args(&[".", "-read", &group_path]).output();
+    if group_check.is_ok() && group_check.unwrap().status.success() {
+        tracing::info!("Service group already exists: {}", SERVICE_GROUP);
+    } else {
+        let group_commands: Vec<Vec<String>> = vec![
+            vec![".".to_string(), "-create".to_string(), group_path.clone()],
+            vec![
+                ".".to_string(),
+                "-create".to_string(),
+                group_path.clone(),
+                "PrimaryGroupID".to_string(),
+                uid_str.clone(),
+            ],
+        ];
 
-    for args in group_commands {
-        let status = Command::new("dscl")
-            .args(&args)
-            .status()
-            .context("Failed to create service group")?;
+        for args in group_commands {
+            let status = Command::new("dscl")
+                .args(&args)
+                .status()
+                .context("Failed to create service group")?;
 
-        if !status.success() {
-            bail!("dscl command failed: dscl {}", args.join(" "));
+            if !status.success() {
+                bail!("dscl command failed: dscl {}", args.join(" "));
+            }
         }
     }
 
@@ -368,36 +380,43 @@ fn create_service_user() -> Result<()> {
     Ok(())
 }
 
-/// Find next available system UID in range 200-399
+/// Find next available system UID in range 200-399.
+///
+/// The chosen number is used as both the service user's UID *and* the
+/// service group's GID (see `create_service_user`), so it must be free in
+/// both `/Users UniqueID` and `/Groups PrimaryGroupID` — checking only users
+/// can hand back a number already claimed by an existing group (e.g. `_guest`
+/// commonly holds GID 201), which then fails group creation with
+/// eDSRecordAlreadyExists after the user record was already created.
 fn find_next_system_uid() -> Result<u32> {
-    // List all users and their UIDs
-    let output = Command::new("dscl")
-        .args(&[".", "-list", "/Users", "UniqueID"])
-        .output()
-        .context("Failed to list users")?;
+    let list_ids = |record_type: &str, attr: &str| -> Result<Vec<u32>> {
+        let output = Command::new("dscl")
+            .args(&[".", "-list", record_type, attr])
+            .output()
+            .with_context(|| format!("Failed to list {}", record_type))?;
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        Ok(stdout
+            .lines()
+            .filter_map(|line| {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if parts.len() >= 2 {
+                    parts[1].parse::<u32>().ok()
+                } else {
+                    None
+                }
+            })
+            .filter(|&id| (200..400).contains(&id))
+            .collect())
+    };
 
-    let stdout = String::from_utf8_lossy(&output.stdout);
-
-    // Parse UIDs
-    let mut uids: Vec<u32> = stdout
-        .lines()
-        .filter_map(|line| {
-            let parts: Vec<&str> = line.split_whitespace().collect();
-            if parts.len() >= 2 {
-                parts[1].parse::<u32>().ok()
-            } else {
-                None
-            }
-        })
-        .filter(|&uid| uid >= 200 && uid < 400)
-        .collect();
-
-    uids.sort();
+    let mut ids = list_ids("/Users", "UniqueID")?;
+    ids.extend(list_ids("/Groups", "PrimaryGroupID")?);
+    ids.sort();
 
     // Find first gap in sequence
-    for uid in 200..400 {
-        if !uids.contains(&uid) {
-            return Ok(uid);
+    for id in 200..400 {
+        if !ids.contains(&id) {
+            return Ok(id);
         }
     }
 
@@ -407,7 +426,7 @@ fn find_next_system_uid() -> Result<u32> {
 /// Create data and log directories with correct ownership
 fn create_directories() -> Result<()> {
     let data_dir_path = data_dir();
-    let log_dir_path = log_dir();
+    let log_dir_path = system_log_dir();
 
     tracing::info!("Creating data directory: {}", data_dir_path.display());
     tracing::info!("Creating log directory: {}", log_dir_path.display());
@@ -425,7 +444,7 @@ fn create_directories() -> Result<()> {
     {
         use std::os::unix::fs::PermissionsExt;
         let permissions = fs::Permissions::from_mode(0o755);
-        fs::set_permissions(&data_dir_path, permissions)
+        fs::set_permissions(&data_dir_path, permissions.clone())
             .context("Failed to set data directory permissions")?;
         fs::set_permissions(&log_dir_path, permissions)
             .context("Failed to set log directory permissions")?;
@@ -496,7 +515,7 @@ fn set_plist_permissions() -> Result<()> {
 /// Uses template from templates/launchd/com.monoterminal.master.plist with dynamic paths
 fn generate_plist() -> String {
     let data_dir_path = data_dir();
-    let log_dir_path = log_dir();
+    let log_dir_path = system_log_dir();
 
     format!(
         r#"<?xml version="1.0" encoding="UTF-8"?>
@@ -604,13 +623,20 @@ fn generate_plist() -> String {
 fn load_service() -> Result<()> {
     tracing::info!("Loading service with launchctl...");
 
+    // `launchctl load` is the legacy (pre-10.11) API. On modern macOS it's a
+    // compatibility shim over the XPC-based launchd and is unreliable for
+    // LaunchDaemons — commonly failing with a bare EIO ("Input/output
+    // error") that gives no indication of the real cause. `bootstrap` is the
+    // real, currently-supported equivalent; "system" is the correct domain
+    // for a system-wide LaunchDaemon (as opposed to "gui/<uid>" for a
+    // per-user LaunchAgent).
     let status = Command::new("launchctl")
-        .args(&["load", PLIST_PATH])
+        .args(&["bootstrap", "system", PLIST_PATH])
         .status()
         .context("Failed to load service")?;
 
     if !status.success() {
-        bail!("launchctl load failed");
+        bail!("launchctl bootstrap failed");
     }
 
     tracing::info!("✓ Service loaded");
@@ -621,13 +647,15 @@ fn load_service() -> Result<()> {
 fn unload_service() -> Result<()> {
     tracing::info!("Unloading service with launchctl...");
 
+    // See load_service(): `unload` is the same unreliable legacy shim;
+    // `bootout` is the modern replacement.
     let status = Command::new("launchctl")
-        .args(&["unload", PLIST_PATH])
+        .args(&["bootout", &format!("system/{}", SERVICE_LABEL)])
         .status()
         .context("Failed to unload service")?;
 
     if !status.success() {
-        bail!("launchctl unload failed");
+        bail!("launchctl bootout failed");
     }
 
     tracing::info!("✓ Service unloaded");

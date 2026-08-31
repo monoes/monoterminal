@@ -16,6 +16,7 @@
 import { decodeEnvelope, encodeEnvelope } from './protocol';
 import type { MessageHandler, SplitDirection } from './protocol';
 import { ConnectionState } from './websocket-client';
+import { getTurnCredentials, toAccountsHttpUrl } from './accounts-client';
 
 /** 'row' (side-by-side) -> HORIZONTAL, 'col' (stacked) -> VERTICAL — matches
  * SplitPane.Direction on the wire (see proto/monoterminal/v1/messages.proto). */
@@ -170,7 +171,22 @@ export class WebRtcClient {
   }
 
   private async startNegotiation(): Promise<void> {
-    const pc = new RTCPeerConnection({ iceServers: [{ urls: STUN_SERVERS }] });
+    const iceServers: RTCIceServer[] = [{ urls: STUN_SERVERS }];
+
+    // Best-effort: falls back to STUN-only (today's behavior) if the relay's
+    // TURN endpoint is unreachable, rather than aborting the connection —
+    // most networks don't need TURN at all. The endpoint is unauthenticated
+    // (keyed by peer_id only — see turn.rs), so this doesn't require a
+    // logged-in session.
+    try {
+      const baseUrl = toAccountsHttpUrl(this.config.relayUrl);
+      const turn = await getTurnCredentials(baseUrl, this.config.peerId);
+      iceServers.push({ urls: turn.urls, username: turn.username, credential: turn.credential });
+    } catch (err) {
+      console.warn('Failed to fetch TURN credentials, falling back to STUN-only:', err);
+    }
+
+    const pc = new RTCPeerConnection({ iceServers });
     this.pc = pc;
 
     pc.onicecandidate = (event) => {
