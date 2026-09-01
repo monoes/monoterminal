@@ -153,6 +153,17 @@ function PaneLeaf({
     (cols: number, rows: number) => client.resize(rows, cols, paneId),
     [client, paneId]
   );
+  // Same reasoning — Terminal's `ref` prop is a callback ref, and React
+  // detaches+reattaches those on every identity change even when the
+  // underlying element hasn't gone anywhere. registerTerminalRef's own
+  // logic (see WorkspaceSession) treats every reattach as "freshly
+  // mounted, blank" and replays the pane's full buffered scrollback — so
+  // an unmemoized inline ref callback here duplicated a pane's entire
+  // history on every single focus click.
+  const setTerminalRef = useCallback(
+    (handle: TerminalHandle | null) => registerTerminalRef(paneId, handle),
+    [paneId, registerTerminalRef]
+  );
 
   function startRenaming() {
     setNameDraft(getPaneName(paneId));
@@ -235,7 +246,7 @@ function PaneLeaf({
       </div>
       <div className="pane-body">
         <Terminal
-          ref={(handle) => registerTerminalRef(paneId, handle)}
+          ref={setTerminalRef}
           onData={handleData}
           onResize={handleResize}
           visible={!isNarrow || isFocused}

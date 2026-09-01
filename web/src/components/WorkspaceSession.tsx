@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { PaneGrid, useIsNarrow } from './PaneGrid';
 import { ConnectionStatus } from './ConnectionStatus';
 import { ConnectionState } from '../lib/websocket-client';
@@ -153,6 +153,26 @@ export const WorkspaceSession = forwardRef<WorkspaceSessionHandle, WorkspaceSess
       [layoutUpdate]
     );
 
+    // Stable across re-renders — same reasoning as PaneGrid's handleData/
+    // handleResize memoization: PaneGrid wraps this in its own per-pane
+    // useCallback keyed on this reference, so if THIS were a fresh inline
+    // closure every render (e.g. every focus-click's LayoutUpdate), that
+    // memoization would be defeated too, and React would detach+reattach
+    // every Terminal's ref on every render — each reattach unconditionally
+    // replays the pane's full buffered scrollback, duplicating everything
+    // already on screen. Only refs are captured below, so no reactive
+    // dependency is needed.
+    const registerTerminalRef = useCallback((paneId: string, handle: TerminalHandle | null) => {
+      terminalRefs.current.set(paneId, handle);
+      // A freshly-mounted xterm (first attach, or a remount forced by the
+      // pane moving to a new spot in the tree — see scrollbackByPane's doc
+      // comment) starts blank; immediately replay whatever output this
+      // pane has produced so far so it never looks like the text vanished.
+      const buffered = handle ? scrollbackByPane.current.get(paneId) : undefined;
+      if (handle && buffered) handle.write(buffered);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     return (
       <div className="workspace-session" style={{ display: visible ? 'flex' : 'none' }}>
         {/* Quiet corner indicator, not permanent chrome — a healthy
@@ -183,16 +203,7 @@ export const WorkspaceSession = forwardRef<WorkspaceSessionHandle, WorkspaceSess
                    to v1.1), so a dragged ratio doesn't survive the next
                    LayoutUpdate from an unrelated split/close. */
               }}
-              registerTerminalRef={(paneId, handle) => {
-                terminalRefs.current.set(paneId, handle);
-                // A freshly-mounted xterm (first attach, or a remount
-                // forced by the pane moving to a new spot in the tree —
-                // see scrollbackByPane's doc comment) starts blank;
-                // immediately replay whatever output this pane has
-                // produced so far so it never looks like the text vanished.
-                const buffered = handle ? scrollbackByPane.current.get(paneId) : undefined;
-                if (handle && buffered) handle.write(buffered);
-              }}
+              registerTerminalRef={registerTerminalRef}
             />
           ) : (
             <div className="workspace-session-loading">Connecting…</div>

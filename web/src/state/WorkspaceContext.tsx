@@ -196,24 +196,47 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
       mergeServerWorkspaces: (computerId, serverWorkspaces) => {
         setState((s) => {
+          const byId = new Map(serverWorkspaces.map((w) => [w.id, w]));
           const byName = new Map(serverWorkspaces.map((w) => [w.name, w]));
-          let backfilled = false;
+          let changed = false;
+
+          // Pass 1: reconcile every local workspace already linked to a
+          // server row (has serverId) by that ID, not by name — a rename
+          // on another device changes the server row's name but not its
+          // id, and matching by name only would miss it entirely, leaving
+          // this device pointed at a now-abandoned session under the
+          // stale name (the daemon resolves sessions purely by name, so a
+          // name mismatch here means genuinely talking to a different,
+          // orphaned session). A local workspace with no serverId yet is
+          // still matched by name once, to link up on first sync.
           const workspaces = s.workspaces.map((w) => {
             if (w.computerId !== computerId) return w;
+            if (w.serverId != null) {
+              const match = byId.get(w.serverId);
+              if (match && match.name !== w.name) {
+                changed = true;
+                return { ...w, name: match.name };
+              }
+              return w;
+            }
             const match = byName.get(w.name);
-            if (match && w.serverId !== match.id) {
-              backfilled = true;
+            if (match) {
+              changed = true;
               return { ...w, serverId: match.id };
             }
             return w;
           });
 
-          const localNames = new Set(
-            s.workspaces.filter((w) => w.computerId === computerId).map((w) => w.name)
+          // Pass 2: any server workspace not now linked to a local one
+          // (by id, after pass 1) is genuinely new to this device.
+          const linkedServerIds = new Set(
+            workspaces
+              .filter((w) => w.computerId === computerId && w.serverId != null)
+              .map((w) => w.serverId)
           );
-          const toAdd = serverWorkspaces.filter((w) => !localNames.has(w.name));
+          const toAdd = serverWorkspaces.filter((w) => !linkedServerIds.has(w.id));
 
-          if (!backfilled && toAdd.length === 0) return s;
+          if (!changed && toAdd.length === 0) return s;
 
           return {
             ...s,
