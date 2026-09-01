@@ -223,3 +223,163 @@ pub async fn delete_computer(
 
     Ok(Json(json!({ "ok": true })))
 }
+
+#[derive(Deserialize)]
+pub struct WorkspaceRequest {
+    name: String,
+}
+
+/// Verifies `computer_id` is owned by `user_id`, returning 404 otherwise.
+/// Shared by `create_workspace` and `list_workspaces` (the latter also
+/// enforces ownership in its own JOIN, but needs this check up front to
+/// distinguish "computer not found/not yours" from "computer has no
+/// workspaces yet").
+fn require_owned_computer(
+    conn: &rusqlite::Connection,
+    computer_id: i64,
+    user_id: &str,
+) -> Result<(), (StatusCode, Json<Value>)> {
+    let owned: Option<i64> = conn
+        .query_row(
+            "SELECT id FROM linked_computers WHERE id = ?1 AND user_id = ?2",
+            rusqlite::params![computer_id, user_id],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(|_| err(StatusCode::INTERNAL_SERVER_ERROR, "database error"))?;
+
+    if owned.is_none() {
+        return Err(err(StatusCode::NOT_FOUND, "computer not found"));
+    }
+    Ok(())
+}
+
+pub async fn list_workspaces(
+    State(state): State<Arc<SharedState>>,
+    auth_user: AuthUser,
+    Path(computer_id): Path<i64>,
+) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
+    let conn = state
+        .db
+        .get_conn()
+        .map_err(|_| err(StatusCode::INTERNAL_SERVER_ERROR, "database unavailable"))?;
+
+    require_owned_computer(&conn, computer_id, &auth_user.user_id)?;
+
+    let mut stmt = conn
+        .prepare("SELECT id, name, created_at FROM workspaces WHERE computer_id = ?1 ORDER BY id")
+        .map_err(|_| err(StatusCode::INTERNAL_SERVER_ERROR, "database error"))?;
+
+    let rows: Vec<(i64, String, i64)> = stmt
+        .query_map(rusqlite::params![computer_id], |row| {
+            Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+        })
+        .map_err(|_| err(StatusCode::INTERNAL_SERVER_ERROR, "database error"))?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|_| err(StatusCode::INTERNAL_SERVER_ERROR, "database error"))?;
+
+    let workspaces: Vec<Value> = rows
+        .into_iter()
+        .map(|(id, name, created_at)| json!({ "id": id, "name": name, "created_at": created_at }))
+        .collect();
+
+    Ok(Json(json!({ "workspaces": workspaces })))
+}
+
+/// Idempotent by design (`INSERT OR IGNORE` against the `UNIQUE(computer_id,
+/// name)` constraint) — safe to call opportunistically from any device that
+/// creates a locally-named workspace, without a 409 race against another
+/// device doing the same thing.
+pub async fn create_workspace(
+    State(state): State<Arc<SharedState>>,
+    auth_user: AuthUser,
+    Path(computer_id): Path<i64>,
+    Json(req): Json<WorkspaceRequest>,
+) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
+    let name = req.name.trim();
+    if name.is_empty() {
+        return Err(err(StatusCode::BAD_REQUEST, "name required"));
+    }
+
+    let conn = state
+        .db
+        .get_conn()
+        .map_err(|_| err(StatusCode::INTERNAL_SERVER_ERROR, "database unavailable"))?;
+
+    require_owned_computer(&conn, computer_id, &auth_user.user_id)?;
+
+    let now = now_secs();
+    conn.execute(
+        "INSERT OR IGNORE INTO workspaces (computer_id, name, created_at) VALUES (?1, ?2, ?3)",
+        rusqlite::params![computer_id, name, now],
+    )
+    .map_err(|_| err(StatusCode::INTERNAL_SERVER_ERROR, "failed to create workspace"))?;
+
+    let (id, created_at): (i64, i64) = conn
+        .query_row(
+            "SELECT id, created_at FROM workspaces WHERE computer_id = ?1 AND name = ?2",
+            rusqlite::params![computer_id, name],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )
+        .map_err(|_| err(StatusCode::INTERNAL_SERVER_ERROR, "database error"))?;
+
+    Ok(Json(json!({
+        "workspace": { "id": id, "name": name, "created_at": created_at }
+    })))
+}
+
+pub async fn rename_workspace(
+    State(state): State<Arc<SharedState>>,
+    auth_user: AuthUser,
+    Path(id): Path<i64>,
+    Json(req): Json<WorkspaceRequest>,
+) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
+    let name = req.name.trim();
+    if name.is_empty() {
+        return Err(err(StatusCode::BAD_REQUEST, "name required"));
+    }
+
+    let conn = state
+        .db
+        .get_conn()
+        .map_err(|_| err(StatusCode::INTERNAL_SERVER_ERROR, "database unavailable"))?;
+
+    let affected = conn
+        .execute(
+            "UPDATE workspaces SET name = ?1 WHERE id = ?2
+             AND computer_id IN (SELECT id FROM linked_computers WHERE user_id = ?3)",
+            rusqlite::params![name, id, auth_user.user_id],
+        )
+        .map_err(|_| err(StatusCode::INTERNAL_SERVER_ERROR, "database error"))?;
+
+    if affected == 0 {
+        return Err(err(StatusCode::NOT_FOUND, "not found"));
+    }
+
+    Ok(Json(json!({ "ok": true })))
+}
+
+pub async fn delete_workspace(
+    State(state): State<Arc<SharedState>>,
+    auth_user: AuthUser,
+    Path(id): Path<i64>,
+) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
+    let conn = state
+        .db
+        .get_conn()
+        .map_err(|_| err(StatusCode::INTERNAL_SERVER_ERROR, "database unavailable"))?;
+
+    let affected = conn
+        .execute(
+            "DELETE FROM workspaces WHERE id = ?1
+             AND computer_id IN (SELECT id FROM linked_computers WHERE user_id = ?2)",
+            rusqlite::params![id, auth_user.user_id],
+        )
+        .map_err(|_| err(StatusCode::INTERNAL_SERVER_ERROR, "database error"))?;
+
+    if affected == 0 {
+        return Err(err(StatusCode::NOT_FOUND, "not found"));
+    }
+
+    Ok(Json(json!({ "ok": true })))
+}

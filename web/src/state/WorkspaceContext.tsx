@@ -19,12 +19,20 @@ export interface ComputerConfig {
   peerId?: string;
   /** Used when mode === 'p2p': the signaling relay URL */
   relayUrl?: string;
+  /** The `linked_computers` row id on the account server — only set for
+   * account-linked (p2p) computers. Used to sync this computer's
+   * workspaces across devices; a computer without one is local-only. */
+  serverId?: number;
 }
 
 export interface WorkspaceConfig {
   id: string;
   computerId: string;
   name: string;
+  /** The server-side `workspaces` row id, once synced — see
+   * `mergeServerWorkspaces`. Absent for workspaces under a computer with no
+   * `serverId`, or not yet round-tripped through the server. */
+  serverId?: number;
 }
 
 interface PersistedState {
@@ -48,8 +56,26 @@ interface WorkspaceContextValue extends PersistedState {
   /** Silently adds a P2P computer discovered via the account's linked
    * computers list — unlike `addComputer`, does not change
    * `activeComputerId`, so background discovery never steals focus from
-   * whatever the user is currently looking at. */
-  addLinkedComputer: (name: string, peerId: string, relayUrl: string) => void;
+   * whatever the user is currently looking at. `serverId` is the
+   * `linked_computers` row id, stored so this computer's workspaces can be
+   * synced (see `mergeServerWorkspaces`). */
+  addLinkedComputer: (name: string, peerId: string, relayUrl: string, serverId: number) => void;
+  /** Additive-only merge of the account server's workspace list for one
+   * computer into local state, keyed by name (matching the daemon's own
+   * `"<computer>/<workspace>"` session-name identity) — adds workspaces
+   * this browser hasn't seen yet, and backfills `serverId` onto local
+   * workspaces that already match by name. Never removes or renames a
+   * local workspace. */
+  mergeServerWorkspaces: (computerId: string, serverWorkspaces: { id: number; name: string }[]) => void;
+  /** Records the server-side workspace id for a workspace created locally,
+   * once the best-effort `createWorkspace` push resolves — by exact local
+   * `id`, not by name, so it's correct even if the workspace gets renamed
+   * locally before that push resolves (a real race: `handleAddWorkspace`
+   * immediately opens rename-on-create). Without this, a rename that beats
+   * the create-push would never reach the server, and the next
+   * `mergeServerWorkspaces` would re-add the old pre-rename name as a
+   * spurious duplicate. */
+  setWorkspaceServerId: (id: string, serverId: number) => void;
   /** True only for the very first render on a device that's never used the
    * app before (no persisted state at all yet) — the seeded "This Machine"
    * default at that point is a meaningless localhost placeholder, not a
@@ -146,9 +172,15 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         return id;
       },
 
-      addLinkedComputer: (name, peerId, relayUrl) => {
+      addLinkedComputer: (name, peerId, relayUrl, serverId) => {
         setState((s) => {
-          if (s.computers.some((c) => c.peerId === peerId)) return s;
+          const idx = s.computers.findIndex((c) => c.peerId === peerId);
+          if (idx !== -1) {
+            if (s.computers[idx].serverId === serverId) return s;
+            const computers = s.computers.slice();
+            computers[idx] = { ...computers[idx], serverId };
+            return { ...s, computers };
+          }
           const computer: ComputerConfig = {
             id: makeId(),
             name,
@@ -156,8 +188,40 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
             wsUrl: '',
             peerId,
             relayUrl,
+            serverId,
           };
           return { ...s, computers: [...s.computers, computer] };
+        });
+      },
+
+      mergeServerWorkspaces: (computerId, serverWorkspaces) => {
+        setState((s) => {
+          const byName = new Map(serverWorkspaces.map((w) => [w.name, w]));
+          let backfilled = false;
+          const workspaces = s.workspaces.map((w) => {
+            if (w.computerId !== computerId) return w;
+            const match = byName.get(w.name);
+            if (match && w.serverId !== match.id) {
+              backfilled = true;
+              return { ...w, serverId: match.id };
+            }
+            return w;
+          });
+
+          const localNames = new Set(
+            s.workspaces.filter((w) => w.computerId === computerId).map((w) => w.name)
+          );
+          const toAdd = serverWorkspaces.filter((w) => !localNames.has(w.name));
+
+          if (!backfilled && toAdd.length === 0) return s;
+
+          return {
+            ...s,
+            workspaces: [
+              ...workspaces,
+              ...toAdd.map((w) => ({ id: makeId(), computerId, name: w.name, serverId: w.id })),
+            ],
+          };
         });
       },
 
@@ -210,6 +274,13 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         setState((s) => ({
           ...s,
           workspaces: s.workspaces.map((w) => (w.id === id ? { ...w, name } : w)),
+        }));
+      },
+
+      setWorkspaceServerId: (id, serverId) => {
+        setState((s) => ({
+          ...s,
+          workspaces: s.workspaces.map((w) => (w.id === id ? { ...w, serverId } : w)),
         }));
       },
 

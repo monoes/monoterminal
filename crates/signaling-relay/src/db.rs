@@ -83,6 +83,14 @@ impl Database {
                     code_verifier TEXT NOT NULL,
                     return_to TEXT NOT NULL,
                     created_at INTEGER NOT NULL
+                );
+
+                CREATE TABLE IF NOT EXISTS workspaces (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    computer_id INTEGER NOT NULL REFERENCES linked_computers(id) ON DELETE CASCADE,
+                    name TEXT NOT NULL,
+                    created_at INTEGER NOT NULL,
+                    UNIQUE(computer_id, name)
                 );",
             )
             .context("failed to initialize schema")?;

@@ -2,10 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { useWorkspace } from '../state/WorkspaceContext';
 import { IconClose, IconFolder, IconMonitor, IconPlus, IconPrompt } from './icons';
 import {
+  createWorkspace,
+  deleteWorkspaceRemote,
   getStoredAuth,
   linkComputer,
   listComputers,
+  listWorkspaces,
   logout,
+  renameWorkspaceRemote,
   toRelayWsUrl,
 } from '../lib/accounts-client';
 import type { LinkedComputer } from '../lib/accounts-client';
@@ -38,6 +42,8 @@ export function Sidebar({ isOpen, onClose, panesByWorkspace, onSelectPane }: Sid
     activeWorkspaceId,
     addComputer,
     addLinkedComputer,
+    mergeServerWorkspaces,
+    setWorkspaceServerId,
     isFirstRun,
     removeComputer,
     renameComputer,
@@ -64,6 +70,15 @@ export function Sidebar({ isOpen, onClose, panesByWorkspace, onSelectPane }: Sid
   const [paneNameDraft, setPaneNameDraft] = useState('');
 
   const [pendingRemoval, setPendingRemoval] = useState<PendingRemoval | null>(null);
+
+  // Mirrors `workspaces` for reading the *current* name from inside an
+  // async callback (see handleAddWorkspace) — a plain closure over
+  // `workspaces` would see whatever it was at the time the callback was
+  // created, not whatever it's since become after a same-tick rename.
+  const workspacesRef = useRef(workspaces);
+  useEffect(() => {
+    workspacesRef.current = workspaces;
+  }, [workspaces]);
 
   const auth = getStoredAuth();
   const [linkedComputers, setLinkedComputers] = useState<LinkedComputer[]>([]);
@@ -105,10 +120,34 @@ export function Sidebar({ isOpen, onClose, panesByWorkspace, onSelectPane }: Sid
   useEffect(() => {
     if (!auth) return;
     for (const c of linkedComputers) {
-      addLinkedComputer(c.name || `Computer ${c.id}`, c.peer_id, toRelayWsUrl(auth.baseUrl));
+      addLinkedComputer(c.name || `Computer ${c.id}`, c.peer_id, toRelayWsUrl(auth.baseUrl), c.id);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [linkedComputers]);
+
+  // Pull each linked computer's workspace list from the account server and
+  // merge it in, so logging into the same account elsewhere shows the same
+  // workspaces (see mergeServerWorkspaces's doc comment — additive-only,
+  // fetch-on-load, not a live push). Depends on `computers` too so it
+  // re-resolves once the merge effect above has actually added the local
+  // ComputerConfig for a newly-discovered linked computer; `listWorkspaces`
+  // + `mergeServerWorkspaces` are both cheap no-ops on a redundant re-fire,
+  // so re-running this on unrelated `computers` changes (e.g. renaming a
+  // different computer) is wasteful but harmless.
+  useEffect(() => {
+    if (!auth) return;
+    for (const lc of linkedComputers) {
+      const local = computers.find((c) => c.peerId === lc.peer_id);
+      if (!local) continue;
+      listWorkspaces(lc.id)
+        .then((res) => mergeServerWorkspaces(local.id, res.workspaces))
+        .catch(() => {
+          // Best-effort: this device just keeps whatever workspaces it
+          // already has locally and tries again next load.
+        });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linkedComputers, computers]);
 
   // On a device that's never used the app before, the seeded "This Machine"
   // (mode: 'direct', wsUrl pointing at localhost) is a meaningless
@@ -188,12 +227,43 @@ export function Sidebar({ isOpen, onClose, panesByWorkspace, onSelectPane }: Sid
     const id = addWorkspace(computerId, name);
     setRenamingWorkspaceId(id);
     setWorkspaceNameDraft(name);
+
+    // Best-effort push to the account server so other devices pick this
+    // workspace up on their next load — only possible for a linked (p2p)
+    // computer, which is the only kind with a server-side identity.
+    const computer = computers.find((c) => c.id === computerId);
+    if (computer?.serverId) {
+      createWorkspace(computer.serverId, name)
+        .then((res) => {
+          setWorkspaceServerId(id, res.workspace.id);
+          // Rename-on-create means the user may have already renamed this
+          // workspace locally before this request resolved — if so, the
+          // server row is still stuck under the auto-generated name from
+          // above; push the current name too instead of leaving it to
+          // drift (mergeServerWorkspaces would otherwise re-add the stale
+          // name as a spurious duplicate on the next sync).
+          const current = workspacesRef.current.find((w) => w.id === id);
+          if (current && current.name !== name) {
+            renameWorkspaceRemote(res.workspace.id, current.name).catch(() => {});
+          }
+        })
+        .catch(() => {
+          // The workspace still exists locally either way; it'll sync on a
+          // future load if this attempt failed (e.g. offline).
+        });
+    }
   }
 
   function commitWorkspaceRename() {
     if (renamingWorkspaceId) {
       const name = workspaceNameDraft.trim();
-      if (name) renameWorkspace(renamingWorkspaceId, name);
+      if (name) {
+        renameWorkspace(renamingWorkspaceId, name);
+        const workspace = workspaces.find((w) => w.id === renamingWorkspaceId);
+        if (workspace?.serverId) {
+          renameWorkspaceRemote(workspace.serverId, name).catch(() => {});
+        }
+      }
     }
     setRenamingWorkspaceId(null);
   }
@@ -226,8 +296,15 @@ export function Sidebar({ isOpen, onClose, panesByWorkspace, onSelectPane }: Sid
 
   function confirmRemoval() {
     if (!pendingRemoval) return;
-    if (pendingRemoval.kind === 'computer') removeComputer(pendingRemoval.id);
-    else removeWorkspace(pendingRemoval.id);
+    if (pendingRemoval.kind === 'computer') {
+      removeComputer(pendingRemoval.id);
+    } else {
+      const workspace = workspaces.find((w) => w.id === pendingRemoval.id);
+      removeWorkspace(pendingRemoval.id);
+      if (workspace?.serverId) {
+        deleteWorkspaceRemote(workspace.serverId).catch(() => {});
+      }
+    }
     setPendingRemoval(null);
   }
 

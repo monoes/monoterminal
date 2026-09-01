@@ -123,6 +123,183 @@ async fn pairing_code_link_and_list_flow() {
     assert_eq!(computers[0]["name"], "Dave's Desktop");
 }
 
+/// Links a computer for `user_id`/`credential` and returns its server-side
+/// `linked_computers.id`. Shared setup for the workspace tests below.
+async fn link_a_computer(server: &TestServer, credential: &str, peer_id: &str) -> i64 {
+    let code_resp = client()
+        .post(format!("{}/api/pairing-codes", server.base_url))
+        .json(&serde_json::json!({"peer_id": peer_id}))
+        .send()
+        .await
+        .unwrap();
+    let code_body: serde_json::Value = code_resp.json().await.unwrap();
+    let code = code_body["code"].as_str().unwrap().to_string();
+
+    let link_resp = client()
+        .post(format!("{}/api/link", server.base_url))
+        .bearer_auth(credential)
+        .json(&serde_json::json!({"code": code}))
+        .send()
+        .await
+        .unwrap();
+    let link_body: serde_json::Value = link_resp.json().await.unwrap();
+    link_body["computer"]["id"].as_i64().unwrap()
+}
+
+#[tokio::test]
+async fn workspace_create_list_rename_delete_flow() {
+    let server = spawn_server().await;
+    let credential = login_as(&server, "monoes-user-jill", "jill@example.com");
+    let computer_id = link_a_computer(&server, &credential, "peer-jill").await;
+
+    let create_resp = client()
+        .post(format!("{}/api/computers/{}/workspaces", server.base_url, computer_id))
+        .bearer_auth(&credential)
+        .json(&serde_json::json!({"name": "Default"}))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(create_resp.status(), 200);
+    let create_body: serde_json::Value = create_resp.json().await.unwrap();
+    assert_eq!(create_body["workspace"]["name"], "Default");
+
+    // Idempotent: creating the same name again succeeds and returns the same row.
+    let create_again = client()
+        .post(format!("{}/api/computers/{}/workspaces", server.base_url, computer_id))
+        .bearer_auth(&credential)
+        .json(&serde_json::json!({"name": "Default"}))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(create_again.status(), 200);
+    let create_again_body: serde_json::Value = create_again.json().await.unwrap();
+    assert_eq!(create_again_body["workspace"]["id"], create_body["workspace"]["id"]);
+
+    let create_resp2 = client()
+        .post(format!("{}/api/computers/{}/workspaces", server.base_url, computer_id))
+        .bearer_auth(&credential)
+        .json(&serde_json::json!({"name": "Backend"}))
+        .send()
+        .await
+        .unwrap();
+    let create_body2: serde_json::Value = create_resp2.json().await.unwrap();
+    let backend_id = create_body2["workspace"]["id"].as_i64().unwrap();
+
+    let list_resp = client()
+        .get(format!("{}/api/computers/{}/workspaces", server.base_url, computer_id))
+        .bearer_auth(&credential)
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(list_resp.status(), 200);
+    let list_body: serde_json::Value = list_resp.json().await.unwrap();
+    let names: Vec<&str> = list_body["workspaces"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|w| w["name"].as_str().unwrap())
+        .collect();
+    assert_eq!(names, vec!["Default", "Backend"]);
+
+    let rename_resp = client()
+        .patch(format!("{}/api/workspaces/{}", server.base_url, backend_id))
+        .bearer_auth(&credential)
+        .json(&serde_json::json!({"name": "Frontend"}))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(rename_resp.status(), 200);
+
+    let list_resp2 = client()
+        .get(format!("{}/api/computers/{}/workspaces", server.base_url, computer_id))
+        .bearer_auth(&credential)
+        .send()
+        .await
+        .unwrap();
+    let list_body2: serde_json::Value = list_resp2.json().await.unwrap();
+    let names2: Vec<&str> = list_body2["workspaces"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|w| w["name"].as_str().unwrap())
+        .collect();
+    assert_eq!(names2, vec!["Default", "Frontend"]);
+
+    let delete_resp = client()
+        .delete(format!("{}/api/workspaces/{}", server.base_url, backend_id))
+        .bearer_auth(&credential)
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(delete_resp.status(), 200);
+
+    let list_resp3 = client()
+        .get(format!("{}/api/computers/{}/workspaces", server.base_url, computer_id))
+        .bearer_auth(&credential)
+        .send()
+        .await
+        .unwrap();
+    let list_body3: serde_json::Value = list_resp3.json().await.unwrap();
+    assert_eq!(list_body3["workspaces"].as_array().unwrap().len(), 1);
+}
+
+#[tokio::test]
+async fn workspace_endpoints_reject_non_owner() {
+    let server = spawn_server().await;
+    let owner_cred = login_as(&server, "monoes-user-kate", "kate@example.com");
+    let computer_id = link_a_computer(&server, &owner_cred, "peer-kate").await;
+
+    let create_resp = client()
+        .post(format!("{}/api/computers/{}/workspaces", server.base_url, computer_id))
+        .bearer_auth(&owner_cred)
+        .json(&serde_json::json!({"name": "Default"}))
+        .send()
+        .await
+        .unwrap();
+    let workspace_id = create_resp
+        .json::<serde_json::Value>()
+        .await
+        .unwrap()["workspace"]["id"]
+        .as_i64()
+        .unwrap();
+
+    let intruder_cred = login_as(&server, "monoes-user-liam", "liam@example.com");
+
+    let list_resp = client()
+        .get(format!("{}/api/computers/{}/workspaces", server.base_url, computer_id))
+        .bearer_auth(&intruder_cred)
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(list_resp.status(), 404);
+
+    let create_as_intruder = client()
+        .post(format!("{}/api/computers/{}/workspaces", server.base_url, computer_id))
+        .bearer_auth(&intruder_cred)
+        .json(&serde_json::json!({"name": "Sneaky"}))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(create_as_intruder.status(), 404);
+
+    let rename_as_intruder = client()
+        .patch(format!("{}/api/workspaces/{}", server.base_url, workspace_id))
+        .bearer_auth(&intruder_cred)
+        .json(&serde_json::json!({"name": "Hijacked"}))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(rename_as_intruder.status(), 404);
+
+    let delete_as_intruder = client()
+        .delete(format!("{}/api/workspaces/{}", server.base_url, workspace_id))
+        .bearer_auth(&intruder_cred)
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(delete_as_intruder.status(), 404);
+}
+
 #[tokio::test]
 async fn consumed_or_expired_code_is_rejected() {
     let server = spawn_server().await;

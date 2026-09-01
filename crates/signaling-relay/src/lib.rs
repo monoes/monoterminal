@@ -12,7 +12,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
 
-use axum::routing::{delete, get, post};
+use axum::routing::{delete, get, patch, post};
 use axum::Router;
 use tokio::sync::Mutex;
 use tower_http::cors::{Any, CorsLayer};
@@ -113,6 +113,14 @@ pub fn build_router_with_state(state: Arc<SharedState>) -> Router {
         .route("/api/link", post(accounts::link_computer))
         .route("/api/computers", get(accounts::list_computers))
         .route("/api/computers/:id", delete(accounts::delete_computer))
+        .route(
+            "/api/computers/:id/workspaces",
+            get(accounts::list_workspaces).post(accounts::create_workspace),
+        )
+        .route(
+            "/api/workspaces/:id",
+            patch(accounts::rename_workspace).delete(accounts::delete_workspace),
+        )
         .route("/api/turn-credentials", get(turn::get_turn_credentials))
         .layer(cors)
         .with_state(state)

@@ -192,3 +192,58 @@ export async function unlinkComputer(id: number): Promise<{ ok: true }> {
   });
   return parseJsonOrThrow<{ ok: true }>(res);
 }
+
+export interface ServerWorkspace {
+  id: number;
+  name: string;
+  created_at: number;
+}
+
+export async function listWorkspaces(computerId: number): Promise<{ workspaces: ServerWorkspace[] }> {
+  const auth = requireAuth();
+  const res = await fetch(`${trimBaseUrl(auth.baseUrl)}/api/computers/${computerId}/workspaces`, {
+    headers: { Authorization: `Bearer ${auth.token}` },
+  });
+  return parseJsonOrThrow<{ workspaces: ServerWorkspace[] }>(res);
+}
+
+/** Idempotent server-side (unique per computer+name) — safe to call whenever
+ * a workspace is created locally, without worrying about a 409 race against
+ * another device creating the same name. */
+export async function createWorkspace(
+  computerId: number,
+  name: string
+): Promise<{ workspace: ServerWorkspace }> {
+  const auth = requireAuth();
+  const res = await fetch(`${trimBaseUrl(auth.baseUrl)}/api/computers/${computerId}/workspaces`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${auth.token}`,
+    },
+    body: JSON.stringify({ name }),
+  });
+  return parseJsonOrThrow<{ workspace: ServerWorkspace }>(res);
+}
+
+export async function renameWorkspaceRemote(workspaceId: number, name: string): Promise<{ ok: true }> {
+  const auth = requireAuth();
+  const res = await fetch(`${trimBaseUrl(auth.baseUrl)}/api/workspaces/${workspaceId}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${auth.token}`,
+    },
+    body: JSON.stringify({ name }),
+  });
+  return parseJsonOrThrow<{ ok: true }>(res);
+}
+
+export async function deleteWorkspaceRemote(workspaceId: number): Promise<{ ok: true }> {
+  const auth = requireAuth();
+  const res = await fetch(`${trimBaseUrl(auth.baseUrl)}/api/workspaces/${workspaceId}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${auth.token}` },
+  });
+  return parseJsonOrThrow<{ ok: true }>(res);
+}
