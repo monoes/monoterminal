@@ -239,7 +239,13 @@ export class WebRtcClient {
     }
   }
 
-  attach(sessionId: string, rows: number, cols: number, sessionName?: string): void {
+  attach(
+    sessionId: string,
+    rows: number,
+    cols: number,
+    sessionName?: string,
+    previousSessionName?: string
+  ): void {
     const jwt = this.config.jwtAuth || '';
     const envelope: any = {
       sequenceNumber: ++this.sequenceNumber,
@@ -249,6 +255,7 @@ export class WebRtcClient {
         cols,
         lastSeenSequence: this.lastSeenSequence,
         sessionName: sessionName || '',
+        previousSessionName: previousSessionName || '',
       },
     };
     // Set auth field dynamically to avoid hook

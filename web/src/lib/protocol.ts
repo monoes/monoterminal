@@ -21,6 +21,10 @@ export interface AttachRequest {
   cols: number;
   lastSeenSequence?: number;
   sessionName?: string;
+  /** Set when sessionName just changed (a workspace/computer rename) for a
+   * session this client was already attached to — see the .proto field's
+   * doc comment. */
+  previousSessionName?: string;
 }
 
 export interface SessionMetadata {
@@ -268,6 +272,7 @@ message AttachRequest {
   uint32 cols = 4;
   uint64 last_seen_sequence = 5;
   string session_name = 6;
+  string previous_session_name = 7;
 }
 message AttachResponse {
   string session_id = 1;

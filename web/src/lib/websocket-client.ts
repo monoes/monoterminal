@@ -216,7 +216,13 @@ export class WebSocketClient {
    * browser/device (which derives the same name) converges on the same
    * live session instead of spawning an independent one.
    */
-  attach(sessionId: string, rows: number, cols: number, sessionName?: string): void {
+  attach(
+    sessionId: string,
+    rows: number,
+    cols: number,
+    sessionName?: string,
+    previousSessionName?: string
+  ): void {
     const jwt = this.config.jwtAuth || '';
     const envelope: any = {
       sequenceNumber: ++this.sequenceNumber,
@@ -226,6 +232,7 @@ export class WebSocketClient {
         cols,
         lastSeenSequence: this.lastSeenSequence,
         sessionName: sessionName || '',
+        previousSessionName: previousSessionName || '',
       },
     };
     // Set auth field dynamically to avoid hook

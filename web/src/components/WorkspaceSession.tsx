@@ -132,11 +132,31 @@ export const WorkspaceSession = forwardRef<WorkspaceSessionHandle, WorkspaceSess
       });
     }, [client]);
 
+    // WorkspaceSession is mounted once per workspace (keyed by workspace.id
+    // in App.tsx, never remounted just to switch which workspace is shown —
+    // see that file's comment), so `sessionKey` only ever changes here when
+    // this workspace or its owning computer gets renamed. Tracking the
+    // value it changed FROM lets us tell the server "this is the same live
+    // session, just renamed" (see AttachRequest.previous_session_name) —
+    // without it, a rename reconnects under a brand-new name the server
+    // has never seen, orphaning the old session and handing back an empty
+    // fresh one in its place.
+    const previousSessionKeyRef = useRef(sessionKey);
+
     useEffect(() => {
+      const previousSessionKey = previousSessionKeyRef.current;
+      previousSessionKeyRef.current = sessionKey;
+
       const unsubscribe = client.onStateChange((state) => {
         setConnectionState(state);
         if (state === ConnectionState.CONNECTED) {
-          client.attach('', 24, 80, sessionKey);
+          client.attach(
+            '',
+            24,
+            80,
+            sessionKey,
+            previousSessionKey !== sessionKey ? previousSessionKey : undefined
+          );
         }
       });
 

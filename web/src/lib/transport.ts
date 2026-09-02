@@ -15,7 +15,13 @@ import type { ComputerConfig } from '../state/WorkspaceContext';
 export interface TerminalTransport {
   connect(): void;
   disconnect(): void;
-  attach(sessionId: string, rows: number, cols: number, sessionName?: string): void;
+  attach(
+    sessionId: string,
+    rows: number,
+    cols: number,
+    sessionName?: string,
+    previousSessionName?: string
+  ): void;
   sendInput(data: string | Uint8Array, paneId?: string): void;
   resize(rows: number, cols: number, paneId?: string): void;
   splitPane(paneId: string, direction: SplitDirection, newSessionShell?: string): void;

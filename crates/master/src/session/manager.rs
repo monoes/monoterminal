@@ -139,11 +139,22 @@ impl SessionManager {
     /// same live session instead of spawning a new PTY, which is what makes
     /// cross-client sync work without a server-side workspace database.
     ///
+    /// `previous_name`, when set, means the caller knows this session used
+    /// to be reachable under that name and wants it addressable as `name`
+    /// from now on — e.g. the client renamed a workspace or its owning
+    /// computer, and reconnects with the new name plus the old one it was
+    /// just attached to. Without this, a rename would silently orphan the
+    /// live session under its old name and hand back a fresh, empty one for
+    /// the new name, since the two are otherwise unrelated strings to this
+    /// map. Only consulted when `name` doesn't already resolve to a live
+    /// session — an existing mapping for `name` always wins.
+    ///
     /// If the previously-mapped session has since been terminated/removed,
     /// a fresh session is created and the mapping is updated.
     pub async fn resolve_named_session(
         &self,
         name: &str,
+        previous_name: Option<&str>,
         owner_user_id: Option<String>,
         rows: u16,
         cols: u16,
@@ -153,6 +164,15 @@ impl SessionManager {
         if let Some(existing_id) = named.get(name).copied() {
             if self.sessions.read().await.contains_key(&existing_id) {
                 return Ok(existing_id);
+            }
+        }
+
+        if let Some(prev) = previous_name.filter(|p| !p.is_empty() && *p != name) {
+            if let Some(existing_id) = named.remove(prev) {
+                if self.sessions.read().await.contains_key(&existing_id) {
+                    named.insert(name.to_string(), existing_id);
+                    return Ok(existing_id);
+                }
             }
         }
 

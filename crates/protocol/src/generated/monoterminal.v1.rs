@@ -103,6 +103,13 @@ pub struct AttachRequest {
     /// Stable logical key (e.g. "computer/workspace/terminal")
     #[prost(string, tag = "6")]
     pub session_name: ::prost::alloc::string::String,
+    /// used to find-or-create a session so multiple clients
+    /// referring to the same logical terminal converge on one
+    /// PTY session. Ignored when session_id is set.
+    ///
+    /// Set when session_name just changed (e.g. a workspace
+    #[prost(string, tag = "7")]
+    pub previous_session_name: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct AttachResponse {

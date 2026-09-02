@@ -64,6 +64,11 @@ message AttachRequest {
                                   // used to find-or-create a session so multiple clients
                                   // referring to the same logical terminal converge on one
                                   // PTY session. Ignored when session_id is set.
+  string previous_session_name = 7; // Set when session_name just changed (e.g. a workspace
+                                  // or computer rename) for a session this client was
+                                  // already attached to — lets the server re-map the old
+                                  // name's live session to the new name instead of orphaning
+                                  // it and creating a fresh empty one.
 }
 
 message AttachResponse {

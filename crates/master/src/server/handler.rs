@@ -423,6 +423,7 @@ async fn process_message(
                 session_manager
                     .resolve_named_session(
                         &req.session_name,
+                        Some(&req.previous_session_name),
                         user_id.clone(),
                         req.rows as u16,
                         req.cols as u16,

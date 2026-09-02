@@ -544,11 +544,11 @@ mod session_manager_layout_tests {
         // Two independent workspaces, each created as its own root session
         // (mirrors resolve_named_session's "creating new" branch).
         let workspace_a = manager
-            .resolve_named_session("computer/api-service/server", None, 24, 80)
+            .resolve_named_session("computer/api-service/server", None, None, 24, 80)
             .await
             .unwrap();
         let workspace_b = manager
-            .resolve_named_session("computer/frontend/server", None, 24, 80)
+            .resolve_named_session("computer/frontend/server", None, None, 24, 80)
             .await
             .unwrap();
         assert_ne!(workspace_a, workspace_b);
@@ -612,5 +612,53 @@ mod session_manager_layout_tests {
             result.is_err(),
             "An unknown pane id must not resolve in any workspace's layout"
         );
+    }
+
+    /// A workspace (or its owning computer) rename must not orphan the live
+    /// session — reconnecting under the new name with `previous_name` set
+    /// should adopt the same session instead of creating a fresh empty one.
+    #[tokio::test]
+    async fn test_resolve_named_session_rename_adopts_existing_session() {
+        let manager = SessionManager::new(None);
+
+        let original = manager
+            .resolve_named_session("bambolina/Default", None, None, 24, 80)
+            .await
+            .unwrap();
+
+        let renamed = manager
+            .resolve_named_session(
+                "bambolina/Work",
+                Some("bambolina/Default"),
+                None,
+                24,
+                80,
+            )
+            .await
+            .unwrap();
+        assert_eq!(
+            original, renamed,
+            "renaming must reattach to the same live session, not spawn a new one"
+        );
+
+        // The old name must no longer resolve to anything — it's been fully
+        // re-mapped, not duplicated.
+        let old_name_again = manager
+            .resolve_named_session("bambolina/Default", None, None, 24, 80)
+            .await
+            .unwrap();
+        assert_ne!(
+            old_name_again, original,
+            "the old name must resolve to a fresh session once it's been renamed away"
+        );
+
+        // A subsequent attach under the new name (e.g. a second device, or
+        // this same client reconnecting later) must keep finding the same
+        // session without needing previous_name again.
+        let renamed_again = manager
+            .resolve_named_session("bambolina/Work", None, None, 24, 80)
+            .await
+            .unwrap();
+        assert_eq!(renamed, renamed_again);
     }
 }
