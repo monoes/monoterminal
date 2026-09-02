@@ -103,6 +103,17 @@ export class WebSocketClient {
     number,
     { resolve: (value: any) => void; reject: (reason: any) => void; timeout: number }
   > = new Map();
+  // `disconnect()` forces `config.autoReconnect` off so a torn-down client
+  // doesn't keep trying to reconnect — but `connect()` needs to restore
+  // whatever the caller originally asked for, or a single disconnect()
+  // permanently disables auto-reconnect for the rest of this client's life.
+  // React 18 StrictMode (dev only) double-invokes mount effects, which
+  // calls connect() -> disconnect() -> connect() on the same client at
+  // startup; without restoring this here, every dev-mode session silently
+  // loses auto-reconnect from the very first render, so any later drop
+  // (server restart, sleep/wake) leaves the terminal stuck until a manual
+  // page refresh creates a fresh client.
+  private readonly configuredAutoReconnect: boolean;
 
   constructor(config: ConnectionConfig) {
     this.config = {
@@ -112,6 +123,7 @@ export class WebSocketClient {
       jwtAuth: '',
       ...config,
     };
+    this.configuredAutoReconnect = this.config.autoReconnect;
   }
 
   connect(): void {
@@ -119,6 +131,7 @@ export class WebSocketClient {
       return;
     }
 
+    this.config.autoReconnect = this.configuredAutoReconnect;
     this.setState(
       this.reconnectAttempts > 0 ? ConnectionState.RECONNECTING : ConnectionState.CONNECTING
     );
