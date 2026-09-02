@@ -3,7 +3,9 @@ import { Terminal as XTerm } from '@xterm/xterm';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
+import { Unicode11Addon } from '@xterm/addon-unicode11';
 import '@xterm/xterm/css/xterm.css';
+import './Terminal.css';
 import { ClipboardHandler } from '../lib/clipboard-handler';
 import type { ClipboardGetResponse, ShowPermissionModal } from '../lib/clipboard-handler';
 import { ClipboardPermissionModal } from './ClipboardPermissionModal';
@@ -57,7 +59,17 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(function Termi
     // Initialize xterm.js with WebGL addon
     const term = new XTerm({
       cursorBlink: true,
-      fontFamily: 'Consolas, "Courier New", monospace',
+      // `ui-monospace` resolves to the OS's native terminal/UI monospace
+      // font (SF Mono on macOS, Cascadia Mono on Windows 11, etc.) — the
+      // previous stack (`Consolas, "Courier New"`) only had a real
+      // monospace font on Windows; everywhere else it fell straight
+      // through to Courier New, a typewriter-style serif face nothing
+      // like what any actual terminal emulator renders with. Named
+      // fallbacks cover the platforms/browsers where `ui-monospace` isn't
+      // supported yet (older Firefox, some Linux configs).
+      fontFamily:
+        'ui-monospace, Menlo, Monaco, "Cascadia Mono", Consolas, "SF Mono", ' +
+        '"DejaVu Sans Mono", "Liberation Mono", monospace',
       fontSize: 14,
       lineHeight: 1.2,
       theme: {
@@ -92,6 +104,15 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(function Termi
 
     // Add web links addon
     term.loadAddon(new WebLinksAddon());
+
+    // xterm.js's built-in character-width table only covers Unicode 6 —
+    // without this, wide characters (CJK, most emoji) measure as 1 column
+    // instead of 2, so the cursor drifts out of alignment with whatever
+    // the shell/TUI app actually drew the moment any such character
+    // appears. Every real terminal emulator gets this right natively.
+    const unicode11Addon = new Unicode11Addon();
+    term.loadAddon(unicode11Addon);
+    term.unicode.activeVersion = '11';
 
     // Try to load WebGL addon
     if (useWebGL) {
@@ -181,6 +202,17 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(function Termi
     if (onData) {
       term.onData(onData);
     }
+
+    // BEL (Ctrl-G / \x07) was previously a silent no-op — bellStyle
+    // defaults to 'none'. Real terminals surface it somehow; a brief
+    // visual flash (matching iTerm2/Windows Terminal's default "visual
+    // bell") is the least surprising choice for a browser tab that may
+    // not have unmuted audio or user-gesture permission to play a sound.
+    const bellDiv = terminalRef.current;
+    term.onBell(() => {
+      bellDiv?.classList.add('terminal-bell-flash');
+      setTimeout(() => bellDiv?.classList.remove('terminal-bell-flash'), 150);
+    });
 
     // Handle resize — debounced. A split-divider drag or a sibling pane
     // splitting/closing can push through dozens of intermediate cols/rows
