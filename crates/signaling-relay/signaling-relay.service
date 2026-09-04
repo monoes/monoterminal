@@ -1,0 +1,14 @@
+[Unit]
+Description=MONOTERMINAL WebRTC signaling relay
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/signaling-relay --bind-addr 0.0.0.0:9000
+Restart=on-failure
+RestartSec=2
+User=signaling-relay
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

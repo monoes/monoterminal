@@ -54,6 +54,7 @@ flamegraph.svg
 # Monomind (local state, not workspace metadata)
 .monomind/cache/
 .monomind/temp/
+/web/src/.monomind/
 .swarm/runs/
 .swarm/temp/
 

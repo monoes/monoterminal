@@ -1,10 +1,83 @@
 ﻿/**
- * WebSocket client for MONOTERMINAL protocol communication
- * Phase 1: WebSocket with Protocol Buffers
- * Phase 2: Will add WebRTC DataChannel P2P support
+ * WebSocket client for MONOTERMINAL protocol communication.
+ * Wire format (schema, message shapes, Envelope encode/decode) lives in
+ * ./protocol — shared with webrtc-client.ts so the two transports can't
+ * drift into two separate copies of the same protocol.
  */
 
-import protobuf from 'protobufjs';
+import { decodeEnvelope, encodeEnvelope } from './protocol';
+import { getAuthService } from './auth/service-singleton';
+import type {
+  AttachResponse,
+  AuthRequest,
+  AuthResponse,
+  ChallengeResponse,
+  ClipboardGetRequest,
+  ClipboardGetResponse,
+  ClipboardOSC52,
+  ClipboardSetRequest,
+  DashboardRequest,
+  DashboardResponse,
+  DetectionRequest,
+  DetectionResponse,
+  ErrorResponse,
+  HealthCheckRequest,
+  HealthCheckResponse,
+  MessageHandler,
+  OutputData,
+  SplitDirection,
+  TokenRefreshResponse,
+  UpgradeRequest,
+  UpgradeResponse,
+} from './protocol';
+
+export type {
+  AttachRequest,
+  AttachResponse,
+  AuthRequest,
+  AuthResponse,
+  ChallengeRequest,
+  ChallengeResponse,
+  ClipboardGetRequest,
+  ClipboardGetResponse,
+  ClipboardOSC52,
+  ClipboardSetRequest,
+  ClosePaneCommand,
+  DashboardRequest,
+  DashboardResponse,
+  DetectionRequest,
+  DetectionResponse,
+  ErrorResponse,
+  FocusPaneCommand,
+  HealthCheckRequest,
+  HealthCheckResponse,
+  Line,
+  LayoutUpdate,
+  MessageHandler,
+  OutputData,
+  PaneLayoutNode,
+  SessionMetadata,
+  SplitDirection,
+  SplitPaneCommand,
+  SplitPaneNode,
+  TerminalPaneNode,
+  TokenRefreshRequest,
+  TokenRefreshResponse,
+  UpgradeRequest,
+  UpgradeResponse,
+} from './protocol';
+
+/** 'row' (side-by-side) -> HORIZONTAL, 'col' (stacked) -> VERTICAL — matches
+ * SplitPane.Direction on the wire (see proto/monoterminal/v1/messages.proto). */
+function directionToWire(dir: SplitDirection): number {
+  return dir === 'row' ? 0 : 1;
+}
+
+/** Unix seconds — matches AuthResponse's *_expires_at fields and the JWT's
+ * own exp/iat convention (see crates/master/src/auth/jwt.rs's Claims). */
+function nowSeconds(): number {
+  return Math.floor(Date.now() / 1000);
+}
 
 export enum ConnectionState {
   DISCONNECTED = 'disconnected',
@@ -22,294 +95,6 @@ export interface ConnectionConfig {
   jwtAuth?: string; // JWT for authentication
 }
 
-// Protocol message types
-export interface AttachRequest {
-  sessionId: string;
-  jwtAuth: string;
-  rows: number;
-  cols: number;
-  lastSeenSequence?: number;
-}
-
-export interface SessionMetadata {
-  shellType: string;
-  workingDir: string;
-  rows: number;
-  cols: number;
-  createdAt: number;
-  lastActivity: number;
-}
-
-export interface Line {
-  data: Uint8Array;
-  lineNumber: number;
-}
-
-export interface AttachResponse {
-  sessionId: string;
-  metadata: SessionMetadata;
-  scrollback: Line[];
-}
-
-export interface OutputData {
-  data: Uint8Array;
-  sequence: number;
-  compression: number;
-}
-
-export interface ErrorResponse {
-  code: number;
-  message: string;
-}
-
-// Monomind-specific message types
-export interface HealthCheckRequest {
-  projectDir?: string;
-}
-
-export interface HealthCheckResponse {
-  installed: boolean;
-  version: string;
-  controlServerReachable: boolean;
-  brokerRegistered: boolean;
-  lastCheckTimestamp: number;
-  issues: Array<{
-    severity: number;
-    message: string;
-    resolution: string;
-  }>;
-}
-
-export interface UpgradeRequest {
-  projectDir?: string;
-  confirmed: boolean;
-}
-
-export interface UpgradeResponse {
-  success: boolean;
-  oldVersion: string;
-  newVersion: string;
-  output: string;
-}
-
-export interface DashboardRequest {
-  command: string;
-  params?: Record<string, string>;
-}
-
-export interface DashboardResponse {
-  jsonData: string;
-  error: number;
-}
-
-export interface DetectionRequest {
-  projectDir: string;
-}
-
-export interface DetectionResponse {
-  found: boolean;
-  monomindRoot: string;
-  suggestInstall: boolean;
-  dismissFileExists: boolean;
-  bannerText: string;
-}
-
-// Auth-specific message types
-export interface ChallengeRequest {
-  // No fields - server generates nonce on receipt
-}
-
-export interface ChallengeResponse {
-  nonce: Uint8Array;
-  expiresAt: number;
-}
-
-export interface AuthRequest {
-  signature: Uint8Array;
-  publicKey: Uint8Array;
-  nonce: Uint8Array;
-}
-
-export interface AuthResponse {
-  accessToken: string;
-  refreshToken: string;
-  accessExpiresAt: number;
-  refreshExpiresAt: number;
-}
-
-export interface TokenRefreshRequest {
-  refreshToken: string;
-}
-
-export interface TokenRefreshResponse {
-  accessToken: string;
-  refreshToken: string;
-  accessExpiresAt: number;
-  refreshExpiresAt: number;
-}
-
-export interface MessageHandler {
-  onAttachResponse?: (response: AttachResponse) => void;
-  onOutputData?: (data: OutputData) => void;
-  onErrorResponse?: (error: ErrorResponse) => void;
-  onChallengeResponse?: (response: ChallengeResponse) => void;
-  onAuthResponse?: (response: AuthResponse) => void;
-  onTokenRefreshResponse?: (response: TokenRefreshResponse) => void;
-}
-
-// Protocol Buffers schema (inline to avoid hook issues)
-const protoSchema = `
-syntax = "proto3";
-package monoterminal.v1;
-message Envelope {
-  uint64 sequence_number = 1;
-  oneof message {
-    AttachRequest attach_request = 2;
-    AttachResponse attach_response = 3;
-    InputData input_data = 4;
-    OutputData output_data = 5;
-    ResizeRequest resize_request = 6;
-    DetachRequest detach_request = 7;
-    ErrorResponse error_response = 8;
-    DashboardRequest dashboard_request = 9;
-    DashboardResponse dashboard_response = 10;
-    HealthCheckRequest health_check_request = 11;
-    HealthCheckResponse health_check_response = 12;
-    UpgradeRequest upgrade_request = 13;
-    UpgradeResponse upgrade_response = 14;
-    DetectionRequest detection_request = 15;
-    DetectionResponse detection_response = 16;
-    ChallengeRequest challenge_request = 18;
-    ChallengeResponse challenge_response = 19;
-    AuthRequest auth_request = 20;
-    AuthResponse auth_response = 21;
-    TokenRefreshRequest token_refresh_request = 22;
-    TokenRefreshResponse token_refresh_response = 23;
-  }
-}
-message AttachRequest {
-  string session_id = 1;
-  string auth_token = 2;
-  uint32 rows = 3;
-  uint32 cols = 4;
-  uint64 last_seen_sequence = 5;
-}
-message AttachResponse {
-  string session_id = 1;
-  SessionMetadata metadata = 2;
-  repeated Line scrollback = 3;
-}
-message InputData {
-  bytes data = 1;
-  optional string auth_token = 2;
-}
-message OutputData {
-  bytes data = 1;
-  uint64 sequence = 2;
-  uint32 compression = 3;
-}
-message ResizeRequest {
-  uint32 rows = 1;
-  uint32 cols = 2;
-  optional string auth_token = 3;
-}
-message DetachRequest { string session_id = 1; }
-message ErrorResponse {
-  uint32 code = 1;
-  string message = 2;
-}
-message SessionMetadata {
-  string shell_type = 1;
-  string working_dir = 2;
-  uint32 rows = 3;
-  uint32 cols = 4;
-  int64 created_at = 5;
-  int64 last_activity = 6;
-}
-message Line {
-  bytes data = 1;
-  uint64 line_number = 2;
-}
-message HealthCheckRequest {
-  string project_dir = 1;
-}
-message HealthCheckResponse {
-  bool installed = 1;
-  string version = 2;
-  bool control_server_reachable = 3;
-  bool broker_registered = 4;
-  int64 last_check_timestamp = 5;
-  repeated HealthIssue issues = 6;
-}
-message HealthIssue {
-  uint32 severity = 1;
-  string message = 2;
-  string resolution = 3;
-}
-message UpgradeRequest {
-  string project_dir = 1;
-  bool confirmed = 2;
-}
-message UpgradeResponse {
-  bool success = 1;
-  string old_version = 2;
-  string new_version = 3;
-  string output = 4;
-}
-message DashboardRequest {
-  string command = 1;
-  map<string, string> params = 2;
-}
-message DashboardResponse {
-  string json_data = 1;
-  uint32 error = 2;
-}
-message DetectionRequest {
-  string project_dir = 1;
-}
-message DetectionResponse {
-  bool found = 1;
-  string monomind_root = 2;
-  bool suggest_install = 3;
-  bool dismiss_file_exists = 4;
-  string banner_text = 5;
-}
-message ChallengeRequest {
-  // No fields - server generates nonce on receipt
-}
-message ChallengeResponse {
-  bytes nonce = 1;
-  int64 expires_at = 2;
-}
-message AuthRequest {
-  bytes signature = 1;
-  bytes public_key = 2;
-  bytes nonce = 3;
-}
-message AuthResponse {
-  string access_token = 1;
-  string refresh_token = 2;
-  int64 access_expires_at = 3;
-  int64 refresh_expires_at = 4;
-}
-message TokenRefreshRequest {
-  string refresh_token = 1;
-}
-message TokenRefreshResponse {
-  string access_token = 1;
-  string refresh_token = 2;
-  int64 access_expires_at = 3;
-  int64 refresh_expires_at = 4;
-}`;
-
-let EnvelopeType: protobuf.Type;
-try {
-  const root = protobuf.parse(protoSchema).root;
-  EnvelopeType = root.lookupType('monoterminal.v1.Envelope');
-} catch (error) {
-  console.error('Failed to parse protocol schema:', error);
-}
-
 export class WebSocketClient {
   private ws: WebSocket | null = null;
   private config: Required<ConnectionConfig>;
@@ -325,6 +110,30 @@ export class WebSocketClient {
     number,
     { resolve: (value: any) => void; reject: (reason: any) => void; timeout: number }
   > = new Map();
+  // `disconnect()` forces `config.autoReconnect` off so a torn-down client
+  // doesn't keep trying to reconnect — but `connect()` needs to restore
+  // whatever the caller originally asked for, or a single disconnect()
+  // permanently disables auto-reconnect for the rest of this client's life.
+  // React 18 StrictMode (dev only) double-invokes mount effects, which
+  // calls connect() -> disconnect() -> connect() on the same client at
+  // startup; without restoring this here, every dev-mode session silently
+  // loses auto-reconnect from the very first render, so any later drop
+  // (server restart, sleep/wake) leaves the terminal stuck until a manual
+  // page refresh creates a fresh client.
+  private readonly configuredAutoReconnect: boolean;
+
+  // True while the post-open, pre-CONNECTED Ed25519 challenge/auth
+  // handshake (see `authenticate()`) is in flight. Lets `sendEnvelope`
+  // permit the handshake's own requests through before the public state
+  // reaches CONNECTED, without weakening the gate for anything else.
+  private authenticating = false;
+  // Proactive JWT refresh (Phase 6): re-armed at the end of every
+  // successful `authenticate()`, cleared on disconnect/close/supersession
+  // so a stale timer can never fire against a dead socket.
+  private refreshTimer: number | null = null;
+  // Holds the current refresh credential in memory only (never persisted),
+  // matching AuthService's own JWT-storage policy.
+  private refreshCredential: string | null = null;
 
   constructor(config: ConnectionConfig) {
     this.config = {
@@ -334,6 +143,7 @@ export class WebSocketClient {
       jwtAuth: '',
       ...config,
     };
+    this.configuredAutoReconnect = this.config.autoReconnect;
   }
 
   connect(): void {
@@ -341,22 +151,36 @@ export class WebSocketClient {
       return;
     }
 
+    this.config.autoReconnect = this.configuredAutoReconnect;
     this.setState(
       this.reconnectAttempts > 0 ? ConnectionState.RECONNECTING : ConnectionState.CONNECTING
     );
 
     try {
-      this.ws = new WebSocket(this.config.url);
-      this.ws.binaryType = 'arraybuffer';
+      // Capture this specific socket instance so every handler below can
+      // check it's still the live one before touching shared state. React
+      // 18 StrictMode double-invokes mount effects in dev, which calls
+      // connect() then disconnect() then connect() again in quick
+      // succession — the FIRST socket's close event used to fire after the
+      // SECOND (real) socket had already opened and been assigned to
+      // this.ws, and unconditionally did `this.ws = null`, wiping out the
+      // live socket reference. attach()'s sendEnvelope() then saw a null/
+      // stale this.ws and silently dropped the attach request forever,
+      // leaving the UI showing "Connected" with no session ever attached.
+      const socket = new WebSocket(this.config.url);
+      this.ws = socket;
+      socket.binaryType = 'arraybuffer';
 
-      this.ws.onopen = () => {
-        console.log('WebSocket connected');
+      socket.onopen = () => {
+        if (this.ws !== socket) return; // superseded by a newer connect()
+        console.log('WebSocket connected, authenticating...');
         this.reconnectAttempts = 0;
         this.sequenceNumber = 0; // Reset sequence on new connection
-        this.setState(ConnectionState.CONNECTED);
+        void this.authenticate(socket);
       };
 
-      this.ws.onmessage = (event) => {
+      socket.onmessage = (event) => {
+        if (this.ws !== socket) return;
         if (event.data instanceof ArrayBuffer) {
           this.handleMessage(event.data);
         } else {
@@ -364,12 +188,14 @@ export class WebSocketClient {
         }
       };
 
-      this.ws.onerror = (error) => {
+      socket.onerror = (error) => {
+        if (this.ws !== socket) return;
         console.error('WebSocket error:', error);
         this.setState(ConnectionState.ERROR);
       };
 
-      this.ws.onclose = (event) => {
+      socket.onclose = (event) => {
+        if (this.ws !== socket) return; // stale socket — already superseded
         console.log('WebSocket closed:', event.code, event.reason);
         this.ws = null;
 
@@ -394,6 +220,8 @@ export class WebSocketClient {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
     }
+    this.clearRefreshTimer();
+    this.authenticating = false;
 
     if (this.ws) {
       this.ws.close();
@@ -403,56 +231,212 @@ export class WebSocketClient {
     this.setState(ConnectionState.DISCONNECTED);
   }
 
+  private clearRefreshTimer(): void {
+    if (this.refreshTimer !== null) {
+      clearTimeout(this.refreshTimer);
+      this.refreshTimer = null;
+    }
+  }
+
   /**
-   * Attach to a session (or create new)
+   * Ed25519 challenge-response handshake (SRS §3.2.2), run once per socket
+   * right after it opens and before the public CONNECTED transition —
+   * `HybridTransport` treats CONNECTED as "this route is usable, call
+   * attach()", so firing it before a real JWT exists would race the
+   * attach's own auth_token against this handshake still completing.
+   *
+   * Every step re-checks `this.ws === socket`, same as `onopen`/`onmessage`/
+   * `onerror`/`onclose` above — this method awaits across multiple network
+   * round trips, each of which is a new window where a StrictMode
+   * double-invoke or a fresh connect() could have superseded this socket.
    */
-  attach(sessionId: string, rows: number, cols: number): void {
+  private async authenticate(socket: WebSocket): Promise<void> {
+    this.authenticating = true;
+    try {
+      const authService = await getAuthService();
+      if (this.ws !== socket) return;
+
+      // Reuse a still-valid JWT across a reconnect/failover instead of
+      // re-running the full round trip — keeps the identity stable and
+      // reconnects fast.
+      const existing = authService.getJWT();
+      if (existing) {
+        this.config.jwtAuth = existing;
+        this.authenticating = false;
+        this.setState(ConnectionState.CONNECTED);
+        this.scheduleRefresh(authService.getJWTTimeRemaining() ?? 0);
+        return;
+      }
+
+      const challenge = await this.sendChallengeRequest();
+      if (this.ws !== socket) return;
+
+      const signed = await authService.signChallenge(challenge);
+      if (this.ws !== socket) return;
+
+      const authResult = await this.sendAuthRequest({
+        signature: signed.signature,
+        publicKey: signed.publicKey,
+        nonce: challenge.nonce,
+      });
+      if (this.ws !== socket) return;
+
+      const access = authResult.accessToken;
+      const refresh = authResult.refreshToken;
+      authService.setJWT(access, authResult.accessExpiresAt - nowSeconds());
+      this.storeRefreshCredential(refresh);
+      this.config.jwtAuth = access;
+
+      console.log(`Authenticated as ${authResult.userId}`);
+      this.authenticating = false;
+      this.setState(ConnectionState.CONNECTED);
+      this.scheduleRefresh(authResult.accessExpiresAt - nowSeconds());
+    } catch (error) {
+      if (this.ws !== socket) return; // superseded mid-handshake — not this socket's problem anymore
+      console.error('Authentication failed:', error);
+      this.authenticating = false;
+      this.setState(ConnectionState.ERROR);
+      socket.close();
+    }
+  }
+
+  private storeRefreshCredential(value: string): void {
+    this.refreshCredential = value;
+  }
+
+  /** Proactively refreshes the JWT ~2 minutes before it expires, so a
+   * terminal session that stays on one healthy socket far longer than the
+   * 15-minute access-token lifetime doesn't start failing auth mid-use.
+   * Falls back to a full `authenticate()` re-run if the refresh itself
+   * fails (e.g. the stored credential was also rejected). */
+  private scheduleRefresh(accessTtlSeconds: number): void {
+    this.clearRefreshTimer();
+    const delayMs = Math.max((accessTtlSeconds - 120) * 1000, 5000);
+    const socket = this.ws;
+
+    this.refreshTimer = window.setTimeout(async () => {
+      if (this.ws !== socket || !this.refreshCredential) return;
+      try {
+        const result = await this.refreshJWT(this.refreshCredential);
+        if (this.ws !== socket) return;
+        const authService = await getAuthService();
+        const access = result.accessToken;
+        const refresh = result.refreshToken; // rotated — the old value is now single-use-burned
+        authService.setJWT(access, result.accessExpiresAt - nowSeconds());
+        this.storeRefreshCredential(refresh);
+        this.config.jwtAuth = access;
+        this.scheduleRefresh(result.accessExpiresAt - nowSeconds());
+      } catch (error) {
+        if (this.ws !== socket) return;
+        console.warn('JWT refresh failed, re-authenticating:', error);
+        // Clear the cached (still-technically-unexpired) access token first —
+        // otherwise authenticate()'s fast path sees it as still valid and
+        // just re-arms another refresh with the same already-proven-bad
+        // refresh token, looping every 5s until the access token's own
+        // expiry instead of getting fresh credentials now.
+        const authService = await getAuthService();
+        authService.clearJWT();
+        void this.authenticate(socket);
+      }
+    }, delayMs);
+  }
+
+  /**
+   * Attach to a session (or create new). When `sessionId` is empty and
+   * `sessionName` is given, the server finds-or-creates a session keyed by
+   * that stable logical name — so the same terminal opened from another
+   * browser/device (which derives the same name) converges on the same
+   * live session instead of spawning an independent one.
+   */
+  attach(
+    sessionId: string,
+    rows: number,
+    cols: number,
+    sessionName?: string,
+    previousSessionName?: string
+  ): void {
     const jwt = this.config.jwtAuth || '';
     const envelope: any = {
       sequenceNumber: ++this.sequenceNumber,
       attachRequest: {
         sessionId: sessionId || '',
+        // protobufjs converts the wire field `auth_token` to camelCase
+        // `authToken` for JS access (default `keepCase: false`) — the
+        // previous `['auth' + '_token']` trick set a property named
+        // `auth_token` that the encoder never reads, so this field was
+        // silently always empty on the wire.
+        authToken: jwt,
         rows,
         cols,
         lastSeenSequence: this.lastSeenSequence,
+        sessionName: sessionName || '',
+        previousSessionName: previousSessionName || '',
       },
     };
-    // Set auth field dynamically to avoid hook
-    envelope.attachRequest['auth' + '_token'] = jwt;
 
     this.sendEnvelope(envelope);
     this.sessionId = sessionId;
   }
 
   /**
-   * Send terminal input
+   * Send terminal input. `paneId` targets a specific pane (Phase 4:
+   * Splits/Tabs) — omitted for a plain, non-paned session.
    */
-  sendInput(data: string | Uint8Array): void {
+  sendInput(data: string | Uint8Array, paneId?: string): void {
     const bytes = typeof data === 'string' ? new TextEncoder().encode(data) : data;
     const jwt = this.config.jwtAuth || '';
     const envelope: any = {
       sequenceNumber: ++this.sequenceNumber,
-      inputData: { data: bytes },
+      inputData: { data: bytes, paneId, authToken: jwt },
     };
-    // Set auth field dynamically to avoid hook
-    envelope.inputData['auth' + '_token'] = jwt;
 
     this.sendEnvelope(envelope);
   }
 
   /**
-   * Send resize request
+   * Send resize request. `paneId` resizes a specific pane's own PTY (Phase
+   * 4: Splits/Tabs) — omitted for a plain, non-paned session.
    */
-  resize(rows: number, cols: number): void {
+  resize(rows: number, cols: number, paneId?: string): void {
     const jwt = this.config.jwtAuth || '';
     const envelope: any = {
       sequenceNumber: ++this.sequenceNumber,
-      resizeRequest: { rows, cols },
+      resizeRequest: { rows, cols, paneId, authToken: jwt },
     };
-    // Set auth field dynamically to avoid hook
-    envelope.resizeRequest['auth' + '_token'] = jwt;
 
     this.sendEnvelope(envelope);
+  }
+
+  /**
+   * Split a pane into two (Phase 4: Splits/Tabs). The new pane's session id
+   * arrives via the next LayoutUpdate — see MessageHandler.onLayoutUpdate.
+   */
+  splitPane(paneId: string, direction: SplitDirection, newSessionShell?: string): void {
+    this.sendEnvelope({
+      sequenceNumber: ++this.sequenceNumber,
+      splitPaneCommand: {
+        paneId,
+        direction: directionToWire(direction),
+        newSessionShell: newSessionShell || '',
+      },
+    });
+  }
+
+  /** Close a pane, killing its PTY session (Phase 4: Splits/Tabs). */
+  closePane(paneId: string): void {
+    this.sendEnvelope({
+      sequenceNumber: ++this.sequenceNumber,
+      closePaneCommand: { paneId },
+    });
+  }
+
+  /** Focus a pane, changing which one receives keyboard input by default
+   * (Phase 4: Splits/Tabs). */
+  focusPane(paneId: string): void {
+    this.sendEnvelope({
+      sequenceNumber: ++this.sequenceNumber,
+      focusPaneCommand: { paneId },
+    });
   }
 
   /**
@@ -555,7 +539,11 @@ export class WebSocketClient {
       sequenceNumber: seqNum,
       challengeRequest: {},
     };
-    return this.sendRequestWithResponse(envelope, seqNum, 5000);
+    // Tighter than the usual 5s request timeout: this happens inside
+    // connect()'s own budget (see HybridTransport's WS_CONNECT_TIMEOUT_MS),
+    // so a wedged daemon should fail fast enough to still be caught by that
+    // outer deadline rather than being cut off mid-request by it.
+    return this.sendRequestWithResponse(envelope, seqNum, 3000);
   }
 
   /**
@@ -571,7 +559,7 @@ export class WebSocketClient {
         nonce: req.nonce,
       },
     };
-    return this.sendRequestWithResponse(envelope, seqNum, 5000);
+    return this.sendRequestWithResponse(envelope, seqNum, 3000);
   }
 
 
@@ -586,6 +574,39 @@ export class WebSocketClient {
       tokenRefreshRequest: request,
     };
     return this.sendRequestWithResponse(envelope, seqNum, 5000);
+  }
+
+  /**
+   * Send clipboard response (ADR-020)
+   */
+  sendClipboardResponse(response: ClipboardGetResponse): void {
+    const envelope = {
+      sequenceNumber: ++this.sequenceNumber,
+      clipboardGetResponse: {
+        requestId: response.requestId,
+        content: response.content,
+        mimeType: response.mimeType,
+        authorized: response.authorized,
+        error: response.error || '',
+      },
+    };
+    this.sendEnvelope(envelope);
+  }
+
+  /**
+   * Send clipboard set request (client initiates clipboard write)
+   */
+  sendClipboardSetRequest(request: ClipboardSetRequest): void {
+    const envelope = {
+      sequenceNumber: ++this.sequenceNumber,
+      clipboardSetRequest: {
+        content: request.content,
+        binaryContent: request.binaryContent,
+        mimeType: request.mimeType,
+        timestamp: request.timestamp,
+      },
+    };
+    this.sendEnvelope(envelope);
   }
   private sendRequestWithResponse<T>(envelope: any, seqNum: number, timeoutMs: number): Promise<T> {
     return new Promise((resolve, reject) => {
@@ -608,10 +629,18 @@ export class WebSocketClient {
 
   private sendEnvelope(envelope: any): void {
     try {
-      const message = EnvelopeType.create(envelope);
-      const buffer = EnvelopeType.encode(message).finish();
+      const buffer = encodeEnvelope(envelope);
 
-      if (this.ws && this.state === ConnectionState.CONNECTED) {
+      // Also permitted while `authenticating`: the challenge/auth handshake
+      // itself has to send envelopes before the public state reaches
+      // CONNECTED (see `authenticate()`) — gating strictly on
+      // ConnectionState.CONNECTED here would deadlock the handshake against
+      // its own send gate.
+      if (
+        this.ws &&
+        this.ws.readyState === WebSocket.OPEN &&
+        (this.state === ConnectionState.CONNECTED || this.authenticating)
+      ) {
         this.ws.send(buffer);
       } else {
         console.warn('Cannot send: WebSocket not connected');
@@ -634,13 +663,7 @@ export class WebSocketClient {
 
   private handleMessage(data: ArrayBuffer): void {
     try {
-      const buffer = new Uint8Array(data);
-      const envelope: any = EnvelopeType.decode(buffer);
-      const obj = EnvelopeType.toObject(envelope, {
-        longs: Number,
-        bytes: Uint8Array,
-        defaults: true,
-      });
+      const obj = decodeEnvelope(data);
 
       const seqNum = obj.sequenceNumber;
       const pending = this.pendingRequests.get(seqNum);
@@ -675,6 +698,14 @@ export class WebSocketClient {
         this.pendingRequests.delete(seqNum);
         pending.resolve(obj.tokenRefreshResponse);
       }
+      // Handle clipboard messages (ADR-020)
+      else if (obj.clipboardGetRequest && this.messageHandlers.onClipboardGetRequest) {
+        this.messageHandlers.onClipboardGetRequest(obj.clipboardGetRequest);
+      } else if (obj.clipboardOsc52 && this.messageHandlers.onClipboardOSC52) {
+        this.messageHandlers.onClipboardOSC52(obj.clipboardOsc52);
+      } else if (obj.layoutUpdate && this.messageHandlers.onLayoutUpdate) {
+        this.messageHandlers.onLayoutUpdate(obj.layoutUpdate);
+      }
       // Handle streaming messages
       else if (obj.attachResponse && this.messageHandlers.onAttachResponse) {
         this.messageHandlers.onAttachResponse(obj.attachResponse);
@@ -682,13 +713,20 @@ export class WebSocketClient {
       } else if (obj.outputData && this.messageHandlers.onOutputData) {
         this.lastSeenSequence = obj.outputData.sequence;
         this.messageHandlers.onOutputData(obj.outputData);
-      } else if (obj.errorResponse && this.messageHandlers.onErrorResponse) {
-        this.messageHandlers.onErrorResponse(obj.errorResponse);
-        // Also reject any pending request with this error
+      } else if (obj.errorResponse) {
+        // Reject the matching pending request unconditionally — this used
+        // to only happen when an onErrorResponse handler was also
+        // registered, so a caller with no handler (e.g. local-daemon.ts's
+        // probe client, or any request made before handlers are wired up)
+        // never got its promise rejected at all and just hung until the
+        // request's own timeout fired.
         if (pending) {
           clearTimeout(pending.timeout);
           this.pendingRequests.delete(seqNum);
           pending.reject(new Error(obj.errorResponse.message));
+        }
+        if (this.messageHandlers.onErrorResponse) {
+          this.messageHandlers.onErrorResponse(obj.errorResponse);
         }
       }
     } catch (error) {

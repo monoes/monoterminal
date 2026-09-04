@@ -14,20 +14,52 @@ use super::{
     Result, Session, SessionContainer, SessionError, SessionId, SessionSnapshot, SessionState,
 };
 use crate::auth::{check_permission, Action};
-use crate::persistence::{session as db_session, Database};
+use crate::layout::{LayoutManager, SplitDirection};
+use crate::persistence::{layout::LayoutPersistence, session as db_session, Database};
 use crate::pty::{PtyBackend, PtyConfig};
+
+/// Result of a successful `handle_split_pane` call. Carries the new pane's
+/// session id (not just the layout tree) because the caller — the WS
+/// connection handler — needs it to also attach the connection's output
+/// channel to the new pane's session, or the new pane's terminal would
+/// never actually stream any output to the client.
+#[derive(Debug)]
+pub struct SplitPaneResult {
+    pub layout_update: monoterminal_protocol::LayoutUpdate,
+    pub new_session_id: SessionId,
+    pub new_pane_id: String,
+}
 
 /// Central session manager
 /// Phase 1: Single active session (simplified from SRS multi-session design)
+/// Phase 4: Pane layout management (ADR-018, task-73)
 pub struct SessionManager {
     /// Active sessions (Option A: SessionContainer with separated locks)
     sessions: Arc<RwLock<HashMap<SessionId, SessionContainer>>>,
+
+    /// Maps a stable logical session key (e.g. "computer/workspace/terminal")
+    /// to the live SessionId it currently resolves to, so multiple clients
+    /// referring to the same logical terminal converge on one PTY session
+    /// instead of each spawning their own (see `resolve_named_session`).
+    named_sessions: Arc<RwLock<HashMap<String, SessionId>>>,
 
     /// Default shell (pwsh.exe if available, else cmd.exe per architecture)
     default_shell: String,
 
     /// Persistence layer (Phase 2: SQLite session + scrollback storage)
     db: Option<Arc<Database>>,
+
+    /// Pane layout managers (Phase 4: Splits/Tabs, ADR-018), one per
+    /// workspace — keyed by the workspace's root session id (its "pane-0",
+    /// i.e. whatever session `resolve_named_session` first created for that
+    /// name). Each workspace gets its own independent split tree; this must
+    /// NOT be a single global layout, or splitting a pane in one workspace
+    /// would corrupt/entangle every other workspace's sessions.
+    layouts: Arc<RwLock<HashMap<SessionId, LayoutManager>>>,
+
+    /// Layout persistence (Phase 4: task-74 Day 4)
+    /// Saves/loads layout state to/from SQLite
+    layout_persistence: Option<Arc<LayoutPersistence>>,
 }
 
 impl SessionManager {
@@ -39,10 +71,14 @@ impl SessionManager {
     /// Create new session manager with optional persistence
     pub fn new_with_db(default_shell: Option<String>, db: Option<Arc<Database>>) -> Self {
         let default_shell = default_shell.unwrap_or_else(|| {
-            // DIAGNOSTIC TEST: Use ping instead of cmd.exe to match Microsoft ConPTY sample
-            // This verifies our ConPTY implementation is correct
-            // TODO: Revert to cmd.exe after test
-            "ping.exe -n 3 localhost".to_string()
+            #[cfg(windows)]
+            {
+                "cmd.exe".to_string()
+            }
+            #[cfg(unix)]
+            {
+                "/bin/bash".to_string()
+            }
         });
 
         tracing::info!(
@@ -79,10 +115,112 @@ impl SessionManager {
             }
         }
 
+        // Initialize layout persistence if database available
+        let layout_persistence = db.as_ref().map(|db_arc| {
+            Arc::new(LayoutPersistence::new(Arc::clone(db_arc)))
+        });
+
         Self {
             sessions: Arc::new(RwLock::new(HashMap::new())),
+            named_sessions: Arc::new(RwLock::new(HashMap::new())),
             default_shell,
             db,
+            layouts: Arc::new(RwLock::new(HashMap::new())), // Phase 4: one entry per workspace root
+            layout_persistence,
+        }
+    }
+
+    /// Find-or-create a session for a stable logical key.
+    ///
+    /// Multiple clients (e.g. the same "terminal" opened in two browser tabs
+    /// or devices) can each independently derive the same `name` from their
+    /// local workspace/terminal labels. The first caller creates the
+    /// session; every subsequent caller with the same name attaches to that
+    /// same live session instead of spawning a new PTY, which is what makes
+    /// cross-client sync work without a server-side workspace database.
+    ///
+    /// `previous_name`, when set, means the caller knows this session used
+    /// to be reachable under that name and wants it addressable as `name`
+    /// from now on — e.g. the client renamed a workspace or its owning
+    /// computer, and reconnects with the new name plus the old one it was
+    /// just attached to. Without this, a rename would silently orphan the
+    /// live session under its old name and hand back a fresh, empty one for
+    /// the new name, since the two are otherwise unrelated strings to this
+    /// map. Only consulted when `name` doesn't already resolve to a live
+    /// session — an existing mapping for `name` always wins.
+    ///
+    /// If the previously-mapped session has since been terminated/removed,
+    /// a fresh session is created and the mapping is updated.
+    pub async fn resolve_named_session(
+        &self,
+        name: &str,
+        previous_name: Option<&str>,
+        owner_user_id: Option<String>,
+        rows: u16,
+        cols: u16,
+    ) -> Result<SessionId> {
+        let mut named = self.named_sessions.write().await;
+
+        if let Some(existing_id) = named.get(name).copied() {
+            if self.sessions.read().await.contains_key(&existing_id) {
+                return Ok(existing_id);
+            }
+        }
+
+        if let Some(prev) = previous_name.filter(|p| !p.is_empty() && *p != name) {
+            if let Some(existing_id) = named.remove(prev) {
+                if self.sessions.read().await.contains_key(&existing_id) {
+                    named.insert(name.to_string(), existing_id);
+                    return Ok(existing_id);
+                }
+            }
+        }
+
+        // create_session_with_user registers this new session as its own
+        // workspace root (gets its own layout tree) — see `ensure_layout`.
+        let id = self
+            .create_session_with_user(owner_user_id, None, rows, cols)
+            .await?;
+        named.insert(name.to_string(), id);
+
+        Ok(id)
+    }
+
+    /// Registers a brand-new, independent layout tree rooted at
+    /// `root_session_id` (its "pane-0"), if one doesn't already exist.
+    /// Called once per workspace, when that workspace's first session is
+    /// created — never for sessions spawned by `handle_split_pane`, which
+    /// belong to an existing workspace's layout instead of starting their
+    /// own.
+    async fn ensure_layout(&self, root_session_id: SessionId) {
+        let mut layouts = self.layouts.write().await;
+        if !layouts.contains_key(&root_session_id) {
+            layouts.insert(root_session_id, LayoutManager::new(root_session_id));
+            drop(layouts);
+            if let Some(container) = self.sessions.read().await.get(&root_session_id) {
+                container.session.write().await.pane_id = Some("pane-0".to_string());
+            }
+        }
+    }
+
+    /// Every (pane_id, session_id) pair in the workspace layout rooted at
+    /// `root_session_id`, including the root itself. Empty if that workspace
+    /// has no split layout (plain, non-paned session). Used when a client
+    /// (re)attaches, so it can also subscribe to every other pane's output —
+    /// otherwise only the root pane's output would ever reach it.
+    pub async fn sibling_pane_sessions(&self, root_session_id: SessionId) -> Vec<(String, SessionId)> {
+        let layouts = self.layouts.read().await;
+        match layouts.get(&root_session_id) {
+            Some(layout) => layout
+                .collect_pane_ids()
+                .into_iter()
+                .filter_map(|pane_id| {
+                    layout
+                        .get_session_id(&pane_id)
+                        .map(|session_id| (pane_id, session_id))
+                })
+                .collect(),
+            None => Vec::new(),
         }
     }
 
@@ -99,10 +237,13 @@ impl SessionManager {
             .await
     }
 
-    /// Create new terminal session with optional owner user_id (RBAC-enabled)
+    /// Create new terminal session with optional owner user_id (RBAC-enabled).
     ///
-    /// Phase 1: Spawns ConPTY backend
-    /// Phase 2+: Will support OpenPTY for Linux/macOS
+    /// This is the entry point for a brand-new *workspace root* — it gets
+    /// its own independent layout tree (Phase 4: Splits/Tabs, ADR-018). A
+    /// pane created by splitting an existing workspace must NOT go through
+    /// here (it belongs to that workspace's existing layout instead) — see
+    /// `create_session_inner`, which this delegates to.
     ///
     /// # Arguments
     /// * `owner_user_id` - User creating the session (from JWT claims, optional)
@@ -110,6 +251,24 @@ impl SessionManager {
     /// * `rows` - Terminal rows
     /// * `cols` - Terminal columns
     pub async fn create_session_with_user(
+        &self,
+        owner_user_id: Option<String>,
+        working_dir: Option<PathBuf>,
+        rows: u16,
+        cols: u16,
+    ) -> Result<SessionId> {
+        let id = self
+            .create_session_inner(owner_user_id, working_dir, rows, cols)
+            .await?;
+        self.ensure_layout(id).await;
+        Ok(id)
+    }
+
+    /// Spawns a PTY session without touching layout state at all. Used by
+    /// `create_session_with_user` (which registers a new layout afterward)
+    /// and by `handle_split_pane` (which instead attaches the new session
+    /// into the *existing* workspace layout it was split from).
+    async fn create_session_inner(
         &self,
         owner_user_id: Option<String>,
         working_dir: Option<PathBuf>,
@@ -164,13 +323,6 @@ impl SessionManager {
             cols,
         );
 
-        // Store container in HashMap FIRST
-        self.sessions.write().await.insert(id, container.clone());
-        tracing::info!(
-            "LIFECYCLE: SessionContainer stored in HashMap for session {}",
-            id
-        );
-
         // Spawn tasks WITH AbortOnDrop tracking (fixes memory leak)
         // Store JoinHandles in container - Drop will abort tasks to release Arc references
         tracing::info!(
@@ -219,6 +371,18 @@ impl SessionManager {
         });
         *container.monomind_task.lock().await = Some(monomind_handle);
 
+        // Store the container in the HashMap only after both task handles are
+        // recorded on it. output_task/monomind_task are Arc<Mutex<...>> —
+        // inserting a clone() earlier and continuing to use the original
+        // `container` local meant that local's Drop (which aborts whatever
+        // handle sits in the shared Arc<Mutex<Option<JoinHandle>>> at drop
+        // time) fired as soon as this function returned, killing the
+        // just-spawned output task instantly via the shared Mutex — even
+        // though a clone of the container still lived on in the map. The
+        // session appeared to attach fine (map lookup succeeded) but never
+        // streamed any PTY output back, because its output task had already
+        // been aborted before the map's clone was ever read.
+        self.sessions.write().await.insert(id, container);
         tracing::info!(
             "Session {} created successfully WITH AbortOnDrop tracking",
             id
@@ -546,6 +710,389 @@ impl SessionManager {
         Ok(())
     }
 
+    // ============================================================================
+    // Phase 4: Pane Layout Management (ADR-018, task-73)
+    // ============================================================================
+
+    /// Handle split pane command (Phase 4: Splits/Tabs)
+    ///
+    /// Creates a new PTY session and splits the specified pane into two panes.
+    ///
+    /// # Arguments
+    /// * `root_session_id` - The workspace's root session id (identifies
+    ///   which workspace's layout tree to mutate — pane ids are only unique
+    ///   within one workspace's layout, not globally)
+    /// * `pane_id` - Which pane to split
+    /// * `direction` - Split direction (horizontal/vertical)
+    /// * `new_session_shell` - Shell command for new pane (e.g., "cmd.exe", "/bin/bash")
+    /// * `user_id` - User requesting split (for RBAC, optional)
+    ///
+    /// # Returns
+    /// The new layout tree plus the new pane's id and session id — the
+    /// caller (the WS connection handler) needs `new_session_id` to also
+    /// attach this connection's output channel to the new pane's session,
+    /// so its terminal output actually streams to the client.
+    pub async fn handle_split_pane(
+        &self,
+        root_session_id: SessionId,
+        pane_id: &str,
+        direction: SplitDirection,
+        new_session_shell: Option<String>,
+        user_id: Option<String>,
+    ) -> Result<SplitPaneResult> {
+        // Get current working directory and dimensions from existing pane's session
+        let (working_dir, rows, cols) = {
+            let layouts = self.layouts.read().await;
+            let layout = layouts.get(&root_session_id).ok_or_else(|| {
+                SessionError::LayoutError("LayoutManager not initialized".to_string())
+            })?;
+            if let Some(session_id) = layout.get_session_id(pane_id) {
+                let sessions = self.sessions.read().await;
+                if let Some(container) = sessions.get(&session_id) {
+                    let session = container.session.read().await;
+                    (
+                        Some(session.working_dir.clone()),
+                        session.dimensions.rows,
+                        session.dimensions.cols,
+                    )
+                } else {
+                    (None, 24, 80) // Fallback defaults
+                }
+            } else {
+                (None, 24, 80) // Fallback defaults
+            }
+        };
+
+        // Create new PTY session for the new pane. Uses `create_session_inner`
+        // (not `create_session_with_user`) — this session belongs to the
+        // existing workspace layout being split, it must NOT become the root
+        // of a brand-new layout of its own.
+        // TODO: Support custom shell per pane via new_session_shell parameter
+        // For now, use default shell (requires refactoring create_session to accept shell override)
+        let _custom_shell = new_session_shell; // Reserved for future use
+
+        let new_session_id = self
+            .create_session_inner(user_id.clone(), working_dir, rows, cols)
+            .await?;
+
+        tracing::info!(
+            "Created new session {} for split pane ({}x{})",
+            new_session_id,
+            rows,
+            cols
+        );
+
+        // Update layout tree
+        let (new_pane_id, layout_update) = {
+            let mut layouts = self.layouts.write().await;
+            let layout = layouts.get_mut(&root_session_id).ok_or_else(|| {
+                SessionError::LayoutError("LayoutManager not initialized".to_string())
+            })?;
+
+            let new_pane_id = layout
+                .split_pane(pane_id, direction, new_session_id)
+                .map_err(|e| SessionError::LayoutError(format!("Split pane failed: {}", e)))?;
+
+            tracing::info!(
+                "Split pane '{}' ({:?}) → created new pane '{}'",
+                pane_id,
+                direction,
+                new_pane_id
+            );
+
+            (new_pane_id, layout.to_proto())
+        };
+
+        // Tag the new session with its pane_id so its output can be
+        // attributed to the right pane on the client (see OutputData.pane_id).
+        if let Some(container) = self.sessions.read().await.get(&new_session_id) {
+            container.session.write().await.pane_id = Some(new_pane_id.clone());
+        }
+
+        // Auto-save layout (if user_id available)
+        if let Some(uid) = &user_id {
+            if let Err(e) = self.auto_save_layout(uid, root_session_id).await {
+                tracing::warn!("Failed to auto-save layout after split: {}", e);
+            }
+        }
+
+        Ok(SplitPaneResult {
+            layout_update,
+            new_session_id,
+            new_pane_id,
+        })
+    }
+
+    /// Handle close pane command (Phase 4: Splits/Tabs)
+    ///
+    /// Closes a pane and kills its associated PTY session.
+    ///
+    /// # Arguments
+    /// * `pane_id` - Which pane to close
+    /// * `user_id` - User requesting close (for RBAC, optional)
+    ///
+    /// # Returns
+    /// LayoutUpdate with new layout tree after pane removal
+    pub async fn handle_close_pane(
+        &self,
+        root_session_id: SessionId,
+        pane_id: &str,
+        user_id: Option<String>,
+    ) -> Result<monoterminal_protocol::LayoutUpdate> {
+        // Get session ID for the pane, then validate + mutate the layout tree
+        // BEFORE touching the PTY session. `close_pane` can fail (e.g.
+        // CANNOT_CLOSE_LAST_PANE) — if we killed the session first and only
+        // validated afterward, a rejected close would still have destroyed
+        // the user's terminal, which is worse than doing nothing.
+        let (session_id, layout_update) = {
+            let mut layouts = self.layouts.write().await;
+            let layout = layouts.get_mut(&root_session_id).ok_or_else(|| {
+                SessionError::LayoutError("LayoutManager not initialized".to_string())
+            })?;
+
+            let session_id = layout
+                .get_session_id(pane_id)
+                .ok_or_else(|| SessionError::LayoutError(format!("Pane '{}' not found", pane_id)))?;
+
+            layout
+                .close_pane(pane_id)
+                .map_err(|e| SessionError::LayoutError(format!("Close pane failed: {}", e)))?;
+
+            tracing::info!("Closed pane '{}'", pane_id);
+
+            (session_id, layout.to_proto())
+        };
+
+        // Now that the layout accepted the close, actually kill the PTY session.
+        self.kill_session_with_user(session_id, user_id.clone()).await?;
+        tracing::info!("Killed session {} for pane '{}'", session_id, pane_id);
+
+        // Auto-save layout (if user_id available)
+        if let Some(uid) = user_id {
+            if let Err(e) = self.auto_save_layout(&uid, root_session_id).await {
+                tracing::warn!("Failed to auto-save layout after close: {}", e);
+            }
+        }
+
+        // Return updated layout
+        Ok(layout_update)
+    }
+
+    /// Handle focus pane command (Phase 4: Splits/Tabs)
+    ///
+    /// Changes which pane has input focus.
+    ///
+    /// # Arguments
+    /// * `root_session_id` - Which workspace's layout to mutate
+    /// * `pane_id` - Which pane to focus
+    ///
+    /// # Returns
+    /// LayoutUpdate with updated focus state
+    pub async fn handle_focus_pane(
+        &self,
+        root_session_id: SessionId,
+        pane_id: &str,
+    ) -> Result<monoterminal_protocol::LayoutUpdate> {
+        // Note: focus_pane doesn't have user_id parameter (not needed for RBAC)
+        // Auto-save is skipped for focus changes (minor state change, can skip persistence)
+
+        let mut layouts = self.layouts.write().await;
+        let layout = layouts
+            .get_mut(&root_session_id)
+            .ok_or_else(|| SessionError::LayoutError("LayoutManager not initialized".to_string()))?;
+
+        layout
+            .focus_pane(pane_id)
+            .map_err(|e| SessionError::LayoutError(format!("Focus pane failed: {}", e)))?;
+
+        tracing::info!("Focused pane '{}'", pane_id);
+
+        // Return updated layout
+        Ok(layout.to_proto())
+    }
+
+    /// Resolves `pane_id` (or the workspace's currently focused pane, if
+    /// `None`) to its underlying session id, within the layout rooted at
+    /// `root_session_id`. Shared by every pane-targeted operation
+    /// (input, resize) so they all resolve pane ids the same way.
+    async fn resolve_pane_session(
+        &self,
+        root_session_id: SessionId,
+        pane_id: Option<&str>,
+    ) -> Result<(String, SessionId)> {
+        let layouts = self.layouts.read().await;
+        let layout = layouts
+            .get(&root_session_id)
+            .ok_or_else(|| SessionError::LayoutError("LayoutManager not initialized".to_string()))?;
+
+        let target = pane_id.unwrap_or_else(|| layout.get_focused_pane_id());
+        let session_id = layout
+            .get_session_id(target)
+            .ok_or_else(|| SessionError::LayoutError(format!("Pane '{}' not found", target)))?;
+
+        Ok((target.to_string(), session_id))
+    }
+
+    /// Resize a specific pane's PTY (or the workspace's focused pane, if
+    /// `pane_id` is `None`). Each pane is its own independent PTY, so
+    /// resizing the root session alone would leave every other pane's
+    /// terminal size stuck at whatever it was when the pane was created.
+    ///
+    /// # Arguments
+    /// * `root_session_id` - Which workspace's layout to look the pane up in
+    /// * `pane_id` - Target pane ID (None = focused pane)
+    pub async fn resize_pane(
+        &self,
+        root_session_id: SessionId,
+        pane_id: Option<&str>,
+        rows: u16,
+        cols: u16,
+        user_id: Option<String>,
+    ) -> Result<()> {
+        let (_, session_id) = self.resolve_pane_session(root_session_id, pane_id).await?;
+        self.resize_session_with_user(session_id, rows, cols, user_id)
+            .await
+    }
+
+    /// Send input to the focused pane (or specified pane)
+    ///
+    /// Phase 4: Routes input to pane's session. Falls back to focused pane if pane_id is None.
+    ///
+    /// # Arguments
+    /// * `root_session_id` - Which workspace's layout to look the pane up in
+    /// * `pane_id` - Target pane ID (None = focused pane)
+    /// * `data` - Input data to send
+    /// * `user_id` - User sending input (for RBAC, optional)
+    pub async fn send_input_to_pane(
+        &self,
+        root_session_id: SessionId,
+        pane_id: Option<&str>,
+        data: &[u8],
+        user_id: Option<String>,
+    ) -> Result<()> {
+        // Determine target pane (specified or focused)
+        let (target_pane_id, session_id) =
+            self.resolve_pane_session(root_session_id, pane_id).await?;
+
+        tracing::debug!(
+            "Routing input ({} bytes) to pane '{}' (session {})",
+            data.len(),
+            target_pane_id,
+            session_id
+        );
+
+        // Send input to the pane's session
+        self.send_input_with_user(session_id, data, user_id).await
+    }
+
+    /// Persistence key for a workspace's layout: layouts are per-workspace
+    /// (see `layouts` field), but the storage schema's primary key is a
+    /// single TEXT column keyed by user — composing user_id with the
+    /// workspace's root session id keeps one user's several workspaces from
+    /// overwriting each other's saved layout under that one column.
+    fn layout_persistence_key(user_id: &str, root_session_id: SessionId) -> String {
+        format!("{}:{}", user_id, root_session_id)
+    }
+
+    /// Auto-save layout to persistence layer (Phase 4: task-74 Day 4)
+    ///
+    /// Called after every layout change (split/close/focus) to persist state.
+    ///
+    /// # Arguments
+    /// * `user_id` - User ID to save layout for
+    /// * `root_session_id` - Which workspace's layout this is
+    ///
+    /// # Returns
+    /// * `Ok(())` - Layout saved successfully (or no persistence available)
+    /// * `Err(_)` - Database error or serialization failure
+    async fn auto_save_layout(&self, user_id: &str, root_session_id: SessionId) -> Result<()> {
+        // Check if persistence is available
+        let persistence = match &self.layout_persistence {
+            Some(p) => p,
+            None => {
+                tracing::debug!("Layout persistence not available, skipping auto-save");
+                return Ok(());
+            }
+        };
+
+        // Get layout snapshot
+        let layout_update = {
+            let layouts = self.layouts.read().await;
+            match layouts.get(&root_session_id) {
+                Some(layout) => layout.to_proto(),
+                None => {
+                    tracing::debug!("No layout to save (LayoutManager not initialized)");
+                    return Ok(());
+                }
+            }
+        };
+
+        // Save to persistence layer
+        let key = Self::layout_persistence_key(user_id, root_session_id);
+        persistence
+            .save_layout(&key, &layout_update)
+            .await
+            .map_err(|e| {
+                SessionError::LayoutError(format!("Failed to save layout: {}", e))
+            })?;
+
+        tracing::debug!("Auto-saved layout for user {} (key {})", user_id, key);
+
+        Ok(())
+    }
+
+    /// Auto-load layout from persistence layer (Phase 4: task-74 Day 4)
+    ///
+    /// Called on session attachment to restore saved layout state.
+    ///
+    /// # Arguments
+    /// * `user_id` - User ID to load layout for
+    /// * `root_session_id` - Which workspace's layout this is
+    ///
+    /// # Returns
+    /// * `Ok(())` - Layout loaded (or no saved layout available)
+    /// * `Err(_)` - Database error or deserialization failure
+    #[allow(dead_code)] // Restoration (LayoutManager::from_proto) not yet implemented
+    async fn auto_load_layout(&self, user_id: &str, root_session_id: SessionId) -> Result<()> {
+        // Check if persistence is available
+        let persistence = match &self.layout_persistence {
+            Some(p) => p,
+            None => {
+                tracing::debug!("Layout persistence not available, skipping auto-load");
+                return Ok(());
+            }
+        };
+
+        // Load layout from persistence
+        let key = Self::layout_persistence_key(user_id, root_session_id);
+        let _layout_update = match persistence.load_layout(&key).await {
+            Ok(Some(layout)) => layout,
+            Ok(None) => {
+                tracing::debug!("No saved layout for user {}", user_id);
+                return Ok(());
+            }
+            Err(e) => {
+                return Err(SessionError::LayoutError(format!(
+                    "Failed to load layout: {}",
+                    e
+                )));
+            }
+        };
+
+        // TODO: Restore layout from LayoutUpdate proto
+        // This requires implementing LayoutManager::from_proto() or similar
+        // For now, just log that we loaded the layout
+        tracing::info!(
+            "Loaded layout for user {} (restoration not yet implemented)",
+            user_id
+        );
+
+        // Store the loaded layout update for future use
+        // When LayoutManager::from_proto() is implemented, reconstruct layout here
+
+        Ok(())
+    }
+
     /// Check if user has permission to perform action on session (Phase 2: RBAC)
     ///
     /// Loads session owner and ACL from database, then calls RBAC check_permission
@@ -795,6 +1342,7 @@ impl SessionManager {
                 data: Bytes::copy_from_slice(data).to_vec(),
                 sequence: sequence_number,
                 compression: monoterminal_protocol::CompressionType::None as i32,
+                pane_id: session.pane_id.clone(),
             })),
         };
 

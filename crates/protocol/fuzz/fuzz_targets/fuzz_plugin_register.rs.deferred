@@ -1,0 +1,57 @@
+#![no_main]
+
+use libfuzzer_sys::fuzz_target;
+use monoterminal_protocol::{PluginRegisterRequest, Envelope, envelope, HookType};
+use prost::Message;
+
+fuzz_target!(|data: &[u8]| {
+    // Fuzz PluginRegisterRequest deserialization
+    // Critical path: Plugin registration (Phase 4 Week 5-8)
+    // Tests: malformed plugin IDs, invalid hook types, large hook arrays
+
+    // Attempt 1: Decode as raw PluginRegisterRequest
+    if let Ok(plugin_req) = PluginRegisterRequest::decode(data) {
+        // Exercise plugin metadata fields
+        let _ = plugin_req.plugin_id.len();
+        let _ = plugin_req.plugin_name.len();
+        let _ = plugin_req.version.len();
+        let _ = plugin_req.hooks.len();
+
+        // Validate plugin ID format (alphanumeric + dash/underscore)
+        // Protocol spec: [a-zA-Z0-9_-]+, max 64 chars
+        let is_valid_id = plugin_req.plugin_id.len() <= 64
+            && plugin_req.plugin_id.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '-');
+        let _ = is_valid_id;
+
+        // Validate hook types
+        for hook in &plugin_req.hooks {
+            let hook_type = HookType::try_from(hook.r#type).unwrap_or(HookType::HookOnOutput);
+            let _ = hook_type;
+
+            // Exercise hook options (map<string, string>)
+            for (key, value) in &hook.options {
+                let _ = key.len();
+                let _ = value.len();
+            }
+        }
+
+        // Test hook limits (max 10 hooks per plugin per protocol spec)
+        let exceeds_limit = plugin_req.hooks.len() > 10;
+        let _ = exceeds_limit;
+
+        // Test re-encoding roundtrip
+        let mut buf = Vec::new();
+        if plugin_req.encode(&mut buf).is_ok() {
+            let _ = PluginRegisterRequest::decode(&buf[..]);
+        }
+    }
+
+    // Attempt 2: Decode as Envelope containing PluginRegisterRequest
+    if let Ok(envelope) = Envelope::decode(data) {
+        if let Some(envelope::Message::PluginRegisterRequest(plugin_req)) = envelope.message {
+            let _ = envelope.sequence_number;
+            let _ = plugin_req.plugin_id.len();
+            let _ = plugin_req.hooks.len();
+        }
+    }
+});

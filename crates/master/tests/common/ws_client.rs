@@ -42,18 +42,23 @@ impl TestWsClient {
     #[allow(dead_code)]
     pub async fn connect(&mut self) -> Result<()> {
         let (stream, _response) = if self.accept_invalid_certs {
-            // Create TLS connector that accepts invalid certificates (for testing only)
-            use native_tls::TlsConnector;
-            let tls_connector = TlsConnector::builder()
-                .danger_accept_invalid_certs(true)
-                .danger_accept_invalid_hostnames(true)
-                .build()?;
+            // Use rustls (not native-tls) to accept the server's self-signed
+            // dev cert: the server is TLS 1.3-only (see server/tls.rs), and
+            // native-tls's macOS backend (Security.framework/Secure
+            // Transport) caps out at TLS 1.2, so it can never complete this
+            // handshake on macOS ("bad protocol version"). rustls is a pure
+            // Rust TLS stack with no such OS-backend cap, so it works
+            // identically on every platform.
+            let tls_config = rustls022::ClientConfig::builder()
+                .dangerous()
+                .with_custom_certificate_verifier(std::sync::Arc::new(NoCertVerification))
+                .with_no_client_auth();
 
             connect_async_tls_with_config(
                 &self.url,
                 None,
                 false,
-                Some(Connector::NativeTls(tls_connector)),
+                Some(Connector::Rustls(std::sync::Arc::new(tls_config))),
             )
             .await?
         } else {
@@ -106,6 +111,159 @@ impl TestWsClient {
         self.stream.is_some()
     }
 
+    /// Performs the real Ed25519 challenge-response handshake (SRS §3.2.2)
+    /// over this connection: ChallengeRequest -> sign the returned nonce
+    /// with `signing_key` -> AuthRequest -> AuthResponse. Returns the
+    /// full response (both tokens + their expiry + the derived user_id) so
+    /// callers can exercise refresh/reuse scenarios too.
+    #[allow(dead_code)]
+    pub async fn authenticate(
+        &mut self,
+        signing_key: &ed25519_dalek::SigningKey,
+    ) -> Result<monoterminal_protocol::AuthResponse> {
+        use ed25519_dalek::Signer;
+        use prost::Message as ProstMessage;
+
+        let challenge_envelope = monoterminal_protocol::Envelope {
+            sequence_number: 100,
+            message: Some(monoterminal_protocol::envelope::Message::ChallengeRequest(
+                monoterminal_protocol::ChallengeRequest {},
+            )),
+        };
+        let mut buf = Vec::with_capacity(challenge_envelope.encoded_len());
+        challenge_envelope.encode(&mut buf)?;
+        self.send_binary(buf).await?;
+
+        let challenge = match self.recv().await? {
+            Message::Binary(data) => {
+                match monoterminal_protocol::Envelope::decode(&data[..])?.message {
+                    Some(monoterminal_protocol::envelope::Message::ChallengeResponse(c)) => c,
+                    Some(monoterminal_protocol::envelope::Message::ErrorResponse(err)) => {
+                        return Err(anyhow::anyhow!(
+                            "ChallengeRequest failed: {} (code: {})",
+                            err.message,
+                            err.code
+                        ))
+                    }
+                    _ => return Err(anyhow::anyhow!("Unexpected response to ChallengeRequest")),
+                }
+            }
+            _ => return Err(anyhow::anyhow!("Expected binary response")),
+        };
+
+        let signature = signing_key.sign(&challenge.nonce);
+
+        let auth_envelope = monoterminal_protocol::Envelope {
+            sequence_number: 101,
+            message: Some(monoterminal_protocol::envelope::Message::AuthRequest(
+                monoterminal_protocol::AuthRequest {
+                    signature: signature.to_bytes().to_vec(),
+                    public_key: signing_key.verifying_key().to_bytes().to_vec(),
+                    nonce: challenge.nonce,
+                },
+            )),
+        };
+        let mut buf = Vec::with_capacity(auth_envelope.encoded_len());
+        auth_envelope.encode(&mut buf)?;
+        self.send_binary(buf).await?;
+
+        match self.recv().await? {
+            Message::Binary(data) => {
+                match monoterminal_protocol::Envelope::decode(&data[..])?.message {
+                    Some(monoterminal_protocol::envelope::Message::AuthResponse(resp)) => Ok(resp),
+                    Some(monoterminal_protocol::envelope::Message::ErrorResponse(err)) => Err(
+                        anyhow::anyhow!("AuthRequest failed: {} (code: {})", err.message, err.code),
+                    ),
+                    _ => Err(anyhow::anyhow!("Unexpected response to AuthRequest")),
+                }
+            }
+            _ => Err(anyhow::anyhow!("Expected binary response")),
+        }
+    }
+
+    /// Sends a raw AuthRequest with caller-supplied fields, bypassing the
+    /// normal challenge round trip — for exercising malformed/mismatched
+    /// inputs directly (wrong nonce, wrong key, no prior challenge, etc.).
+    #[allow(dead_code)]
+    pub async fn send_raw_auth_request(
+        &mut self,
+        signature: Vec<u8>,
+        public_key: Vec<u8>,
+        nonce: Vec<u8>,
+    ) -> Result<Result<monoterminal_protocol::AuthResponse, monoterminal_protocol::ErrorResponse>>
+    {
+        use prost::Message as ProstMessage;
+
+        let envelope = monoterminal_protocol::Envelope {
+            sequence_number: 102,
+            message: Some(monoterminal_protocol::envelope::Message::AuthRequest(
+                monoterminal_protocol::AuthRequest {
+                    signature,
+                    public_key,
+                    nonce,
+                },
+            )),
+        };
+        let mut buf = Vec::with_capacity(envelope.encoded_len());
+        envelope.encode(&mut buf)?;
+        self.send_binary(buf).await?;
+
+        match self.recv().await? {
+            Message::Binary(data) => {
+                match monoterminal_protocol::Envelope::decode(&data[..])?.message {
+                    Some(monoterminal_protocol::envelope::Message::AuthResponse(resp)) => {
+                        Ok(Ok(resp))
+                    }
+                    Some(monoterminal_protocol::envelope::Message::ErrorResponse(err)) => {
+                        Ok(Err(err))
+                    }
+                    _ => Err(anyhow::anyhow!("Unexpected response to AuthRequest")),
+                }
+            }
+            _ => Err(anyhow::anyhow!("Expected binary response")),
+        }
+    }
+
+    /// Sends a TokenRefreshRequest and returns either the new token pair or
+    /// the server's ErrorResponse (refresh failures are expected/asserted
+    /// on in some tests, not just treated as a hard error).
+    #[allow(dead_code)]
+    pub async fn refresh_token(
+        &mut self,
+        refresh_token: &str,
+    ) -> Result<
+        Result<monoterminal_protocol::TokenRefreshResponse, monoterminal_protocol::ErrorResponse>,
+    > {
+        use prost::Message as ProstMessage;
+
+        let envelope = monoterminal_protocol::Envelope {
+            sequence_number: 103,
+            message: Some(monoterminal_protocol::envelope::Message::TokenRefreshRequest(
+                monoterminal_protocol::TokenRefreshRequest {
+                    refresh_token: refresh_token.to_string(),
+                },
+            )),
+        };
+        let mut buf = Vec::with_capacity(envelope.encoded_len());
+        envelope.encode(&mut buf)?;
+        self.send_binary(buf).await?;
+
+        match self.recv().await? {
+            Message::Binary(data) => {
+                match monoterminal_protocol::Envelope::decode(&data[..])?.message {
+                    Some(monoterminal_protocol::envelope::Message::TokenRefreshResponse(resp)) => {
+                        Ok(Ok(resp))
+                    }
+                    Some(monoterminal_protocol::envelope::Message::ErrorResponse(err)) => {
+                        Ok(Err(err))
+                    }
+                    _ => Err(anyhow::anyhow!("Unexpected response to TokenRefreshRequest")),
+                }
+            }
+            _ => Err(anyhow::anyhow!("Expected binary response")),
+        }
+    }
+
     /// Send AttachRequest and wait for AttachResponse
     #[allow(dead_code)]
     pub async fn attach(
@@ -123,6 +281,8 @@ impl TestWsClient {
             rows,
             cols,
             last_seen_sequence: 0,
+            session_name: String::new(),
+            previous_session_name: String::new(),
         };
 
         let envelope = monoterminal_protocol::Envelope {
@@ -161,6 +321,7 @@ impl TestWsClient {
 
         let input_data = monoterminal_protocol::InputData {
             data: data.to_vec(),
+            pane_id: None,
             auth_token: jwt_bearer.to_owned(),
         };
 
@@ -186,6 +347,7 @@ impl TestWsClient {
         let resize_req = monoterminal_protocol::ResizeRequest {
             rows,
             cols,
+            pane_id: None,
             auth_token: jwt_bearer.to_owned(),
         };
 
@@ -224,6 +386,49 @@ impl TestWsClient {
         self.send_binary(buf).await?;
 
         Ok(())
+    }
+}
+
+/// Accepts any server certificate — mirrors native-tls's
+/// `danger_accept_invalid_certs(true)` for connecting to the self-signed dev
+/// TLS cert. Test-only: never use for a real connection.
+#[derive(Debug)]
+struct NoCertVerification;
+
+impl rustls022::client::danger::ServerCertVerifier for NoCertVerification {
+    fn verify_server_cert(
+        &self,
+        _end_entity: &rustls022::pki_types::CertificateDer<'_>,
+        _intermediates: &[rustls022::pki_types::CertificateDer<'_>],
+        _server_name: &rustls022::pki_types::ServerName<'_>,
+        _ocsp_response: &[u8],
+        _now: rustls022::pki_types::UnixTime,
+    ) -> Result<rustls022::client::danger::ServerCertVerified, rustls022::Error> {
+        Ok(rustls022::client::danger::ServerCertVerified::assertion())
+    }
+
+    fn verify_tls12_signature(
+        &self,
+        _message: &[u8],
+        _cert: &rustls022::pki_types::CertificateDer<'_>,
+        _dss: &rustls022::DigitallySignedStruct,
+    ) -> Result<rustls022::client::danger::HandshakeSignatureValid, rustls022::Error> {
+        Ok(rustls022::client::danger::HandshakeSignatureValid::assertion())
+    }
+
+    fn verify_tls13_signature(
+        &self,
+        _message: &[u8],
+        _cert: &rustls022::pki_types::CertificateDer<'_>,
+        _dss: &rustls022::DigitallySignedStruct,
+    ) -> Result<rustls022::client::danger::HandshakeSignatureValid, rustls022::Error> {
+        Ok(rustls022::client::danger::HandshakeSignatureValid::assertion())
+    }
+
+    fn supported_verify_schemes(&self) -> Vec<rustls022::SignatureScheme> {
+        rustls022::crypto::ring::default_provider()
+            .signature_verification_algorithms
+            .supported_schemes()
     }
 }
 

@@ -1,16 +1,22 @@
+/* Calm by default (connected is the expected state and shouldn't shout),
+   escalating to a filled, bordered pill only for states that need
+   attention (connecting/reconnecting/error) — see per-state rules below. */
 .connection-status {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background: #2d2d2d;
-  border-bottom: 1px solid #3e3e3e;
-  font-size: 13px;
+  gap: var(--space-1);
+  padding: 3px var(--space-2);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
   font-weight: 500;
+  line-height: 1;
+  background: color-mix(in oklch, var(--surface-0) 70%, transparent);
+  backdrop-filter: blur(4px);
+  transition: background-color var(--duration-base) var(--ease-out-expo);
 }
 
 .status-icon {
-  font-size: 12px;
+  font-size: 8px;
   line-height: 1;
 }
 
@@ -19,36 +25,55 @@
 }
 
 .reconnect-btn {
-  padding: 4px 12px;
-  background: #007acc;
+  padding: 2px var(--space-2);
+  background: var(--accent);
   border: none;
-  border-radius: 4px;
-  color: #ffffff;
-  font-size: 12px;
+  border-radius: var(--radius-full);
+  color: var(--ink-on-accent);
+  font-size: var(--text-xs);
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: background-color var(--duration-fast) var(--ease-out-expo),
+    transform var(--duration-fast) var(--ease-out-expo);
 }
 
 .reconnect-btn:hover {
-  background: #006bb3;
+  background: color-mix(in oklch, var(--accent) 85%, black 15%);
 }
 
 .reconnect-btn:active {
   transform: scale(0.95);
 }
 
-/* Connection states */
-.connection-status.connected {
-  color: #0dbc79;
+/* Coarse pointer (touch): the default padding gives a ~20px tall tap
+   target — comfortable for a mouse, too thin to reliably hit with a
+   finger for a control that matters (recovering a dropped connection). */
+@media (hover: none), (pointer: coarse) {
+  .reconnect-btn {
+    padding: var(--space-2) var(--space-3);
+    min-height: var(--hit-target-compact);
+  }
 }
 
-.connection-status.connected .status-icon {
-  animation: pulse 2s ease-in-out infinite;
+/* Connected: quietest state — a small steady dot, no fill, easy to ignore. */
+.connection-status.connected {
+  color: var(--state-success);
+  background: transparent;
+  backdrop-filter: none;
+}
+
+/* Connecting/reconnecting/disconnected/error: something worth noticing, so
+   the pill earns its background + a touch more presence. */
+.connection-status.connecting,
+.connection-status.reconnecting,
+.connection-status.disconnected,
+.connection-status.error {
+  padding: 4px var(--space-3);
+  box-shadow: var(--shadow-sm);
 }
 
 .connection-status.connecting {
-  color: #e5e510;
+  color: var(--state-warning);
 }
 
 .connection-status.connecting .status-icon {
@@ -56,7 +81,7 @@
 }
 
 .connection-status.reconnecting {
-  color: #f5f543;
+  color: var(--state-warning);
 }
 
 .connection-status.reconnecting .status-icon {
@@ -64,28 +89,41 @@
 }
 
 .connection-status.disconnected {
-  color: #858585;
+  color: var(--ink-muted);
 }
 
 .connection-status.error {
-  color: #cd3131;
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
+  color: var(--state-error);
 }
 
 @keyframes spin {
-  0% {
+  from {
     transform: rotate(0deg);
   }
-  100% {
+  to {
     transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .connection-status.connecting .status-icon,
+  .connection-status.reconnecting .status-icon {
+    animation: none;
+  }
+}
+
+/* Mobile: narrower terminals wrap more lines, so real output is far more
+   likely to reach the right edge under this corner indicator. Shrinking
+   the connected state to just its dot (no "Connected" label) keeps the
+   glanceable confirmation without a word-sized area of overlap risk —
+   problem states keep their full label everywhere, since that's exactly
+   when a mobile user most needs it spelled out. */
+@media (max-width: 480px) {
+  .connection-status.connected .status-text {
+    display: none;
+  }
+
+  .connection-status.connected {
+    padding: 4px;
   }
 }

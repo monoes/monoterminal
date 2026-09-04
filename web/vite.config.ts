@@ -70,9 +70,15 @@ export default defineConfig({
   ],
   server: {
     port: 3000,
+    // Explicit IPv4 loopback: Node's default DNS resolution for the
+    // 'localhost' hostname on this machine returns ::1 first, so binding
+    // without an explicit host only listened on ::1 — any client (browser
+    // or otherwise) whose resolver or happy-eyeballs picked 127.0.0.1 first
+    // got a hard connection-refused instead of falling through.
+    host: '127.0.0.1',
     proxy: {
       '/ws': {
-        target: 'ws://localhost:5000',
+        target: 'ws://localhost:54321',
         ws: true,
       },
     },

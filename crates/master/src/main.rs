@@ -3,25 +3,30 @@
 // See: docs/monoterminal-srs.md
 
 mod auth;
+mod clipboard; // Phase 4: Bidirectional clipboard backend (ADR-020, task-74)
+mod discovery;
+mod layout; // Phase 4: Splits/Tabs layout manager (ADR-018, task-72)
 mod persistence;
 mod platform;
 mod pty;
 mod server;
 mod session;
+mod tray;
 mod ui;
 mod webrtc;
 
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use tokio::sync::broadcast;
 
-use auth::{keys::load_or_generate_keypair, Ed25519AuthService, RateLimiter};
+use auth::{keys::load_or_generate_keypair_at, Ed25519AuthService, RateLimiter};
 use monoterminal_monomind_bridge::HealthStatus;
 
 /// MONOTERMINAL master daemon
-#[derive(Parser, Debug)]
+#[derive(Parser, Debug, Clone)]
 #[command(name = "monoterminal-master")]
 #[command(about = "MONOTERMINAL master daemon", long_about = None)]
 #[command(version)]
@@ -36,7 +41,13 @@ struct Args {
     dev_mode: bool,
 
     /// Server bind address
-    #[arg(long, default_value = "127.0.0.1:5000", global = true)]
+    ///
+    /// Port 5000 (the old default) is claimed by macOS's AirPlay Receiver by
+    /// default on every stock Mac, so the daemon would silently fail to bind
+    /// unless the user disabled AirPlay Receiver or passed --bind-addr
+    /// explicitly. 54321 is in IANA's private/dynamic range (49152-65535),
+    /// which no registered service is allowed to use.
+    #[arg(long, default_value = "127.0.0.1:54321", global = true)]
     bind_addr: String,
 
     /// systemd mode (Type=notify readiness signaling)
@@ -46,10 +57,26 @@ struct Args {
     /// launchd mode (macOS launch daemon)
     #[arg(long, hide = true)]
     launchd: bool,
+
+    /// Disable the system tray icon (always off in --systemd/--launchd mode)
+    #[arg(long, default_value_t = false, global = true)]
+    no_tray: bool,
+
+    /// URL opened by the tray icon's "Open Dashboard" menu item
+    #[arg(long, default_value = "http://localhost:3000", global = true)]
+    dashboard_url: String,
+
+    /// Enable WebRTC P2P remote access by connecting out to a signaling
+    /// relay at this URL (e.g. ws://relay.example.com:9000). Lets a browser
+    /// reach this daemon from outside the local network without port
+    /// forwarding — see docs/decisions/011-p2p-networking-architecture.md.
+    /// Disabled (no P2P) when omitted.
+    #[arg(long, global = true)]
+    relay_url: Option<String>,
 }
 
 /// MONOTERMINAL commands
-#[derive(Subcommand, Debug)]
+#[derive(Subcommand, Debug, Clone)]
 enum Command {
     /// Install MONOTERMINAL as a system service
     #[command(name = "install-service")]
@@ -125,48 +152,49 @@ async fn handle_service_command(command: Command) -> Result<()> {
         } => {
             require_root()?;
 
-            // Interactive prompts for data/user removal (if not already specified)
-            let confirm_remove_data = if remove_data {
-                true
-            } else {
-                print!(
-                    "\nData directory: {}\nRemove data directory? [y/N]: ",
-                    platform::paths::data_dir().display()
-                );
-                read_confirmation()
-            };
+            // Linux: userdel-based removal lives here (systemd::uninstall_service
+            // doesn't remove the user itself), so these prompts and the
+            // subsequent cleanup are this platform's only removal path.
+            #[cfg(target_os = "linux")]
+            {
+                let confirm_remove_data = if remove_data {
+                    true
+                } else {
+                    print!(
+                        "\nData directory: {}\nRemove data directory? [y/N]: ",
+                        platform::paths::data_dir().display()
+                    );
+                    read_confirmation()
+                };
 
-            let confirm_remove_user = if remove_user {
-                true
-            } else {
-                print!("\nService user: monoterminal\nRemove service user? [y/N]: ");
-                read_confirmation()
-            };
+                let confirm_remove_user = if remove_user {
+                    true
+                } else {
+                    print!("\nService user: monoterminal\nRemove service user? [y/N]: ");
+                    read_confirmation()
+                };
 
-            uninstall_service()?;
+                uninstall_service()?;
 
-            // Post-uninstall cleanup based on user confirmation
-            if confirm_remove_data {
-                println!("\nRemoving data directory...");
-                let data_dir = platform::paths::data_dir();
-                if data_dir.exists() {
-                    std::fs::remove_dir_all(&data_dir).context(format!(
-                        "Failed to remove data directory: {}",
-                        data_dir.display()
-                    ))?;
-                    println!("✓ Data directory removed: {}", data_dir.display());
+                if confirm_remove_data {
+                    println!("\nRemoving data directory...");
+                    let data_dir = platform::paths::data_dir();
+                    if data_dir.exists() {
+                        std::fs::remove_dir_all(&data_dir).context(format!(
+                            "Failed to remove data directory: {}",
+                            data_dir.display()
+                        ))?;
+                        println!("✓ Data directory removed: {}", data_dir.display());
+                    }
+                } else {
+                    println!(
+                        "\nData directory preserved: {}",
+                        platform::paths::data_dir().display()
+                    );
                 }
-            } else {
-                println!(
-                    "\nData directory preserved: {}",
-                    platform::paths::data_dir().display()
-                );
-            }
 
-            if confirm_remove_user {
-                println!("\nRemoving service user...");
-                #[cfg(target_os = "linux")]
-                {
+                if confirm_remove_user {
+                    println!("\nRemoving service user...");
                     let status = std::process::Command::new("userdel")
                         .arg("monoterminal")
                         .status();
@@ -177,13 +205,23 @@ async fn handle_service_command(command: Command) -> Result<()> {
                             "Warning: Failed to remove service user (may need manual cleanup)"
                         ),
                     }
+                } else {
+                    println!("\nService user preserved: monoterminal");
                 }
-                #[cfg(not(target_os = "linux"))]
-                {
-                    println!("User removal not implemented for this platform");
-                }
-            } else {
-                println!("\nService user preserved: monoterminal");
+            }
+
+            // macOS (launchd) and Windows: the platform-specific
+            // uninstall_service() already prompts for data/log directory and
+            // service-user removal, and actually performs it (e.g. launchd.rs
+            // uses dscl to remove the service user/group). Duplicating that
+            // here — as this match arm used to — produced two conflicting
+            // sets of prompts per run and, on macOS, a misleading "User
+            // removal not implemented for this platform" message printed
+            // *after* the user had already been removed by the platform impl.
+            #[cfg(not(target_os = "linux"))]
+            {
+                let _ = (remove_data, remove_user); // not yet wired into these platforms' prompts
+                uninstall_service()?;
             }
         }
 
@@ -241,16 +279,52 @@ async fn handle_service_command(command: Command) -> Result<()> {
     Ok(())
 }
 
-#[tokio::main]
-async fn main() -> Result<()> {
-    // Parse CLI arguments
+fn main() -> Result<()> {
     let args = Args::parse();
 
-    // Handle service management commands (non-daemon mode)
+    // Handle service management commands (non-daemon mode) — no tray needed.
     if let Some(command) = args.command {
-        return handle_service_command(command).await;
+        let rt = tokio::runtime::Runtime::new().context("Failed to create tokio runtime")?;
+        return rt.block_on(handle_service_command(command));
     }
 
+    // systemd/launchd run headless (no desktop session to put a tray icon
+    // in), and --no-tray lets users opt out explicitly.
+    let tray_enabled = !args.no_tray && !args.systemd && !args.launchd;
+
+    if !tray_enabled {
+        let rt = tokio::runtime::Runtime::new().context("Failed to create tokio runtime")?;
+        return rt.block_on(run_daemon(args));
+    }
+
+    // The tray icon's OS message pump must run on the main thread (required
+    // by Windows/macOS), so the actual async daemon runs on a background
+    // thread with its own tokio runtime instead.
+    let dashboard_url = args.dashboard_url.clone();
+    let bind_addr = args.bind_addr.clone();
+    let shutdown = Arc::new(AtomicBool::new(false));
+
+    let daemon_thread = std::thread::spawn(move || -> Result<()> {
+        let rt = tokio::runtime::Runtime::new().context("Failed to create tokio runtime")?;
+        rt.block_on(run_daemon(args))
+    });
+
+    tray::run(dashboard_url, bind_addr, shutdown.clone());
+
+    // "Quit" was chosen (or the tray failed to start and returned
+    // immediately) — the daemon thread runs until the process exits, so
+    // just let it keep running in the background if the tray closed for
+    // any reason other than a deliberate quit.
+    if shutdown.load(Ordering::SeqCst) {
+        std::process::exit(0);
+    }
+
+    daemon_thread
+        .join()
+        .unwrap_or_else(|_| Err(anyhow::anyhow!("Daemon thread panicked")))
+}
+
+async fn run_daemon(args: Args) -> Result<()> {
     // Initialize logging based on environment
     // SOAK_TEST_MODE=1 enables structured JSON logging to file for 24h soak tests
     // Otherwise: compact console output for normal operation
@@ -322,8 +396,21 @@ async fn main() -> Result<()> {
         platform::service::sd_notify::notify_status("Loading Ed25519 keypair...")?;
     }
 
-    let keypair = load_or_generate_keypair().context("Failed to load Ed25519 keypair")?;
+    // Running as an installed system service: the service account's home
+    // directory is intentionally unusable for storage (see
+    // load_or_generate_keypair_at's docs), so store the identity key
+    // system-wide instead of under a per-user home.
+    let keypair = load_or_generate_keypair_at(args.launchd || args.systemd)
+        .context("Failed to load Ed25519 keypair")?;
     tracing::info!("Ed25519 keypair loaded");
+
+    // This daemon's P2P identity — always derived, regardless of whether
+    // --relay-url is set, so a browser on the same machine can always ask
+    // "what's your peer_id" (see PairingCodeCache below) even for a daemon
+    // running in pure local/direct mode. Logged at startup since a daemon
+    // with no relay configured has no other way to surface this value.
+    let peer_id = hex::encode(keypair.verifying_bytes());
+    tracing::info!("Daemon peer_id: {}", peer_id);
 
     // 2. Create authentication service (Ed25519 + JWT)
     let auth_service = Arc::new(Ed25519AuthService::new(&keypair)?);
@@ -358,12 +445,91 @@ async fn main() -> Result<()> {
         server_config.dev_mode = args.dev_mode;
     }
 
+    // --dev-mode uses a hardcoded compiled-in test certificate and never
+    // touches the filesystem (see TlsConfig::build_dev_acceptor); everything
+    // else needs a real certificate to exist somewhere. Same system-vs-user
+    // split as the identity key: a service account has no usable home
+    // directory to fall back to.
+    if !server_config.dev_mode {
+        let cert_dir = if args.launchd || args.systemd {
+            platform::paths::system_cert_dir()
+        } else {
+            platform::paths::user_cert_dir()
+        };
+        server_config.tls = server::TlsConfig::ensure_self_signed(&cert_dir)
+            .context("Failed to provision TLS certificate")?;
+    }
+
     tracing::info!(
         "Server configuration: bind_addr={}, max_connections={}, dev_mode={}",
         server_config.bind_addr,
         server_config.max_connections,
         server_config.dev_mode
     );
+
+    // 7b. Optionally start the WebRTC P2P signaling client (remote access
+    // without port-forwarding/VPN — see docs/decisions/011-p2p-networking-architecture.md).
+    // Dials out to a signaling relay; the relay never sees terminal traffic,
+    // only the SDP/ICE handshake needed to open a direct DataChannel.
+    // SaaS device-pairing code cache — always constructed so any daemon can
+    // answer "what's your peer_id" over the dashboard command path (used by
+    // the browser's local-daemon probe), independent of whether P2P/account
+    // linking is actually enabled. `get_or_refresh()` (the only relay-
+    // dependent operation) errors immediately when no --relay-url was given.
+    let pairing_cache = webrtc::PairingCodeCache::new(args.relay_url.clone(), peer_id.clone());
+
+    if let Some(relay_url) = args.relay_url.clone() {
+        let signing_key = Arc::new(ed25519_dalek::SigningKey::from_bytes(keypair.signing_bytes()));
+        let p2p_session_manager = session_manager.clone();
+        let p2p_auth_service = auth_service.clone() as Arc<dyn auth::AuthService>;
+        // A separate ClipboardManager instance from the WebSocket server's —
+        // harmless since its state is keyed per-SessionId (globally unique
+        // UUIDs), so there's no cross-talk between the two transports.
+        let p2p_clipboard_manager = Arc::new(clipboard::ClipboardManager::new());
+        let p2p_dev_mode = args.dev_mode;
+        let cache = pairing_cache.clone();
+
+        tracing::info!("P2P signaling enabled, relay: {}", relay_url);
+        tokio::spawn(async move {
+            // `signaling_client::run` already reconnects forever on any
+            // ordinary connection error — it should never return. If it
+            // ever does (a bug, or a panic unwinding out of this task), the
+            // task would otherwise die silently with no further log output,
+            // permanently and invisibly disabling P2P for the rest of the
+            // process's life. Respawn it instead, so a bug in the
+            // negotiation path degrades to "P2P reconnects every 5s" rather
+            // than "P2P is dead until the daemon is restarted by hand".
+            loop {
+                let relay_url = relay_url.clone();
+                let signing_key = signing_key.clone();
+                let session_manager = p2p_session_manager.clone();
+                let clipboard_manager = p2p_clipboard_manager.clone();
+                let auth_service = p2p_auth_service.clone();
+                let cache = cache.clone();
+
+                let result = tokio::spawn(async move {
+                    webrtc::signaling_client::run(
+                        relay_url,
+                        signing_key,
+                        session_manager,
+                        clipboard_manager,
+                        auth_service,
+                        p2p_dev_mode,
+                        Some(cache),
+                    )
+                    .await;
+                })
+                .await;
+
+                if let Err(join_err) = result {
+                    tracing::error!("P2P signaling task panicked: {} — restarting in 5s", join_err);
+                } else {
+                    tracing::error!("P2P signaling task exited unexpectedly — restarting in 5s");
+                }
+                tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+            }
+        });
+    }
 
     // 8. Create WebSocket server with auth + rate limiting
     #[cfg(target_os = "linux")]
@@ -377,6 +543,7 @@ async fn main() -> Result<()> {
         rate_limiter,
         auth_service,
         health_tx,
+        Some(pairing_cache),
     )?;
     tracing::info!("WebSocket server created");
 

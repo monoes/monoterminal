@@ -17,8 +17,8 @@ body {
     'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #1e1e1e;
-  color: #d4d4d4;
+  background: var(--surface-0);
+  color: var(--ink-primary);
 }
 
 .app {
@@ -33,59 +33,108 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #2d2d2d;
-  border-bottom: 1px solid #3e3e3e;
-  height: 48px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border-default);
+  min-height: 48px;
   flex-shrink: 0;
-  padding: 0 16px;
+  padding: 0 var(--space-4);
+  padding-top: env(safe-area-inset-top);
+  padding-left: max(var(--space-4), env(safe-area-inset-left));
+  padding-right: max(var(--space-4), env(safe-area-inset-right));
   position: relative;
-  z-index: 1000; /* Above panel (999) to prevent close button overlap */
+  z-index: var(--z-header);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
 }
 
 .header-left h1 {
-  font-size: 16px;
+  font-size: var(--text-lg);
   font-weight: 600;
-  color: #ffffff;
+  color: var(--p-white);
   margin: 0;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
-.header-center {
-  flex: 1;
-  display: flex;
-  justify-content: center;
+.active-terminal-label {
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+  padding-left: var(--space-3);
+  border-left: 1px solid var(--border-default);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .header-right {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.sidebar-toggle-btn {
+  display: none;
+  width: var(--hit-target);
+  height: var(--hit-target);
+  margin: 0 calc(var(--space-2) * -1) 0 calc(var(--space-1) * -1);
+  background: transparent;
+  border: none;
+  color: var(--ink-primary);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.sidebar-toggle-btn:active {
+  background: var(--state-active-bg);
 }
 
 .panel-toggle-btn {
   width: 36px;
   height: 36px;
   background: transparent;
-  border: 1px solid #3e3e3e;
-  border-radius: 4px;
-  color: #d4d4d4;
-  font-size: 18px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  color: var(--ink-primary);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s ease;
+  transition: background-color var(--duration-fast) var(--ease-out-expo),
+    color var(--duration-fast) var(--ease-out-expo),
+    transform var(--duration-fast) var(--ease-out-expo);
 }
 
 .panel-toggle-btn:hover {
-  background: #3e3e3e;
-  color: #ffffff;
+  background: var(--border-default);
+  color: var(--p-white);
 }
 
 .panel-toggle-btn:active {
   transform: scale(0.95);
 }
 
+.panel-toggle-btn:focus-visible,
+.sidebar-toggle-btn:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
 /* Main content area */
+.app-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  min-height: 0;
+}
+
 .app-main {
   flex: 1;
   display: flex;
@@ -98,17 +147,61 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: margin-right 0.3s ease;
+  transition: margin-right var(--duration-slow) var(--ease-out-expo);
+  position: relative;
+}
+
+.no-terminals {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  color: var(--ink-muted);
+  padding: var(--space-6);
+  text-align: center;
+}
+
+.no-terminals svg {
+  opacity: 0.4;
+  margin-bottom: var(--space-2);
+}
+
+.no-terminals p {
+  color: var(--ink-secondary);
+  font-size: var(--text-lg);
+  font-weight: 500;
+}
+
+.no-terminals span {
+  font-size: var(--text-base);
+  max-width: 32ch;
 }
 
 .app-main.panel-open .terminal-container {
   margin-right: 360px;
 }
 
+/* Tablet */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .app-main.panel-open .terminal-container {
+    margin-right: 320px;
+  }
+}
+
 /* Mobile adjustments */
 @media (max-width: 768px) {
+  .sidebar-toggle-btn {
+    display: flex;
+  }
+
   .header-left h1 {
-    font-size: 14px;
+    font-size: var(--text-md);
+  }
+
+  .active-terminal-label {
+    display: none;
   }
 
   .app-main.panel-open .terminal-container {
@@ -118,13 +211,6 @@ body {
   /* Account for mobile keyboard */
   .app-main {
     padding-bottom: 60px;
-  }
-}
-
-/* Tablet */
-@media (min-width: 769px) and (max-width: 1024px) {
-  .app-main.panel-open .terminal-container {
-    margin-right: 320px;
   }
 }
 

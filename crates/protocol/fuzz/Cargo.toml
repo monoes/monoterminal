@@ -1,0 +1,56 @@
+[package]
+name = "monoterminal-protocol-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[workspace]
+# Opt out of parent workspace - fuzz targets need separate build system
+
+[dependencies]
+libfuzzer-sys = "0.4"
+prost = "0.13"
+
+[dependencies.monoterminal-protocol]
+path = ".."
+
+# Critical path fuzz targets (Q1 answer: priority)
+[[bin]]
+name = "fuzz_attach_request"
+path = "fuzz_targets/fuzz_attach_request.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_input_data"
+path = "fuzz_targets/fuzz_input_data.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_output_data"
+path = "fuzz_targets/fuzz_output_data.rs"
+test = false
+doc = false
+bench = false
+
+# Plugin protocol fuzz target (Phase 4 Week 5-8 - deferred)
+# [[bin]]
+# name = "fuzz_plugin_register"
+# path = "fuzz_targets/fuzz_plugin_register.rs"
+# test = false
+# doc = false
+# bench = false
+
+# Comprehensive fuzz target (all message types)
+[[bin]]
+name = "fuzz_envelope"
+path = "fuzz_targets/fuzz_envelope.rs"
+test = false
+doc = false
+bench = false

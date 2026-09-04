@@ -1,0 +1,37 @@
+.workspace-session {
+  position: relative;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
+}
+
+/* A quiet corner indicator, not a persistent header bar — a healthy
+   connection shouldn't cost permanent chrome. It only asks for attention
+   (see ConnectionStatus.css) when there's actually something to report. */
+.workspace-session-status {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-3);
+  z-index: 1;
+}
+
+.workspace-session-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.workspace-session-loading {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--ink-muted);
+  font-size: var(--text-base);
+}

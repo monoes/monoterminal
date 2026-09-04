@@ -1,654 +1,383 @@
 // Windows ConPTY Backend Implementation
 // SRS Reference: §2.1.2.3 Windows ConPTY [D1.2.3]
 //
-// Implements the PtyBackend trait for Windows using the Console Pseudo-console API.
-// Windows 10 1809+ (build 17763+) required.
+// Implements the PtyBackend trait for Windows using portable-pty, which wraps
+// the Console Pseudo-console API (Windows 10 1809+) internally.
 //
-// Architecture:
-// - BufReader/BufWriter around async pipe handles for I/O
-// - Direct read()/write() calls from Session Manager (no background tasks)
-// - Cleanup via terminate() or Drop
+// The hand-rolled Win32 FFI version of this file (raw CreatePipe/CreatePseudoConsole/
+// CreateProcessW plumbing with a PeekNamedPipe-based AsyncRead) had a real, unresolved
+// bug: PeekNamedPipe on the ConPTY output pipe reported 0 bytes available forever, even
+// with a live, CPU-active shell process that had just received input — output never
+// reached the client despite the session "attaching" successfully. That code also left
+// behind a trail of leftover diagnostic tracing (search git history) from a previous
+// engineer who found the same symptom and left the exact test (`test_write_read`,
+// see below) permanently `#[ignore]`d rather than fixed.
 //
-// Safety: All unsafe FFI calls have documented safety invariants.
+// portable-pty is already used successfully for the Unix backend (see unix.rs) and its
+// `NativePtySystem` supports Windows via ConPTY internally too — this file mirrors
+// unix.rs's proven spawn_blocking-based async wrapper instead of re-implementing
+// low-level Win32 pipe/IOCP plumbing by hand.
 
 use super::{
     error::{PtyError, PtyResult},
     PtyBackend, PtyConfig,
 };
 use async_trait::async_trait;
-use std::ffi::OsStr;
-use std::os::windows::ffi::OsStrExt;
-use std::ptr;
+use portable_pty::{CommandBuilder, NativePtySystem, PtyPair, PtySize, PtySystem};
+use std::future::Future;
+use std::io::{self, Read as StdRead, Write as StdWrite};
+use std::sync::{Arc, Mutex};
 use tokio::io::{AsyncReadExt, AsyncWriteExt, BufReader};
-use windows::core::PCWSTR;
-use windows::Win32::Foundation::{CloseHandle, HANDLE};
-use windows::Win32::System::Console::{
-    ClosePseudoConsole, CreatePseudoConsole, ResizePseudoConsole, COORD, HPCON,
-};
-use windows::Win32::System::Pipes::{CreatePipe, PeekNamedPipe};
-use windows::Win32::System::Threading::{
-    CreateProcessW, InitializeProcThreadAttributeList, TerminateProcess, UpdateProcThreadAttribute,
-    CREATE_UNICODE_ENVIRONMENT, EXTENDED_STARTUPINFO_PRESENT, LPPROC_THREAD_ATTRIBUTE_LIST,
-    PROCESS_INFORMATION, PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE, STARTUPINFOEXW,
-};
 
 /// 4KB buffer size per SRS §3.1.4
 const PTY_BUFFER_SIZE: usize = 4096;
 
-/// Windows ConPTY backend
+/// Windows ConPTY backend using portable-pty
 ///
-/// Implements PtyBackend trait for Windows using CreatePseudoConsole API.
+/// Implements PtyBackend trait for Windows using portable-pty's native ConPTY support.
 /// Session Manager calls methods on this struct via `Box<dyn PtyBackend>`.
 pub struct ConPtyBackend {
-    /// Pseudo-console handle (Option allows terminate() to consume and prevent Drop race)
-    hpc: Option<HPCON>,
-    /// Child process handle (Option allows terminate() to consume and prevent Drop race)
-    process_handle: Option<HANDLE>,
+    /// PTY pair (master + slave) — kept alive for resize() and to hold ConPTY open
+    pty_pair: Arc<Mutex<PtyPair>>,
+
+    /// Child process handle
+    child: Arc<Mutex<Box<dyn portable_pty::Child + Send>>>,
+
     /// Buffered output reader (ConPTY → Session Manager)
-    output_reader: BufReader<AsyncPipeReader>,
+    output_reader: BufReader<PtyReader>,
+
     /// Direct input writer (Session Manager → ConPTY) - unbuffered for immediate delivery
-    input_writer: AsyncPipeWriter,
+    input_writer: PtyWriter,
+
     /// Shell process ID
     shell_pid: u32,
 }
 
-// SAFETY: Windows HANDLEs are safe to send between threads - they're just kernel object references.
-// The HPCON and HANDLE types are opaque handles that can be used from any thread.
-// They are also safe to share (&T) between threads as the Windows kernel handles synchronization.
+// SAFETY: portable-pty types are Send + Sync when wrapped in Arc<Mutex<>>
 unsafe impl Send for ConPtyBackend {}
 unsafe impl Sync for ConPtyBackend {}
 
-/// Async wrapper around Windows pipe HANDLE
+/// Async wrapper around portable-pty reader
 ///
-/// Implements tokio::io::AsyncRead and AsyncWrite.
-/// Uses blocking I/O with spawn_blocking for Phase 1 simplicity.
-/// TODO: Implement proper overlapped I/O with IOCP for production.
-struct AsyncPipeReader {
-    handle: HANDLE,
+/// Implements tokio::io::AsyncRead via spawn_blocking, since portable-pty's
+/// Read/Write handles are synchronous.
+///
+/// The in-flight spawn_blocking task is stored on the struct (`pending`)
+/// rather than recreated on every poll_read call. A prior version spawned a
+/// brand-new blocking task from scratch on each poll, discarding the
+/// previous attempt's JoinHandle future the moment poll_read returned
+/// Pending. Nothing ever kept that discarded future alive to observe its
+/// completion, and — since `reader` is behind a Mutex — a still-running
+/// first read (blocked waiting for real PTY output) held the lock while
+/// every subsequent poll spawned ANOTHER task that immediately blocked
+/// trying to acquire the same lock. Net effect: a hard, permanent hang the
+/// instant a read didn't resolve on its very first poll — confirmed by a
+/// standalone repro that isolated this exact struct as the only difference
+/// between a working plain-synchronous portable-pty read and a hanging one.
+struct PtyReader {
+    reader: Arc<Mutex<Box<dyn StdRead + Send>>>,
+    pending: Option<tokio::task::JoinHandle<(io::Result<usize>, Vec<u8>)>>,
 }
 
-struct AsyncPipeWriter {
-    handle: HANDLE,
+struct PtyWriter {
+    writer: Arc<Mutex<Box<dyn StdWrite + Send>>>,
+    pending_write: Option<tokio::task::JoinHandle<io::Result<usize>>>,
+    pending_flush: Option<tokio::task::JoinHandle<io::Result<()>>>,
 }
 
-// SAFETY: HANDLEs are safe to send and share between threads
-unsafe impl Send for AsyncPipeReader {}
-unsafe impl Sync for AsyncPipeReader {}
-unsafe impl Send for AsyncPipeWriter {}
-unsafe impl Sync for AsyncPipeWriter {}
+// SAFETY: Wrapped in Arc<Mutex<>> for thread-safety
+unsafe impl Send for PtyReader {}
+unsafe impl Sync for PtyReader {}
+unsafe impl Send for PtyWriter {}
+unsafe impl Sync for PtyWriter {}
 
-impl AsyncPipeReader {
-    unsafe fn from_handle(handle: HANDLE) -> Self {
-        Self { handle }
-    }
-}
-
-impl AsyncPipeWriter {
-    unsafe fn from_handle(handle: HANDLE) -> Self {
-        Self { handle }
-    }
-}
-
-impl Drop for AsyncPipeReader {
-    fn drop(&mut self) {
-        // SAFETY: Close the pipe handle to prevent resource leaks
-        // CloseHandle is safe to call on valid HANDLEs and handles double-close gracefully
-        unsafe {
-            let _ = CloseHandle(self.handle);
+impl PtyReader {
+    fn new(reader: Box<dyn StdRead + Send>) -> Self {
+        Self {
+            reader: Arc::new(Mutex::new(reader)),
+            pending: None,
         }
     }
 }
 
-impl Drop for AsyncPipeWriter {
-    fn drop(&mut self) {
-        // SAFETY: Close the pipe handle to prevent resource leaks
-        // CloseHandle is safe to call on valid HANDLEs and handles double-close gracefully
-        unsafe {
-            let _ = CloseHandle(self.handle);
+impl PtyWriter {
+    fn new(writer: Box<dyn StdWrite + Send>) -> Self {
+        Self {
+            writer: Arc::new(Mutex::new(writer)),
+            pending_write: None,
+            pending_flush: None,
         }
     }
 }
 
-impl tokio::io::AsyncRead for AsyncPipeReader {
+// Implement tokio AsyncRead for PtyReader
+impl tokio::io::AsyncRead for PtyReader {
     fn poll_read(
         self: std::pin::Pin<&mut Self>,
         cx: &mut std::task::Context<'_>,
         buf: &mut tokio::io::ReadBuf<'_>,
-    ) -> std::task::Poll<std::io::Result<()>> {
-        // Phase 1: Use PeekNamedPipe to check data availability before reading
-        // This avoids blocking the tokio executor with synchronous ReadFile
-        // TODO: Implement proper overlapped I/O with IOCP for production (Phase 2+)
+    ) -> std::task::Poll<io::Result<()>> {
+        let this = self.get_mut();
 
-        use windows::Win32::Storage::FileSystem::ReadFile;
-
-        let handle = self.handle;
-
-        // Check if data is available WITHOUT blocking
-        let mut bytes_available: u32 = 0;
-
-        // SAFETY: PeekNamedPipe is safe to call with valid handle
-        // We only check bytes available, not reading actual data yet
-        let peek_result = unsafe {
-            PeekNamedPipe(
-                handle,
-                None,                       // Don't read data, just check availability
-                0,                          // No buffer
-                None,                       // Don't need bytes read
-                Some(&mut bytes_available), // Get bytes available
-                None,                       // Don't need bytes left in message
-            )
-        };
-
-        // DIAGNOSTIC: Log PeekNamedPipe result
-        tracing::debug!(
-            "🔍 PeekNamedPipe: handle={:?}, result={:?}, bytes_available={}",
-            handle.0,
-            peek_result.is_ok(),
-            bytes_available
-        );
-
-        match peek_result {
-            Err(e) => {
-                let err_code = e.code().0;
-                tracing::warn!(
-                    "🔍 PeekNamedPipe ERROR: code={}, handle={:?}",
-                    err_code,
-                    handle.0
-                );
-                // ERROR_NO_DATA (232) or ERROR_PIPE_NOT_CONNECTED (233) = pipe closing
-                if err_code == 232 || err_code == 233 {
-                    tracing::debug!("🔍 Pipe closing (error {}), returning EOF", err_code);
-                    return std::task::Poll::Ready(Ok(())); // EOF
-                } else {
-                    return std::task::Poll::Ready(Err(std::io::Error::from_raw_os_error(
-                        err_code,
-                    )));
-                }
-            }
-            Ok(_) if bytes_available == 0 => {
-                // No data available yet - return Pending without blocking
-                // Register waker so tokio runtime polls this future again
-                tracing::trace!("🔍 No data available, returning Pending");
-                cx.waker().wake_by_ref();
-                return std::task::Poll::Pending;
-            }
-            Ok(_) => {
-                // Data available! Safe to call ReadFile (won't block)
-                tracing::info!(
-                    "🔍 DATA AVAILABLE: {} bytes ready to read!",
-                    bytes_available
-                );
-            }
+        if this.pending.is_none() {
+            let reader = this.reader.clone();
+            let buf_len = buf.remaining();
+            this.pending = Some(tokio::task::spawn_blocking(move || {
+                let mut temp_buf = vec![0u8; buf_len];
+                let mut r = reader.lock().unwrap();
+                let result = r.read(&mut temp_buf);
+                (result, temp_buf)
+            }));
         }
 
-        // SAFETY: We need raw access to the buffer for Windows ReadFile API
-        let buf_slice = unsafe {
-            let ptr = buf.unfilled_mut().as_mut_ptr();
-            let len = buf.unfilled_mut().len();
-            // Cast MaybeUninit<u8> to u8 for Windows API - ReadFile will initialize it
-            std::slice::from_raw_parts_mut(ptr as *mut u8, len)
-        };
-
-        // Data is available - call ReadFile (won't block because we peeked first)
-        let mut bytes_read: u32 = 0;
-
-        tracing::debug!("🔍 Calling ReadFile: buffer_size={}", buf_slice.len());
-
-        // SAFETY: ReadFile is safe to call with valid handle and buffer
-        // We know data is available from PeekNamedPipe, so this won't block
-        let result = unsafe { ReadFile(handle, Some(buf_slice), Some(&mut bytes_read), None) };
-
-        tracing::info!(
-            "🔍 ReadFile RESULT: {:?}, bytes_read={}",
-            result.is_ok(),
-            bytes_read
-        );
-
-        match result {
-            Ok(_) if bytes_read > 0 => {
-                tracing::info!("🎉 READ SUCCESS: {} bytes read from ConPTY!", bytes_read);
-                unsafe { buf.assume_init(bytes_read as usize) };
-                buf.advance(bytes_read as usize);
+        let handle = this.pending.as_mut().unwrap();
+        match std::pin::Pin::new(handle).poll(cx) {
+            std::task::Poll::Ready(Ok((Ok(n), temp_buf))) => {
+                this.pending = None;
+                buf.put_slice(&temp_buf[..n]);
                 std::task::Poll::Ready(Ok(()))
             }
-            Ok(_) => {
-                // Peek said data available but ReadFile got 0 bytes
-                // This can happen with race conditions - return Pending and try again
-                cx.waker().wake_by_ref();
-                std::task::Poll::Pending
+            std::task::Poll::Ready(Ok((Err(e), _))) => {
+                this.pending = None;
+                std::task::Poll::Ready(Err(e))
             }
-            Err(e) => {
-                let err_code = e.code().0;
-                // ERROR_NO_DATA (232) or ERROR_PIPE_NOT_CONNECTED (233) = pipe closing
-                if err_code == 232 || err_code == 233 {
-                    std::task::Poll::Ready(Ok(())) // EOF
-                } else {
-                    std::task::Poll::Ready(Err(std::io::Error::from_raw_os_error(err_code)))
-                }
+            std::task::Poll::Ready(Err(e)) => {
+                this.pending = None;
+                std::task::Poll::Ready(Err(io::Error::new(io::ErrorKind::Other, e)))
             }
+            std::task::Poll::Pending => std::task::Poll::Pending,
         }
     }
 }
 
-impl tokio::io::AsyncWrite for AsyncPipeWriter {
+// Implement tokio AsyncWrite for PtyWriter
+impl tokio::io::AsyncWrite for PtyWriter {
     fn poll_write(
         self: std::pin::Pin<&mut Self>,
-        _cx: &mut std::task::Context<'_>,
+        cx: &mut std::task::Context<'_>,
         buf: &[u8],
-    ) -> std::task::Poll<Result<usize, std::io::Error>> {
-        use windows::Win32::Storage::FileSystem::WriteFile;
+    ) -> std::task::Poll<io::Result<usize>> {
+        let this = self.get_mut();
 
-        let handle = self.handle;
-        let mut bytes_written: u32 = 0;
+        if this.pending_write.is_none() {
+            let writer = this.writer.clone();
+            let data = buf.to_vec();
+            this.pending_write = Some(tokio::task::spawn_blocking(move || {
+                let mut w = writer.lock().unwrap();
+                w.write(&data)
+            }));
+        }
 
-        // SAFETY: WriteFile is safe to call with valid handle and buffer
-        let result = unsafe { WriteFile(handle, Some(buf), Some(&mut bytes_written), None) };
-
-        match result {
-            Ok(_) => std::task::Poll::Ready(Ok(bytes_written as usize)),
-            Err(e) => {
-                let err_code = e.code().0;
-                // ERROR_NO_DATA (232) or ERROR_PIPE_NOT_CONNECTED (233) = pipe closing
-                if err_code == 232 || err_code == 233 {
-                    std::task::Poll::Ready(Err(std::io::Error::new(
-                        std::io::ErrorKind::BrokenPipe,
-                        "PTY pipe closed",
-                    )))
-                } else {
-                    std::task::Poll::Ready(Err(std::io::Error::from_raw_os_error(err_code)))
-                }
+        let handle = this.pending_write.as_mut().unwrap();
+        match std::pin::Pin::new(handle).poll(cx) {
+            std::task::Poll::Ready(Ok(Ok(n))) => {
+                this.pending_write = None;
+                std::task::Poll::Ready(Ok(n))
             }
+            std::task::Poll::Ready(Ok(Err(e))) => {
+                this.pending_write = None;
+                std::task::Poll::Ready(Err(e))
+            }
+            std::task::Poll::Ready(Err(e)) => {
+                this.pending_write = None;
+                std::task::Poll::Ready(Err(io::Error::new(io::ErrorKind::Other, e)))
+            }
+            std::task::Poll::Pending => std::task::Poll::Pending,
         }
     }
 
     fn poll_flush(
         self: std::pin::Pin<&mut Self>,
-        _cx: &mut std::task::Context<'_>,
-    ) -> std::task::Poll<Result<(), std::io::Error>> {
-        use windows::Win32::Storage::FileSystem::FlushFileBuffers;
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<io::Result<()>> {
+        let this = self.get_mut();
 
-        // Explicitly flush to ensure low-latency input delivery
-        let result = unsafe { FlushFileBuffers(self.handle) };
+        if this.pending_flush.is_none() {
+            let writer = this.writer.clone();
+            this.pending_flush = Some(tokio::task::spawn_blocking(move || {
+                let mut w = writer.lock().unwrap();
+                w.flush()
+            }));
+        }
 
-        match result {
-            Ok(_) => std::task::Poll::Ready(Ok(())),
-            Err(_) => {
-                // Flush failure is non-fatal for pipes, data is still written
+        let handle = this.pending_flush.as_mut().unwrap();
+        match std::pin::Pin::new(handle).poll(cx) {
+            std::task::Poll::Ready(Ok(Ok(()))) => {
+                this.pending_flush = None;
                 std::task::Poll::Ready(Ok(()))
             }
+            std::task::Poll::Ready(Ok(Err(e))) => {
+                this.pending_flush = None;
+                std::task::Poll::Ready(Err(e))
+            }
+            std::task::Poll::Ready(Err(e)) => {
+                this.pending_flush = None;
+                std::task::Poll::Ready(Err(io::Error::new(io::ErrorKind::Other, e)))
+            }
+            std::task::Poll::Pending => std::task::Poll::Pending,
         }
     }
 
     fn poll_shutdown(
         self: std::pin::Pin<&mut Self>,
-        _cx: &mut std::task::Context<'_>,
-    ) -> std::task::Poll<Result<(), std::io::Error>> {
-        // Flush before shutdown
-        self.poll_flush(_cx)
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<io::Result<()>> {
+        self.poll_flush(cx)
     }
 }
 
 #[async_trait]
 impl PtyBackend for ConPtyBackend {
-    async fn create(config: PtyConfig) -> PtyResult<Self> {
+    /// Create a new ConPTY session with the given configuration
+    async fn create(config: PtyConfig) -> PtyResult<Self>
+    where
+        Self: Sized,
+    {
         tracing::info!(
-            "Creating ConPTY: shell={}, cwd={:?}, size={}x{}",
+            "Creating ConPTY: shell={}, cwd={:?}, {}x{}",
             config.shell,
             config.working_dir,
-            config.cols,
-            config.rows
+            config.rows,
+            config.cols
         );
 
-        // Create pipes for ConPTY I/O
-        let (input_read, input_write) = create_pipe()?;
-        let (output_read, output_write) = create_pipe()?;
+        // Get native PTY system (Windows: ConPTY via portable-pty)
+        let pty_system = NativePtySystem::default();
 
-        tracing::info!("🔍 PIPE HANDLES CREATED:");
-        tracing::info!(
-            "🔍   input_read={:?}, input_write={:?}",
-            input_read.0,
-            input_write.0
-        );
-        tracing::info!(
-            "🔍   output_read={:?}, output_write={:?}",
-            output_read.0,
-            output_write.0
-        );
+        // Create PTY pair with requested dimensions
+        let pty_pair = pty_system
+            .openpty(PtySize {
+                rows: config.rows,
+                cols: config.cols,
+                pixel_width: 0,  // Not used
+                pixel_height: 0, // Not used
+            })
+            .map_err(|e| PtyError::CreateFailed(format!("openpty failed: {}", e)))?;
 
-        // Create pseudo-console
-        let coord = COORD {
-            X: config.cols as i16,
-            Y: config.rows as i16,
-        };
+        // Build command from config
+        let mut cmd = CommandBuilder::new(&config.shell);
+        cmd.cwd(config.working_dir);
 
-        // SAFETY: CreatePseudoConsole is safe to call with valid handles and size.
-        // The handles are owned by us and will be properly managed.
-        // Note: API changed in windows crate 0.58+ - now returns HPCON directly
-        tracing::info!("🔍 Calling CreatePseudoConsole:");
-        tracing::info!(
-            "🔍   size={}x{}, input_read={:?}, output_write={:?}",
-            coord.X,
-            coord.Y,
-            input_read.0,
-            output_write.0
-        );
-
-        let hpc = unsafe {
-            CreatePseudoConsole(coord, input_read, output_write, 0)
-                .map_err(|e| PtyError::CreateFailed(format!("CreatePseudoConsole failed: {}", e)))?
-        };
-
-        tracing::info!("🔍 CreatePseudoConsole SUCCESS, hpc={:?}", hpc.0);
-
-        // CRITICAL: Close the PTY-end handles after CreatePseudoConsole
-        // Per Microsoft ConPTY sample: CreatePseudoConsole duplicates the handles internally
-        // We must close our copies or ConPTY won't activate the pipes!
-        // See: https://github.com/microsoft/terminal/blob/main/samples/ConPTY/EchoCon/EchoCon/EchoCon.cpp#L123-125
-        unsafe {
-            tracing::info!(
-                "🔍 Closing PTY-end handles: input_read={:?}, output_write={:?}",
-                input_read.0,
-                output_write.0
-            );
-            let _ = CloseHandle(input_read);
-            let _ = CloseHandle(output_write);
-            tracing::info!("🔍 PTY-end handles closed - ConPTY now owns duplicates");
+        // Set environment variables
+        for (key, val) in config.environment {
+            cmd.env(key, val);
         }
 
         // Spawn child process attached to ConPTY
-        let (process_handle, shell_pid) = spawn_process(&hpc, &config)?;
+        let child = pty_pair
+            .slave
+            .spawn_command(cmd)
+            .map_err(|e| PtyError::CreateFailed(format!("spawn_command failed: {}", e)))?;
 
-        // Wrap pipe handles in async readers/writers
-        // SAFETY: We're wrapping valid pipe handles for async I/O
-        tracing::info!("🔍 Wrapping pipe handles:");
-        tracing::info!("🔍   output_reader <- output_read={:?}", output_read.0);
-        tracing::info!("🔍   input_writer <- input_write={:?}", input_write.0);
+        let shell_pid = child.process_id().unwrap_or(0);
+        tracing::info!("ConPTY created: pid={}", shell_pid);
 
-        // DIAGNOSTIC: Verify handle is valid before wrapping
-        tracing::info!(
-            "🔍 VALIDATION: output_read handle = {:?} (should read ConPTY output)",
-            output_read.0
-        );
-        tracing::info!("🔍 VALIDATION: This is the CLIENT-END handle (we read, ConPTY writes)");
+        // Get master I/O handles
+        let master_reader = pty_pair
+            .master
+            .try_clone_reader()
+            .map_err(|e| PtyError::CreateFailed(format!("clone reader failed: {}", e)))?;
 
-        // CRITICAL DIAGNOSTIC: Try RAW synchronous ReadFile to see if data exists
-        // This tests if the pipe actually has data, bypassing all async machinery
-        use windows::Win32::Storage::FileSystem::ReadFile;
-        tracing::info!("🔍 RAW READ TEST: Attempting synchronous ReadFile for 100ms...");
+        let master_writer = pty_pair
+            .master
+            .take_writer()
+            .map_err(|e| PtyError::CreateFailed(format!("take writer failed: {}", e)))?;
 
-        // Give ping a moment to start and output
-        std::thread::sleep(std::time::Duration::from_millis(100));
+        // Wrap I/O in async readers/writers with 4KB buffer (SRS §3.1.4)
+        let output_reader =
+            BufReader::with_capacity(PTY_BUFFER_SIZE, PtyReader::new(master_reader));
 
-        let mut test_buffer = [0u8; 1024];
-        let mut bytes_read: u32 = 0;
-        let raw_read_result = unsafe {
-            ReadFile(
-                output_read,
-                Some(&mut test_buffer),
-                Some(&mut bytes_read),
-                None,
-            )
-        };
+        let input_writer = PtyWriter::new(master_writer);
 
-        match raw_read_result {
-            Ok(_) if bytes_read > 0 => {
-                tracing::error!(
-                    "🎉🎉🎉 RAW READ SUCCESS: {} bytes! Data EXISTS! AsyncPipeReader is the bug!",
-                    bytes_read
-                );
-                tracing::error!(
-                    "🎉 First 100 bytes: {:?}",
-                    &test_buffer[..std::cmp::min(100, bytes_read as usize)]
-                );
-            }
-            Ok(_) => {
-                tracing::error!("🔍 RAW READ: 0 bytes (no data yet, but read succeeded)");
-            }
-            Err(e) => {
-                tracing::error!("🔍 RAW READ ERROR: {:?}", e);
-            }
-        }
-
-        let output_reader = BufReader::with_capacity(PTY_BUFFER_SIZE, unsafe {
-            AsyncPipeReader::from_handle(output_read)
-        });
-
-        // Direct writer without buffering - immediate writes to ConPTY
-        // BufWriter was causing flush() to block, preventing data delivery
-        let input_writer = unsafe { AsyncPipeWriter::from_handle(input_write) };
-
-        tracing::info!("ConPTY session created: pid={}", shell_pid);
-
-        Ok(Self {
-            hpc: Some(hpc),
-            process_handle: Some(process_handle),
+        Ok(ConPtyBackend {
+            pty_pair: Arc::new(Mutex::new(pty_pair)),
+            child: Arc::new(Mutex::new(child)),
             output_reader,
             input_writer,
             shell_pid,
         })
     }
 
-    async fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-        tracing::info!("PTY backend: read() ENTRY, buffer size={}", buf.len());
-        tracing::info!("PTY backend: About to call output_reader.read()");
-        let result = self.output_reader.read(buf).await;
-        tracing::info!(
-            "PTY backend: output_reader.read() returned: {:?}",
-            result
-                .as_ref()
-                .map(|n| format!("{} bytes", n))
-                .unwrap_or_else(|e| format!("Error: {}", e))
-        );
-        result
+    /// Read output from the PTY (non-blocking)
+    async fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        self.output_reader.read(buf).await
     }
 
-    async fn write(&mut self, data: &[u8]) -> std::io::Result<()> {
-        tracing::info!("📝 PTY write() ENTRY: {} bytes", data.len());
-        tracing::info!("📝 PTY calling input_writer.write_all() (direct, no buffer)");
-        // Direct write without BufWriter - data goes straight to ConPTY
+    /// Write input to the PTY (flushes immediately)
+    async fn write(&mut self, data: &[u8]) -> io::Result<()> {
         self.input_writer.write_all(data).await?;
-        tracing::info!("📝 PTY write_all() SUCCESS - data sent to ConPTY");
+        self.input_writer.flush().await?;
         Ok(())
     }
 
+    /// Resize the PTY to new dimensions
     fn resize(&mut self, rows: u16, cols: u16) -> PtyResult<()> {
-        let coord = COORD {
-            X: cols as i16,
-            Y: rows as i16,
-        };
-
-        // Get hpc handle, error if already consumed by terminate()
-        let hpc = self
-            .hpc
-            .ok_or_else(|| PtyError::ResizeFailed("PTY already terminated".to_string()))?;
-
-        // SAFETY: ResizePseudoConsole is safe to call on a valid HPCON
-        unsafe {
-            ResizePseudoConsole(hpc, coord).map_err(|e| PtyError::ResizeFailed(e.to_string()))?;
-        }
-
-        tracing::debug!("Resized ConPTY to {}x{}", cols, rows);
+        let pty_pair = self.pty_pair.lock().unwrap();
+        pty_pair
+            .master
+            .resize(PtySize {
+                rows,
+                cols,
+                pixel_width: 0,
+                pixel_height: 0,
+            })
+            .map_err(|e| PtyError::ResizeFailed(format!("resize failed: {}", e)))?;
         Ok(())
     }
 
+    /// Get the shell process ID
     fn shell_pid(&self) -> u32 {
         self.shell_pid
     }
 
-    async fn terminate(mut self: Box<Self>) -> PtyResult<()> {
-        tracing::info!("Terminating ConPTY session: pid={}", self.shell_pid);
+    /// Terminate the PTY session (kill process and cleanup)
+    async fn terminate(self: Box<Self>) -> PtyResult<()> {
+        tracing::info!("Terminating ConPTY: pid={}", self.shell_pid);
 
-        // Take ownership of handles to prevent Drop from double-closing
-        let hpc = self.hpc.take();
-        let process_handle = self.process_handle.take();
-
-        if let (Some(hpc), Some(process_handle)) = (hpc, process_handle) {
-            // SAFETY: TerminateProcess is safe to call on a valid process handle
-            unsafe {
-                TerminateProcess(process_handle, 1).map_err(|e| {
-                    PtyError::CreateFailed(format!("TerminateProcess failed: {}", e))
-                })?;
-
-                // Cleanup handles (now consumed, Drop won't run on them)
-                ClosePseudoConsole(hpc);
-                let _ = CloseHandle(process_handle);
-            }
-
-            tracing::info!("ConPTY session terminated: pid={}", self.shell_pid);
-        } else {
-            tracing::warn!("ConPTY session already terminated: pid={}", self.shell_pid);
+        // Kill child process
+        {
+            let mut child = self.child.lock().unwrap();
+            child
+                .kill()
+                .map_err(|e| PtyError::TerminateFailed(format!("kill failed: {}", e)))?;
         }
 
-        Ok(())
+        // Wait for process exit (with timeout)
+        let child_clone = self.child.clone();
+        match tokio::time::timeout(
+            std::time::Duration::from_secs(5),
+            tokio::task::spawn_blocking(move || {
+                let mut child = child_clone.lock().unwrap();
+                child.wait()
+            }),
+        )
+        .await
+        {
+            Ok(Ok(Ok(_))) => {
+                tracing::info!("ConPTY terminated successfully: pid={}", self.shell_pid);
+                Ok(())
+            }
+            Ok(Ok(Err(e))) => Err(PtyError::TerminateFailed(format!("wait failed: {}", e))),
+            Ok(Err(e)) => Err(PtyError::TerminateFailed(format!(
+                "spawn_blocking failed: {}",
+                e
+            ))),
+            Err(_) => {
+                tracing::warn!("ConPTY terminate timeout: pid={}", self.shell_pid);
+                Ok(()) // Continue cleanup even on timeout
+            }
+        }
     }
 }
 
 impl Drop for ConPtyBackend {
     fn drop(&mut self) {
-        tracing::debug!("Dropping ConPTY backend: pid={}", self.shell_pid);
-
-        // Only close handles if they weren't consumed by terminate()
-        // This prevents double-close and race conditions with active ReadFile calls
-        if let (Some(hpc), Some(process_handle)) = (self.hpc.take(), self.process_handle.take()) {
-            tracing::debug!("Drop cleaning up ConPTY handles: pid={}", self.shell_pid);
-
-            // SAFETY: Handles are valid and haven't been closed yet
-            unsafe {
-                ClosePseudoConsole(hpc);
-                let _ = CloseHandle(process_handle);
-            }
-        } else {
-            tracing::debug!(
-                "Drop: ConPTY handles already cleaned up (terminate() called): pid={}",
-                self.shell_pid
-            );
+        // Best-effort cleanup
+        if let Ok(mut child) = self.child.lock() {
+            let _ = child.kill();
         }
+        tracing::debug!("ConPTY dropped: pid={}", self.shell_pid);
     }
-}
-
-// Helper method for test compatibility - boxes self and calls trait method
-impl ConPtyBackend {
-    /// Terminate the PTY session (helper that boxes internally)
-    ///
-    /// This method allows calling terminate() on a bare ConPtyBackend instance
-    /// in tests, which internally boxes it and calls the PtyBackend trait method.
-    ///
-    /// Production code uses Box<dyn PtyBackend> and calls the trait method directly.
-    /// This shadows the trait method when called on concrete type.
-    #[allow(dead_code)] // Used in tests
-    pub async fn terminate(self) -> PtyResult<()> {
-        Box::new(self).terminate().await
-    }
-}
-
-// ========== Helper Functions ==========
-
-/// Create a pipe for ConPTY I/O
-fn create_pipe() -> PtyResult<(HANDLE, HANDLE)> {
-    let mut read_handle = HANDLE::default();
-    let mut write_handle = HANDLE::default();
-
-    // SAFETY: CreatePipe is safe to call with valid out-pointers.
-    // We pass None for security attributes (default) and 0 for buffer size (default).
-    unsafe {
-        CreatePipe(&mut read_handle, &mut write_handle, None, 0)
-            .map_err(|e| PtyError::CreateFailed(format!("CreatePipe failed: {}", e)))?;
-    }
-
-    Ok((read_handle, write_handle))
-}
-
-/// Convert Rust string to null-terminated wide string for Windows APIs
-fn to_wide_string(s: &str) -> Vec<u16> {
-    OsStr::new(s)
-        .encode_wide()
-        .chain(std::iter::once(0))
-        .collect()
-}
-
-/// Spawn child process attached to ConPTY
-///
-/// # Safety
-/// Uses CreateProcessW with EXTENDED_STARTUPINFO_PRESENT and properly
-/// initialized STARTUPINFOEX containing the ConPTY handle.
-fn spawn_process(hpc: &HPCON, config: &PtyConfig) -> PtyResult<(HANDLE, u32)> {
-    let mut command_line = to_wide_string(&config.shell);
-
-    let cwd = config
-        .working_dir
-        .to_str()
-        .ok_or_else(|| PtyError::InvalidConfig("Invalid working directory".to_string()))?;
-    let cwd_wide = to_wide_string(cwd);
-
-    // Initialize STARTUPINFOEX
-    let mut startup_info: STARTUPINFOEXW = unsafe { std::mem::zeroed() };
-    startup_info.StartupInfo.cb = std::mem::size_of::<STARTUPINFOEXW>() as u32;
-    // Do NOT set STARTF_USESTDHANDLES - ConPTY attribute handles std redirects automatically
-    // Setting it without hStdInput/Output/Error causes child process to get INVALID_HANDLE_VALUE
-    // startup_info.StartupInfo.dwFlags = 0;  // Already zero from zeroed(), no need to set
-
-    // Determine required size for attribute list
-    let mut attr_size: usize = 0;
-    unsafe {
-        let _ = InitializeProcThreadAttributeList(
-            LPPROC_THREAD_ATTRIBUTE_LIST(ptr::null_mut()),
-            1,
-            0,
-            &mut attr_size,
-        );
-    }
-
-    // Allocate and initialize attribute list
-    let mut attr_list_buffer: Vec<u8> = vec![0u8; attr_size];
-    let attr_list_ptr = LPPROC_THREAD_ATTRIBUTE_LIST(attr_list_buffer.as_mut_ptr() as *mut _);
-
-    unsafe {
-        InitializeProcThreadAttributeList(attr_list_ptr, 1, 0, &mut attr_size).map_err(|e| {
-            PtyError::SpawnFailed(format!("InitializeProcThreadAttributeList failed: {}", e))
-        })?;
-    }
-
-    startup_info.lpAttributeList = attr_list_ptr;
-
-    // Attach ConPTY to the attribute list
-    unsafe {
-        UpdateProcThreadAttribute(
-            attr_list_ptr,
-            0,
-            PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE as usize,
-            Some(hpc as *const _ as *const _),
-            std::mem::size_of::<HPCON>(),
-            None,
-            None,
-        )
-        .map_err(|e| PtyError::SpawnFailed(format!("UpdateProcThreadAttribute failed: {}", e)))?;
-    }
-
-    // Create the process
-    let mut process_info: PROCESS_INFORMATION = unsafe { std::mem::zeroed() };
-
-    unsafe {
-        CreateProcessW(
-            None,
-            windows::core::PWSTR(command_line.as_mut_ptr()),
-            None,
-            None,
-            false,
-            EXTENDED_STARTUPINFO_PRESENT | CREATE_UNICODE_ENVIRONMENT,
-            None,
-            PCWSTR(cwd_wide.as_ptr()),
-            &startup_info.StartupInfo,
-            &mut process_info,
-        )
-        .map_err(|e| PtyError::SpawnFailed(format!("CreateProcessW failed: {}", e)))?;
-    }
-
-    // Close thread handle (we don't need it)
-    unsafe {
-        let _ = CloseHandle(process_info.hThread);
-    }
-
-    Ok((process_info.hProcess, process_info.dwProcessId))
 }
 
 #[cfg(test)]
@@ -691,11 +420,10 @@ mod tests {
         assert!(backend.shell_pid() > 0);
 
         // Clean up
-        backend.terminate().await.ok();
+        Box::new(backend).terminate().await.ok();
     }
 
     #[tokio::test]
-    #[ignore = "Known issue: AsyncPipeReader uses blocking ReadFile in poll_read, violates tokio async contract. See windows.rs PtyHandle for proper async architecture. TODO: Phase 2 - migrate to windows.rs or implement proper overlapped I/O"]
     async fn test_write_read() {
         let config = PtyConfig {
             shell: "cmd.exe".to_string(),
@@ -744,7 +472,7 @@ mod tests {
         assert!(found, "Expected 'hello' in output");
 
         // Clean up
-        backend.terminate().await.ok();
+        Box::new(backend).terminate().await.ok();
     }
 
     #[tokio::test]
@@ -766,7 +494,7 @@ mod tests {
         backend.resize(50, 120).expect("Failed to resize again");
 
         // Clean up
-        backend.terminate().await.ok();
+        Box::new(backend).terminate().await.ok();
     }
 
     #[tokio::test]
@@ -787,6 +515,6 @@ mod tests {
         assert!(pid > 0);
 
         // Terminate should succeed
-        backend.terminate().await.expect("Failed to terminate");
+        Box::new(backend).terminate().await.expect("Failed to terminate");
     }
 }

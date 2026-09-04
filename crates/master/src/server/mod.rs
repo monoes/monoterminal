@@ -24,7 +24,9 @@ use tokio_rustls::TlsAcceptor;
 use tracing::{debug, error, info, warn};
 
 use crate::auth::{AuthService, Ed25519AuthService, RateLimiter};
+use crate::clipboard::ClipboardManager;
 use crate::session::manager::SessionManager;
+use crate::webrtc::PairingCodeCache;
 use monoterminal_monomind_bridge::HealthStatus;
 
 /// WebSocket server configuration
@@ -51,8 +53,12 @@ pub struct ServerConfig {
 impl Default for ServerConfig {
     fn default() -> Self {
         Self {
-            // Phase 1: local only - 127.0.0.1:5000 per eng-director
-            bind_addr: "127.0.0.1:5000".parse().unwrap(),
+            // Phase 1: local only. Not 5000 — macOS's AirPlay Receiver
+            // claims that port by default on every stock Mac, so the
+            // daemon would fail to bind out of the box; 54321 is in IANA's
+            // private/dynamic range (49152-65535), unclaimable by any
+            // registered service.
+            bind_addr: "127.0.0.1:54321".parse().unwrap(),
             tls: TlsConfig::default(),
             max_connections: 1000,
             rate_limit_per_minute: 100,
@@ -65,6 +71,10 @@ impl Default for ServerConfig {
 pub struct Server {
     config: ServerConfig,
     session_manager: Arc<SessionManager>,
+    clipboard_manager: Arc<ClipboardManager>,
+    /// Cached SaaS device-pairing code fetcher — `None` when P2P (and thus
+    /// the relay's pairing REST API) is not configured for this daemon.
+    pairing_cache: Option<Arc<PairingCodeCache>>,
     tls_acceptor: TlsAcceptor,
     rate_limiter: Arc<RateLimiter>,
     auth_service: Arc<Ed25519AuthService>,
@@ -83,6 +93,7 @@ impl Server {
         rate_limiter: Arc<RateLimiter>,
         auth_service: Arc<Ed25519AuthService>,
         health_tx: broadcast::Sender<HealthStatus>,
+        pairing_cache: Option<Arc<PairingCodeCache>>,
     ) -> Result<Self> {
         // Use embedded test certificates in dev_mode to avoid filesystem dependencies
         let tls_acceptor = if config.dev_mode {
@@ -92,9 +103,14 @@ impl Server {
         };
         let dev_mode = config.dev_mode;
 
+        // Initialize clipboard manager (Phase 4: ADR-020)
+        let clipboard_manager = Arc::new(ClipboardManager::new());
+
         Ok(Self {
             config,
             session_manager,
+            clipboard_manager,
+            pairing_cache,
             tls_acceptor,
             rate_limiter,
             auth_service,
@@ -115,6 +131,7 @@ impl Server {
         rate_limiter: Arc<RateLimiter>,
         auth_service: Arc<Ed25519AuthService>,
         health_tx: broadcast::Sender<HealthStatus>,
+        pairing_cache: Option<Arc<PairingCodeCache>>,
         startup_tx: oneshot::Sender<SocketAddr>,
     ) -> Result<Self> {
         // Use embedded test certificates in dev_mode to avoid filesystem dependencies
@@ -125,9 +142,14 @@ impl Server {
         };
         let dev_mode = config.dev_mode;
 
+        // Initialize clipboard manager (Phase 4: ADR-020)
+        let clipboard_manager = Arc::new(ClipboardManager::new());
+
         Ok(Self {
             config,
             session_manager,
+            clipboard_manager,
+            pairing_cache,
             tls_acceptor,
             rate_limiter,
             auth_service,
@@ -235,8 +257,10 @@ impl Server {
             ws_stream,
             peer_addr,
             Arc::clone(&self.session_manager),
+            Arc::clone(&self.clipboard_manager),
             Arc::clone(&self.auth_service) as Arc<dyn AuthService>,
             self.dev_mode,
+            self.pairing_cache.clone(),
         )
         .await
     }

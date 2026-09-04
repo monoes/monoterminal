@@ -17,13 +17,13 @@ import {
 } from './keys';
 import {
   signChallenge,
-  serializeChallengeResponse,
   parseChallenge,
   isChallengeExpired,
   type Challenge,
   type ChallengeResponse,
 } from './challenge';
 import { deleteKeypair } from './storage';
+import type { ChallengeResponse as WireChallengeResponse } from '../protocol';
 
 // Re-export types and utilities
 export type { Ed25519Keypair, Challenge, ChallengeResponse };
@@ -76,19 +76,18 @@ export class AuthService {
   }
 
   /**
-   * Sign a challenge received from the server
-   *
-   * @param challengeData - Challenge data from server (JSON)
-   * @returns Serialized challenge response (signature + public key as base64)
+   * Sign a challenge received from the server (a decoded ChallengeResponse
+   * envelope message). Returns the raw signature/public key bytes — no
+   * base64 step, since the wire format is already protobuf `bytes` and
+   * protobufjs hands back real Uint8Arrays on both ends.
    */
-  async signChallenge(challengeData: any): Promise<{ signature: string; publicKey: string }> {
+  async signChallenge(challengeData: WireChallengeResponse): Promise<ChallengeResponse> {
     if (!this.keypair) {
       throw new Error('Auth service not initialized. Call initialize() first.');
     }
 
     const challenge = parseChallenge(challengeData);
-    const response = await signChallenge(challenge, this.keypair.privateKey, this.keypair.publicKey);
-    return serializeChallengeResponse(response);
+    return signChallenge(challenge, this.keypair.privateKey, this.keypair.publicKey);
   }
 
   /**

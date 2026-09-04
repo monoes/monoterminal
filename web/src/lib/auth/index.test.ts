@@ -55,17 +55,16 @@ describe('AuthService', () => {
 
     const nonce = new Uint8Array(32);
     crypto.getRandomValues(nonce);
-    const base64Nonce = btoa(String.fromCharCode(...nonce));
 
     const challengeData = {
-      nonce: base64Nonce,
-      expiresAt: Date.now() + 30000,
+      nonce,
+      expiresAt: Math.floor(Date.now() / 1000) + 30,
     };
 
     const response = await service.signChallenge(challengeData);
 
-    expect(typeof response.signature).toBe('string');
-    expect(typeof response.publicKey).toBe('string');
+    expect(response.signature).toBeInstanceOf(Uint8Array);
+    expect(response.publicKey).toBeInstanceOf(Uint8Array);
   });
 
   it('should store and retrieve JWT', async () => {

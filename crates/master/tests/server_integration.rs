@@ -38,6 +38,7 @@ async fn test_server_startup_and_shutdown() {
         rate_limiter,
         auth_service,
         health_tx,
+        None,
     );
 
     assert!(server.is_ok(), "Server should initialize successfully");
@@ -61,6 +62,7 @@ async fn test_server_bind_to_specified_port() {
         rate_limiter,
         auth_service,
         health_tx,
+        None,
         startup_tx,
     );
 
@@ -99,6 +101,7 @@ async fn test_server_dev_mode_flag() {
         rate_limiter,
         auth_service,
         health_tx,
+        None,
     );
 
     assert!(server.is_ok(), "Server with dev_mode should initialize");
@@ -124,6 +127,7 @@ async fn test_server_max_connections_config() {
         rate_limiter,
         auth_service,
         health_tx,
+        None,
     );
 
     assert!(server.is_ok());
@@ -147,6 +151,7 @@ async fn test_server_rate_limit_config() {
         rate_limiter,
         auth_service,
         health_tx,
+        None,
     );
 
     assert!(server.is_ok());
@@ -197,6 +202,7 @@ async fn test_server_health_channel() {
         rate_limiter,
         auth_service,
         health_tx.clone(),
+        None,
     );
 
     assert!(server.is_ok());
@@ -244,6 +250,7 @@ async fn test_server_invalid_bind_address() {
         rate_limiter,
         auth_service,
         health_tx,
+        None,
     );
 
     // Server creation should succeed (binding happens in run())
@@ -271,7 +278,7 @@ fn test_server_config_debug() {
     let config = ServerConfig::default();
     let debug_str = format!("{:?}", config);
 
-    assert!(debug_str.contains("127.0.0.1:5000"));
+    assert!(debug_str.contains("127.0.0.1:54321"));
     assert!(debug_str.contains("max_connections"));
     assert!(debug_str.contains("rate_limit_per_minute"));
 }

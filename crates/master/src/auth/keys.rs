@@ -91,7 +91,22 @@ impl Ed25519KeyPair {
 /// - Generates new keypair if file doesn't exist
 /// - Loads existing keypair if file exists
 pub fn load_or_generate_keypair() -> Result<Ed25519KeyPair> {
-    let key_path = get_identity_key_path()?;
+    load_or_generate_keypair_at(false)
+}
+
+/// Like `load_or_generate_keypair`, but when `use_system_dir` is true, stores
+/// the key under the platform's system-wide data directory instead of
+/// `~/.monoterminal`.
+///
+/// Pass `true` when running as an installed launchd/systemd service: the
+/// service account's home directory is intentionally unusable for storage
+/// (e.g. macOS's launchd service accounts get `NFSHomeDirectory: /var/empty`,
+/// a protected read-only path) precisely because daemons aren't supposed to
+/// need one — `dirs::home_dir()` resolves there anyway and
+/// `fs::create_dir_all` then fails with "Operation not permitted", which
+/// previously crash-looped the service on every start.
+pub fn load_or_generate_keypair_at(use_system_dir: bool) -> Result<Ed25519KeyPair> {
+    let key_path = get_identity_key_path(use_system_dir)?;
 
     if key_path.exists() {
         load_keypair(&key_path)
@@ -103,10 +118,13 @@ pub fn load_or_generate_keypair() -> Result<Ed25519KeyPair> {
 }
 
 /// Get path to identity key file
-fn get_identity_key_path() -> Result<PathBuf> {
-    let home = dirs::home_dir().ok_or_else(|| anyhow!("Failed to determine home directory"))?;
-
-    let monoterminal_dir = home.join(".monoterminal");
+fn get_identity_key_path(use_system_dir: bool) -> Result<PathBuf> {
+    let monoterminal_dir = if use_system_dir {
+        crate::platform::paths::data_dir()
+    } else {
+        let home = dirs::home_dir().ok_or_else(|| anyhow!("Failed to determine home directory"))?;
+        home.join(".monoterminal")
+    };
 
     // Create directory if it doesn't exist
     if !monoterminal_dir.exists() {

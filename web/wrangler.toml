@@ -1,0 +1,10 @@
+name = "monoterminal-web"
+compatibility_date = "2025-04-17"
+
+[assets]
+directory = "dist"
+not_found_handling = "single-page-application"
+
+[[routes]]
+pattern = "mt.monoes.me"
+custom_domain = true

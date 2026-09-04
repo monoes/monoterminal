@@ -11,10 +11,12 @@
  */
 
 import { sign } from './keys';
+import type { ChallengeResponse as WireChallengeResponse } from '../protocol';
 
 export interface Challenge {
   nonce: Uint8Array;       // 32-byte random challenge
-  expiresAt: number;       // Unix timestamp (ms)
+  expiresAt: number;       // Unix timestamp (seconds) — matches the JWT's
+                           // own exp/iat convention (see auth/jwt.rs's Claims)
 }
 
 export interface ChallengeResponse {
@@ -23,32 +25,31 @@ export interface ChallengeResponse {
 }
 
 /**
- * Parse challenge from server
- * Expects JSON: { nonce: string (base64), expiresAt: number }
+ * Parse a challenge from the server's ChallengeResponse envelope message.
+ * `nonce`/`expiresAt` already arrive as real bytes/a number — protobufjs
+ * decodes `bytes` fields straight into a Uint8Array, so there's no base64
+ * step here (there used to be one, against a wire shape the server never
+ * actually sent).
  */
-export function parseChallenge(data: any): Challenge {
-  if (!data.nonce || typeof data.expiresAt !== 'number') {
+export function parseChallenge(data: WireChallengeResponse): Challenge {
+  if (!(data.nonce instanceof Uint8Array) || typeof data.expiresAt !== 'number') {
     throw new Error('Invalid challenge format');
   }
-
-  // Decode base64 nonce
-  const nonce = Uint8Array.from(atob(data.nonce), c => c.charCodeAt(0));
-
-  if (nonce.length !== 32) {
-    throw new Error(`Invalid nonce length: expected 32 bytes, got ${nonce.length}`);
+  if (data.nonce.length !== 32) {
+    throw new Error(`Invalid nonce length: expected 32 bytes, got ${data.nonce.length}`);
   }
 
   return {
-    nonce,
+    nonce: data.nonce,
     expiresAt: data.expiresAt,
   };
 }
 
 /**
- * Check if challenge has expired
+ * Check if challenge has expired. `expiresAt` is Unix seconds.
  */
 export function isChallengeExpired(challenge: Challenge): boolean {
-  return Date.now() > challenge.expiresAt;
+  return Math.floor(Date.now() / 1000) > challenge.expiresAt;
 }
 
 /**
@@ -79,19 +80,5 @@ export async function signChallenge(
   return {
     signature,
     publicKey,
-  };
-}
-
-/**
- * Serialize challenge response for transmission
- * Returns JSON-serializable object with base64-encoded binary data
- */
-export function serializeChallengeResponse(response: ChallengeResponse): {
-  signature: string;
-  publicKey: string;
-} {
-  return {
-    signature: btoa(String.fromCharCode(...response.signature)),
-    publicKey: btoa(String.fromCharCode(...response.publicKey)),
   };
 }

@@ -53,6 +53,7 @@ rustls-pemfile = "1.0"
 uuid = { version = "1.6", features = ["v4", "serde"] }
 which = "5.0"
 dirs = "5.0"
+rcgen = "0.11"
 clap = { version = "4.5", features = ["derive"] }
 
 # WebRTC dependencies (Phase 2)
@@ -69,8 +70,18 @@ pollster = "0.3"
 bytemuck = { version = "1.14", features = ["derive"] }
 chrono = "0.4"
 
+# System tray icon (minimal daemon status + "Open Dashboard"/"Quit")
+tray-icon = "0.19"
+open = "5"
+
 # Font rendering (Phase 1: fontdue for Windows, Phase 3: HarfBuzz for Linux/macOS)
 fontdue = "0.9"
+
+# WASM Plugin System (Phase 4 Week 3-4, ADR-019)
+# TODO: wasmer dependency blocked by virtual-net compilation errors (Week 3 Day 1)
+# Stub module structure created first, dependencies to be resolved in Day 2
+# wasmer = "=4.2.5"
+# wasmer-wasix = "0.18"
 
 # Internal workspace crates
 monoterminal-protocol = { path = "../protocol" }
@@ -79,11 +90,15 @@ monoterminal-monomind-bridge = { path = "../monomind-bridge" }
 # Windows-specific (ConPTY)
 [target.'cfg(windows)'.dependencies]
 windows = { workspace = true }
+portable-pty = "0.8"
 
 # Unix-specific (Phase 3: Unix PTY support)
 [target.'cfg(unix)'.dependencies]
 portable-pty = "0.8"
 libc = "0.2"
+
+[target.'cfg(unix)'.dev-dependencies]
+nix = { version = "0.25", features = ["signal"] }
 
 [features]
 test-support = []
@@ -95,6 +110,11 @@ tempfile = { workspace = true }
 mockall = { workspace = true }
 insta = { workspace = true }
 tokio-test = "0.4"
+toml = "0.8"
+# tokio-tungstenite's "rustls-tls-webpki-roots" feature pulls in rustls 0.22
+# (distinct from the crate's own `rustls = "0.21"` regular dependency above),
+# and Connector::Rustls requires a 0.22 ClientConfig specifically.
+rustls022 = { package = "rustls", version = "0.22" }
 
 [[bench]]
 name = "pty_throughput"

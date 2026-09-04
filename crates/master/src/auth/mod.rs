@@ -15,7 +15,7 @@ use async_trait::async_trait;
 // Re-exports for convenience
 pub use challenge::{Challenge, Ed25519ChallengeHandler};
 pub use jwt::{Claims, JwtService, TokenPair};
-pub use keys::{load_or_generate_keypair, Ed25519KeyPair};
+pub use keys::{load_or_generate_keypair, load_or_generate_keypair_at, Ed25519KeyPair};
 pub use rate_limit::RateLimiter;
 pub use rbac::{check_permission, Action};
 

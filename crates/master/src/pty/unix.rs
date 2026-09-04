@@ -55,12 +55,26 @@ unsafe impl Sync for UnixPtyBackend {}
 /// Implements tokio::io::AsyncRead via spawn_blocking.
 /// Uses blocking I/O with spawn_blocking for Phase 3 simplicity.
 /// TODO: Optimize with tokio-uring for Linux in Phase 4.
+///
+/// The in-flight spawn_blocking task is stored on the struct (`pending`)
+/// rather than recreated on every poll_read call. Recreating it each call
+/// discards the previous attempt's JoinHandle future the moment poll_read
+/// returns Pending — with nothing left to observe its completion — and
+/// since `reader` is behind a Mutex, a still-running first read (blocked
+/// waiting for real output) holds the lock while every subsequent poll
+/// spawns ANOTHER task that immediately blocks trying to acquire the same
+/// lock. Net effect: a hard, permanent hang the instant a read doesn't
+/// resolve on its very first poll. Found via the Windows ConPTY backend
+/// (conpty.rs), which shares this exact reader/writer implementation.
 struct PtyReader {
     reader: Arc<Mutex<Box<dyn StdRead + Send>>>,
+    pending: Option<tokio::task::JoinHandle<(io::Result<usize>, Vec<u8>)>>,
 }
 
 struct PtyWriter {
     writer: Arc<Mutex<Box<dyn StdWrite + Send>>>,
+    pending_write: Option<tokio::task::JoinHandle<io::Result<usize>>>,
+    pending_flush: Option<tokio::task::JoinHandle<io::Result<()>>>,
 }
 
 // SAFETY: Wrapped in Arc<Mutex<>> for thread-safety
@@ -73,6 +87,7 @@ impl PtyReader {
     fn new(reader: Box<dyn StdRead + Send>) -> Self {
         Self {
             reader: Arc::new(Mutex::new(reader)),
+            pending: None,
         }
     }
 }
@@ -81,6 +96,8 @@ impl PtyWriter {
     fn new(writer: Box<dyn StdWrite + Send>) -> Self {
         Self {
             writer: Arc::new(Mutex::new(writer)),
+            pending_write: None,
+            pending_flush: None,
         }
     }
 }
@@ -92,24 +109,32 @@ impl tokio::io::AsyncRead for PtyReader {
         cx: &mut std::task::Context<'_>,
         buf: &mut tokio::io::ReadBuf<'_>,
     ) -> std::task::Poll<io::Result<()>> {
-        // Use spawn_blocking for synchronous read (portable-pty provides blocking I/O)
-        let reader = self.reader.clone();
-        let buf_len = buf.remaining();
+        let this = self.get_mut();
 
-        let mut fut = Box::pin(tokio::task::spawn_blocking(move || {
-            let mut temp_buf = vec![0u8; buf_len];
-            let mut r = reader.lock().unwrap();
-            let result = r.read(&mut temp_buf);
-            (result, temp_buf)
-        }));
+        if this.pending.is_none() {
+            let reader = this.reader.clone();
+            let buf_len = buf.remaining();
+            this.pending = Some(tokio::task::spawn_blocking(move || {
+                let mut temp_buf = vec![0u8; buf_len];
+                let mut r = reader.lock().unwrap();
+                let result = r.read(&mut temp_buf);
+                (result, temp_buf)
+            }));
+        }
 
-        match fut.as_mut().poll(cx) {
+        let handle = this.pending.as_mut().unwrap();
+        match std::pin::Pin::new(handle).poll(cx) {
             std::task::Poll::Ready(Ok((Ok(n), temp_buf))) => {
+                this.pending = None;
                 buf.put_slice(&temp_buf[..n]);
                 std::task::Poll::Ready(Ok(()))
             }
-            std::task::Poll::Ready(Ok((Err(e), _))) => std::task::Poll::Ready(Err(e)),
+            std::task::Poll::Ready(Ok((Err(e), _))) => {
+                this.pending = None;
+                std::task::Poll::Ready(Err(e))
+            }
             std::task::Poll::Ready(Err(e)) => {
+                this.pending = None;
                 std::task::Poll::Ready(Err(io::Error::new(io::ErrorKind::Other, e)))
             }
             std::task::Poll::Pending => std::task::Poll::Pending,
@@ -124,18 +149,29 @@ impl tokio::io::AsyncWrite for PtyWriter {
         cx: &mut std::task::Context<'_>,
         buf: &[u8],
     ) -> std::task::Poll<io::Result<usize>> {
-        let writer = self.writer.clone();
-        let data = buf.to_vec();
+        let this = self.get_mut();
 
-        let mut fut = Box::pin(tokio::task::spawn_blocking(move || {
-            let mut w = writer.lock().unwrap();
-            w.write(&data)
-        }));
+        if this.pending_write.is_none() {
+            let writer = this.writer.clone();
+            let data = buf.to_vec();
+            this.pending_write = Some(tokio::task::spawn_blocking(move || {
+                let mut w = writer.lock().unwrap();
+                w.write(&data)
+            }));
+        }
 
-        match fut.as_mut().poll(cx) {
-            std::task::Poll::Ready(Ok(Ok(n))) => std::task::Poll::Ready(Ok(n)),
-            std::task::Poll::Ready(Ok(Err(e))) => std::task::Poll::Ready(Err(e)),
+        let handle = this.pending_write.as_mut().unwrap();
+        match std::pin::Pin::new(handle).poll(cx) {
+            std::task::Poll::Ready(Ok(Ok(n))) => {
+                this.pending_write = None;
+                std::task::Poll::Ready(Ok(n))
+            }
+            std::task::Poll::Ready(Ok(Err(e))) => {
+                this.pending_write = None;
+                std::task::Poll::Ready(Err(e))
+            }
             std::task::Poll::Ready(Err(e)) => {
+                this.pending_write = None;
                 std::task::Poll::Ready(Err(io::Error::new(io::ErrorKind::Other, e)))
             }
             std::task::Poll::Pending => std::task::Poll::Pending,
@@ -146,17 +182,28 @@ impl tokio::io::AsyncWrite for PtyWriter {
         self: std::pin::Pin<&mut Self>,
         cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<io::Result<()>> {
-        let writer = self.writer.clone();
+        let this = self.get_mut();
 
-        let mut fut = Box::pin(tokio::task::spawn_blocking(move || {
-            let mut w = writer.lock().unwrap();
-            w.flush()
-        }));
+        if this.pending_flush.is_none() {
+            let writer = this.writer.clone();
+            this.pending_flush = Some(tokio::task::spawn_blocking(move || {
+                let mut w = writer.lock().unwrap();
+                w.flush()
+            }));
+        }
 
-        match fut.as_mut().poll(cx) {
-            std::task::Poll::Ready(Ok(Ok(()))) => std::task::Poll::Ready(Ok(())),
-            std::task::Poll::Ready(Ok(Err(e))) => std::task::Poll::Ready(Err(e)),
+        let handle = this.pending_flush.as_mut().unwrap();
+        match std::pin::Pin::new(handle).poll(cx) {
+            std::task::Poll::Ready(Ok(Ok(()))) => {
+                this.pending_flush = None;
+                std::task::Poll::Ready(Ok(()))
+            }
+            std::task::Poll::Ready(Ok(Err(e))) => {
+                this.pending_flush = None;
+                std::task::Poll::Ready(Err(e))
+            }
             std::task::Poll::Ready(Err(e)) => {
+                this.pending_flush = None;
                 std::task::Poll::Ready(Err(io::Error::new(io::ErrorKind::Other, e)))
             }
             std::task::Poll::Pending => std::task::Poll::Pending,
@@ -209,7 +256,7 @@ impl PtyBackend for UnixPtyBackend {
         }
 
         // Spawn child process with slave PTY
-        let mut child = pty_pair
+        let child = pty_pair
             .slave
             .spawn_command(cmd)
             .map_err(|e| PtyError::CreateFailed(format!("spawn_command failed: {}", e)))?;
@@ -317,8 +364,14 @@ impl PtyBackend for UnixPtyBackend {
 
 impl Drop for UnixPtyBackend {
     fn drop(&mut self) {
-        // Best-effort cleanup
-        if let Ok(mut child) = self.child.lock() {
+        // Best-effort cleanup. Must use try_lock(), not lock(): terminate()'s
+        // spawn_blocking wait task (see terminate()) can outlive its 5s
+        // tokio::time::timeout (spawn_blocking work can't be cancelled) and
+        // keep holding this same Mutex indefinitely while blocked in
+        // Child::wait(). A blocking lock() here would then deadlock forever
+        // against that orphaned thread instead of just skipping a redundant
+        // kill (terminate() already sent one).
+        if let Ok(mut child) = self.child.try_lock() {
             let _ = child.kill();
         }
         tracing::debug!("Unix PTY dropped: pid={}", self.shell_pid);

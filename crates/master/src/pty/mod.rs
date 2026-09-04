@@ -29,7 +29,9 @@ pub use unix::UnixPtyBackend;
 // Export PtyResult for test access (per rust-backend-lead guidance)
 pub use error::PtyResult;
 
-#[cfg(test)]
+// ConPTY-specific property tests (hardcoded cmd.exe/C:\ paths, ConPtyBackend).
+// The cfg(unix) PTY path has its own tests colocated in unix.rs.
+#[cfg(all(test, windows))]
 mod tests;
 
 use async_trait::async_trait;

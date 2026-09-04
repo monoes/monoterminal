@@ -1,0 +1,19 @@
+/* Visual bell (BEL / Ctrl-G) — see Terminal.tsx's onBell handler. A brief
+   inverted flash, matching the "visual bell" default most terminal
+   emulators (iTerm2, Windows Terminal, GNOME Terminal) fall back to when
+   an audible bell isn't appropriate. */
+.terminal-bell-flash {
+  animation: terminal-bell-flash 150ms ease-out;
+}
+
+@keyframes terminal-bell-flash {
+  0% {
+    filter: invert(0);
+  }
+  30% {
+    filter: invert(0.85);
+  }
+  100% {
+    filter: invert(0);
+  }
+}

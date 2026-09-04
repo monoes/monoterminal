@@ -15,6 +15,9 @@ pub use session::{ClientId, Session, SessionContainer, SessionId, SessionSnapsho
 #[cfg(test)]
 mod tests;
 
+#[cfg(test)]
+mod manager_layout_tests;
+
 use thiserror::Error;
 
 /// Session management errors
@@ -40,6 +43,9 @@ pub enum SessionError {
 
     #[error("Permission denied: {0}")]
     PermissionDenied(String),
+
+    #[error("Layout error: {0}")]
+    LayoutError(String),
 }
 
 pub type Result<T> = std::result::Result<T, SessionError>;

@@ -208,7 +208,7 @@ pub fn prune_old_lines(conn: &Connection, session_id: &Uuid, keep_lines: u64) ->
     let deleted = conn.execute(
         "DELETE FROM scrollback
          WHERE session_id = ?1
-         AND line_number < (
+         AND line_number <= (
              SELECT MAX(line_number) - ?2
              FROM scrollback
              WHERE session_id = ?1
