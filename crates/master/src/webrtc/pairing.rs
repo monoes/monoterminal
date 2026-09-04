@@ -86,14 +86,21 @@ fn now_secs() -> i64 {
 /// Caches the daemon's current pairing code, only fetching a new one from
 /// the relay when none is cached yet or the cached one has expired. This
 /// keeps repeated dashboard opens from hammering the relay's rate limit.
+///
+/// Also doubles as this daemon's identity holder: `peer_id()` is always
+/// available (the Ed25519 identity key it's derived from always exists),
+/// independent of whether a relay is configured at all — a daemon started
+/// with no `--relay-url` still has `relay_url: None` here but can still
+/// answer "what's my peer_id" over the dashboard command path (used by the
+/// browser's local-daemon probe, which needs no relay/account to work).
 pub struct PairingCodeCache {
-    relay_url: String,
+    relay_url: Option<String>,
     peer_id: String,
     current: RwLock<Option<PairingCode>>,
 }
 
 impl PairingCodeCache {
-    pub fn new(relay_url: String, peer_id: String) -> Arc<Self> {
+    pub fn new(relay_url: Option<String>, peer_id: String) -> Arc<Self> {
         Arc::new(Self {
             relay_url,
             peer_id,
@@ -108,8 +115,15 @@ impl PairingCodeCache {
     }
 
     /// Returns the cached pairing code if still valid, otherwise fetches and
-    /// caches a new one.
+    /// caches a new one. Errors immediately, with no network call, if this
+    /// daemon has no relay configured — pairing/account linking requires one.
     pub async fn get_or_refresh(&self) -> Result<PairingCode> {
+        let Some(relay_url) = self.relay_url.as_deref() else {
+            return Err(WebRtcError::Internal(
+                "P2P is not enabled on this daemon (no --relay-url configured)".to_string(),
+            ));
+        };
+
         let mut guard = self.current.write().await;
 
         if let Some(code) = guard.as_ref() {
@@ -119,7 +133,7 @@ impl PairingCodeCache {
             }
         }
 
-        let fresh = fetch_pairing_code(&self.relay_url, &self.peer_id).await?;
+        let fresh = fetch_pairing_code(relay_url, &self.peer_id).await?;
         *guard = Some(fresh.clone());
         Ok(fresh)
     }
@@ -151,5 +165,18 @@ mod tests {
             relay_url_to_http("ws://relay.example.com:9000/signal"),
             "http://relay.example.com:9000/signal"
         );
+    }
+
+    #[test]
+    fn test_peer_id_available_with_no_relay() {
+        let cache = PairingCodeCache::new(None, "abc123".to_string());
+        assert_eq!(cache.peer_id(), "abc123");
+    }
+
+    #[tokio::test]
+    async fn test_get_or_refresh_errors_without_network_call_when_no_relay() {
+        let cache = PairingCodeCache::new(None, "abc123".to_string());
+        let result = cache.get_or_refresh().await;
+        assert!(result.is_err());
     }
 }

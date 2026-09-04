@@ -10,6 +10,11 @@ use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+/// Access token lifetime, in seconds (SRS §3.2.2).
+pub const ACCESS_TTL_SECS: i64 = 900;
+/// Refresh token lifetime, in seconds (SRS §3.2.2).
+pub const REFRESH_TTL_SECS: i64 = 2_592_000;
+
 #[derive(Debug, Clone)]
 pub struct TokenPair {
     pub access: String,
@@ -56,7 +61,7 @@ impl JwtService {
         let access = Claims {
             sub: user_id.0.clone(),
             iss: self.issuer.clone(),
-            exp: now + 900,
+            exp: now + ACCESS_TTL_SECS,
             iat: now,
             scope: "session:attach session:create input:write".into(),
             jti: Some(gen_jti()), // Each access token unique for revocation
@@ -64,7 +69,7 @@ impl JwtService {
         let refresh = Claims {
             sub: user_id.0.clone(),
             iss: self.issuer.clone(),
-            exp: now + 2592000,
+            exp: now + REFRESH_TTL_SECS,
             iat: now,
             scope: "token:refresh".into(),
             jti: Some(gen_jti()),

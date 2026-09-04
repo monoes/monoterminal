@@ -6,6 +6,7 @@
  */
 
 import { decodeEnvelope, encodeEnvelope } from './protocol';
+import { getAuthService } from './auth/service-singleton';
 import type {
   AttachResponse,
   AuthRequest,
@@ -72,6 +73,12 @@ function directionToWire(dir: SplitDirection): number {
   return dir === 'row' ? 0 : 1;
 }
 
+/** Unix seconds — matches AuthResponse's *_expires_at fields and the JWT's
+ * own exp/iat convention (see crates/master/src/auth/jwt.rs's Claims). */
+function nowSeconds(): number {
+  return Math.floor(Date.now() / 1000);
+}
+
 export enum ConnectionState {
   DISCONNECTED = 'disconnected',
   CONNECTING = 'connecting',
@@ -115,6 +122,19 @@ export class WebSocketClient {
   // page refresh creates a fresh client.
   private readonly configuredAutoReconnect: boolean;
 
+  // True while the post-open, pre-CONNECTED Ed25519 challenge/auth
+  // handshake (see `authenticate()`) is in flight. Lets `sendEnvelope`
+  // permit the handshake's own requests through before the public state
+  // reaches CONNECTED, without weakening the gate for anything else.
+  private authenticating = false;
+  // Proactive JWT refresh (Phase 6): re-armed at the end of every
+  // successful `authenticate()`, cleared on disconnect/close/supersession
+  // so a stale timer can never fire against a dead socket.
+  private refreshTimer: number | null = null;
+  // Holds the current refresh credential in memory only (never persisted),
+  // matching AuthService's own JWT-storage policy.
+  private refreshCredential: string | null = null;
+
   constructor(config: ConnectionConfig) {
     this.config = {
       autoReconnect: true,
@@ -153,10 +173,10 @@ export class WebSocketClient {
 
       socket.onopen = () => {
         if (this.ws !== socket) return; // superseded by a newer connect()
-        console.log('WebSocket connected');
+        console.log('WebSocket connected, authenticating...');
         this.reconnectAttempts = 0;
         this.sequenceNumber = 0; // Reset sequence on new connection
-        this.setState(ConnectionState.CONNECTED);
+        void this.authenticate(socket);
       };
 
       socket.onmessage = (event) => {
@@ -200,6 +220,8 @@ export class WebSocketClient {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
     }
+    this.clearRefreshTimer();
+    this.authenticating = false;
 
     if (this.ws) {
       this.ws.close();
@@ -207,6 +229,116 @@ export class WebSocketClient {
     }
 
     this.setState(ConnectionState.DISCONNECTED);
+  }
+
+  private clearRefreshTimer(): void {
+    if (this.refreshTimer !== null) {
+      clearTimeout(this.refreshTimer);
+      this.refreshTimer = null;
+    }
+  }
+
+  /**
+   * Ed25519 challenge-response handshake (SRS §3.2.2), run once per socket
+   * right after it opens and before the public CONNECTED transition —
+   * `HybridTransport` treats CONNECTED as "this route is usable, call
+   * attach()", so firing it before a real JWT exists would race the
+   * attach's own auth_token against this handshake still completing.
+   *
+   * Every step re-checks `this.ws === socket`, same as `onopen`/`onmessage`/
+   * `onerror`/`onclose` above — this method awaits across multiple network
+   * round trips, each of which is a new window where a StrictMode
+   * double-invoke or a fresh connect() could have superseded this socket.
+   */
+  private async authenticate(socket: WebSocket): Promise<void> {
+    this.authenticating = true;
+    try {
+      const authService = await getAuthService();
+      if (this.ws !== socket) return;
+
+      // Reuse a still-valid JWT across a reconnect/failover instead of
+      // re-running the full round trip — keeps the identity stable and
+      // reconnects fast.
+      const existing = authService.getJWT();
+      if (existing) {
+        this.config.jwtAuth = existing;
+        this.authenticating = false;
+        this.setState(ConnectionState.CONNECTED);
+        this.scheduleRefresh(authService.getJWTTimeRemaining() ?? 0);
+        return;
+      }
+
+      const challenge = await this.sendChallengeRequest();
+      if (this.ws !== socket) return;
+
+      const signed = await authService.signChallenge(challenge);
+      if (this.ws !== socket) return;
+
+      const authResult = await this.sendAuthRequest({
+        signature: signed.signature,
+        publicKey: signed.publicKey,
+        nonce: challenge.nonce,
+      });
+      if (this.ws !== socket) return;
+
+      const access = authResult.accessToken;
+      const refresh = authResult.refreshToken;
+      authService.setJWT(access, authResult.accessExpiresAt - nowSeconds());
+      this.storeRefreshCredential(refresh);
+      this.config.jwtAuth = access;
+
+      console.log(`Authenticated as ${authResult.userId}`);
+      this.authenticating = false;
+      this.setState(ConnectionState.CONNECTED);
+      this.scheduleRefresh(authResult.accessExpiresAt - nowSeconds());
+    } catch (error) {
+      if (this.ws !== socket) return; // superseded mid-handshake — not this socket's problem anymore
+      console.error('Authentication failed:', error);
+      this.authenticating = false;
+      this.setState(ConnectionState.ERROR);
+      socket.close();
+    }
+  }
+
+  private storeRefreshCredential(value: string): void {
+    this.refreshCredential = value;
+  }
+
+  /** Proactively refreshes the JWT ~2 minutes before it expires, so a
+   * terminal session that stays on one healthy socket far longer than the
+   * 15-minute access-token lifetime doesn't start failing auth mid-use.
+   * Falls back to a full `authenticate()` re-run if the refresh itself
+   * fails (e.g. the stored credential was also rejected). */
+  private scheduleRefresh(accessTtlSeconds: number): void {
+    this.clearRefreshTimer();
+    const delayMs = Math.max((accessTtlSeconds - 120) * 1000, 5000);
+    const socket = this.ws;
+
+    this.refreshTimer = window.setTimeout(async () => {
+      if (this.ws !== socket || !this.refreshCredential) return;
+      try {
+        const result = await this.refreshJWT(this.refreshCredential);
+        if (this.ws !== socket) return;
+        const authService = await getAuthService();
+        const access = result.accessToken;
+        const refresh = result.refreshToken; // rotated — the old value is now single-use-burned
+        authService.setJWT(access, result.accessExpiresAt - nowSeconds());
+        this.storeRefreshCredential(refresh);
+        this.config.jwtAuth = access;
+        this.scheduleRefresh(result.accessExpiresAt - nowSeconds());
+      } catch (error) {
+        if (this.ws !== socket) return;
+        console.warn('JWT refresh failed, re-authenticating:', error);
+        // Clear the cached (still-technically-unexpired) access token first —
+        // otherwise authenticate()'s fast path sees it as still valid and
+        // just re-arms another refresh with the same already-proven-bad
+        // refresh token, looping every 5s until the access token's own
+        // expiry instead of getting fresh credentials now.
+        const authService = await getAuthService();
+        authService.clearJWT();
+        void this.authenticate(socket);
+      }
+    }, delayMs);
   }
 
   /**
@@ -228,6 +360,12 @@ export class WebSocketClient {
       sequenceNumber: ++this.sequenceNumber,
       attachRequest: {
         sessionId: sessionId || '',
+        // protobufjs converts the wire field `auth_token` to camelCase
+        // `authToken` for JS access (default `keepCase: false`) — the
+        // previous `['auth' + '_token']` trick set a property named
+        // `auth_token` that the encoder never reads, so this field was
+        // silently always empty on the wire.
+        authToken: jwt,
         rows,
         cols,
         lastSeenSequence: this.lastSeenSequence,
@@ -235,8 +373,6 @@ export class WebSocketClient {
         previousSessionName: previousSessionName || '',
       },
     };
-    // Set auth field dynamically to avoid hook
-    envelope.attachRequest['auth' + '_token'] = jwt;
 
     this.sendEnvelope(envelope);
     this.sessionId = sessionId;
@@ -251,10 +387,8 @@ export class WebSocketClient {
     const jwt = this.config.jwtAuth || '';
     const envelope: any = {
       sequenceNumber: ++this.sequenceNumber,
-      inputData: { data: bytes, paneId },
+      inputData: { data: bytes, paneId, authToken: jwt },
     };
-    // Set auth field dynamically to avoid hook
-    envelope.inputData['auth' + '_token'] = jwt;
 
     this.sendEnvelope(envelope);
   }
@@ -267,10 +401,8 @@ export class WebSocketClient {
     const jwt = this.config.jwtAuth || '';
     const envelope: any = {
       sequenceNumber: ++this.sequenceNumber,
-      resizeRequest: { rows, cols, paneId },
+      resizeRequest: { rows, cols, paneId, authToken: jwt },
     };
-    // Set auth field dynamically to avoid hook
-    envelope.resizeRequest['auth' + '_token'] = jwt;
 
     this.sendEnvelope(envelope);
   }
@@ -407,7 +539,11 @@ export class WebSocketClient {
       sequenceNumber: seqNum,
       challengeRequest: {},
     };
-    return this.sendRequestWithResponse(envelope, seqNum, 5000);
+    // Tighter than the usual 5s request timeout: this happens inside
+    // connect()'s own budget (see HybridTransport's WS_CONNECT_TIMEOUT_MS),
+    // so a wedged daemon should fail fast enough to still be caught by that
+    // outer deadline rather than being cut off mid-request by it.
+    return this.sendRequestWithResponse(envelope, seqNum, 3000);
   }
 
   /**
@@ -423,7 +559,7 @@ export class WebSocketClient {
         nonce: req.nonce,
       },
     };
-    return this.sendRequestWithResponse(envelope, seqNum, 5000);
+    return this.sendRequestWithResponse(envelope, seqNum, 3000);
   }
 
 
@@ -495,7 +631,16 @@ export class WebSocketClient {
     try {
       const buffer = encodeEnvelope(envelope);
 
-      if (this.ws && this.state === ConnectionState.CONNECTED) {
+      // Also permitted while `authenticating`: the challenge/auth handshake
+      // itself has to send envelopes before the public state reaches
+      // CONNECTED (see `authenticate()`) — gating strictly on
+      // ConnectionState.CONNECTED here would deadlock the handshake against
+      // its own send gate.
+      if (
+        this.ws &&
+        this.ws.readyState === WebSocket.OPEN &&
+        (this.state === ConnectionState.CONNECTED || this.authenticating)
+      ) {
         this.ws.send(buffer);
       } else {
         console.warn('Cannot send: WebSocket not connected');
@@ -568,13 +713,20 @@ export class WebSocketClient {
       } else if (obj.outputData && this.messageHandlers.onOutputData) {
         this.lastSeenSequence = obj.outputData.sequence;
         this.messageHandlers.onOutputData(obj.outputData);
-      } else if (obj.errorResponse && this.messageHandlers.onErrorResponse) {
-        this.messageHandlers.onErrorResponse(obj.errorResponse);
-        // Also reject any pending request with this error
+      } else if (obj.errorResponse) {
+        // Reject the matching pending request unconditionally — this used
+        // to only happen when an onErrorResponse handler was also
+        // registered, so a caller with no handler (e.g. local-daemon.ts's
+        // probe client, or any request made before handlers are wired up)
+        // never got its promise rejected at all and just hung until the
+        // request's own timeout fired.
         if (pending) {
           clearTimeout(pending.timeout);
           this.pendingRequests.delete(seqNum);
           pending.reject(new Error(obj.errorResponse.message));
+        }
+        if (this.messageHandlers.onErrorResponse) {
+          this.messageHandlers.onErrorResponse(obj.errorResponse);
         }
       }
     } catch (error) {

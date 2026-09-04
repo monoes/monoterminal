@@ -7,10 +7,12 @@
  * (splitPane/closePane/focusPane, pane-tagged sendInput/resize).
  */
 
-import { WebSocketClient, ConnectionState } from './websocket-client';
-import { WebRtcClient } from './webrtc-client';
+import { ConnectionState } from './websocket-client';
+import { HybridTransport } from './hybrid-transport';
 import type { MessageHandler, SplitDirection } from './protocol';
 import type { ComputerConfig } from '../state/WorkspaceContext';
+import { resolveRoutes } from '../state/WorkspaceContext';
+import { getLocalDaemon } from './local-daemon';
 
 export interface TerminalTransport {
   connect(): void;
@@ -32,17 +34,17 @@ export interface TerminalTransport {
   getState(): ConnectionState;
 }
 
-export function createTransport(computer: ComputerConfig): TerminalTransport {
-  if (computer.mode === 'p2p') {
-    return new WebRtcClient({
-      relayUrl: computer.relayUrl || '',
-      peerId: computer.peerId || '',
-    });
-  }
-  return new WebSocketClient({
-    url: computer.wsUrl,
-    autoReconnect: true,
-    reconnectInterval: 3000,
-    maxReconnectAttempts: 5,
-  });
+/** Takes a getter, not a `ComputerConfig` directly: the transport is built
+ * once inside a `useState` initializer (see WorkspaceSession.tsx) and lives
+ * for the whole session, but `mergeComputers`/`adoptPeerId` can update a
+ * computer's `peerId`/`wsUrl` later (e.g. discovering the same daemon is
+ * also reachable locally, well after a pane was already opened) by
+ * producing a new `ComputerConfig` object — closing over the object itself
+ * would freeze the routes this transport ever considers to whatever they
+ * were at mount, silently defeating "prefer local over P2P" for any
+ * already-open session. The getter is re-invoked on every `connect()`
+ * attempt (same as `getLocalDaemon()` already was), so an identity update
+ * is picked up on the next reconnect with no remount needed. */
+export function createTransport(getComputer: () => ComputerConfig): TerminalTransport {
+  return new HybridTransport(() => resolveRoutes(getComputer(), getLocalDaemon()));
 }

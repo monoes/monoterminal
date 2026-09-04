@@ -175,6 +175,7 @@ export interface AuthResponse {
   refreshToken: string;
   accessExpiresAt: number;
   refreshExpiresAt: number;
+  userId: string;
 }
 
 export interface TokenRefreshRequest {
@@ -249,12 +250,12 @@ message Envelope {
     UpgradeResponse upgrade_response = 14;
     DetectionRequest detection_request = 15;
     DetectionResponse detection_response = 16;
-    ChallengeRequest challenge_request = 18;
-    ChallengeResponse challenge_response = 19;
-    AuthRequest auth_request = 20;
-    AuthResponse auth_response = 21;
-    TokenRefreshRequest token_refresh_request = 22;
-    TokenRefreshResponse token_refresh_response = 23;
+    ChallengeRequest challenge_request = 40;
+    ChallengeResponse challenge_response = 41;
+    AuthRequest auth_request = 42;
+    AuthResponse auth_response = 43;
+    TokenRefreshRequest token_refresh_request = 44;
+    TokenRefreshResponse token_refresh_response = 45;
     SplitPaneCommand split_pane_command = 32;
     ClosePaneCommand close_pane_command = 33;
     FocusPaneCommand focus_pane_command = 34;
@@ -405,6 +406,7 @@ message AuthResponse {
   string refresh_token = 2;
   int64 access_expires_at = 3;
   int64 refresh_expires_at = 4;
+  string user_id = 5;
 }
 message TokenRefreshRequest {
   string refresh_token = 1;

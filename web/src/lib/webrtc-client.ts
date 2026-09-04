@@ -14,9 +14,14 @@
  */
 
 import { decodeEnvelope, encodeEnvelope } from './protocol';
-import type { MessageHandler, SplitDirection } from './protocol';
+import type { MessageHandler, SplitDirection, ChallengeResponse, AuthResponse, TokenRefreshResponse } from './protocol';
 import { ConnectionState } from './websocket-client';
 import { getTurnCredentials, toAccountsHttpUrl } from './accounts-client';
+import { getAuthService } from './auth/service-singleton';
+
+function nowSeconds(): number {
+  return Math.floor(Date.now() / 1000);
+}
 
 /** 'row' (side-by-side) -> HORIZONTAL, 'col' (stacked) -> VERTICAL — matches
  * SplitPane.Direction on the wire (see proto/monoterminal/v1/messages.proto). */
@@ -59,6 +64,17 @@ export class WebRtcClient {
     number,
     { resolve: (value: any) => void; reject: (reason: any) => void; timeout: number }
   > = new Map();
+
+  // Mirrors WebSocketClient's own Ed25519 challenge/auth handshake (see
+  // that file's authenticate()) — the daemon's process_message doesn't
+  // distinguish WS from DataChannel connections, so once dev_mode is off,
+  // P2P needs the exact same real auth or every attach()/sendInput()/
+  // resize() gets rejected with "Missing authentication token". No
+  // `authenticating` gate flag needed here (unlike WebSocketClient) since
+  // `sendEnvelope` below only checks the DataChannel's own `readyState`,
+  // which is already 'open' throughout this handshake.
+  private refreshTimer: number | null = null;
+  private refreshCredential: string | null = null;
 
   constructor(config: WebRtcConnectionConfig) {
     this.config = { jwtAuth: '', ...config };
@@ -115,6 +131,7 @@ export class WebRtcClient {
   }
 
   disconnect(): void {
+    this.clearRefreshTimer();
     this.relaySocket?.close();
     this.relaySocket = null;
     this.dataChannel?.close();
@@ -122,6 +139,17 @@ export class WebRtcClient {
     this.pc?.close();
     this.pc = null;
     this.setState(ConnectionState.DISCONNECTED);
+  }
+
+  private clearRefreshTimer(): void {
+    if (this.refreshTimer !== null) {
+      clearTimeout(this.refreshTimer);
+      this.refreshTimer = null;
+    }
+  }
+
+  private storeRefreshCredential(value: string): void {
+    this.refreshCredential = value;
   }
 
   private async handleRelayMessage(msg: RelayMessage): Promise<void> {
@@ -202,6 +230,7 @@ export class WebRtcClient {
 
     pc.onconnectionstatechange = () => {
       if (pc.connectionState === 'failed' || pc.connectionState === 'closed') {
+        this.clearRefreshTimer();
         this.setState(ConnectionState.ERROR);
       }
     };
@@ -213,12 +242,13 @@ export class WebRtcClient {
     dc.onopen = () => {
       console.log('WebRTC DataChannel open — P2P connection established');
       this.sequenceNumber = 0;
-      this.setState(ConnectionState.CONNECTED);
       // The signaling relay's job is done — the data path is now direct.
       this.relaySocket?.close();
+      void this.authenticate(dc);
     };
 
     dc.onclose = () => {
+      this.clearRefreshTimer();
       this.setState(ConnectionState.DISCONNECTED);
     };
 
@@ -239,6 +269,126 @@ export class WebRtcClient {
     }
   }
 
+  /** Ed25519 challenge-response handshake, run once the DataChannel opens
+   * and before the public CONNECTED transition — same contract as
+   * WebSocketClient.authenticate(): `attach()` only fires once CONNECTED,
+   * so this must complete (and populate `config.jwtAuth`) first. Every step
+   * re-checks `this.dataChannel === dc` since a fresh connect()/disconnect()
+   * can supersede this channel mid-await. */
+  private async authenticate(dc: RTCDataChannel): Promise<void> {
+    try {
+      const authService = await getAuthService();
+      if (this.dataChannel !== dc) return;
+
+      const existing = authService.getJWT();
+      if (existing) {
+        this.config.jwtAuth = existing;
+        this.setState(ConnectionState.CONNECTED);
+        this.scheduleRefresh(dc, authService.getJWTTimeRemaining() ?? 0);
+        return;
+      }
+
+      const challenge = await this.sendChallengeRequest();
+      if (this.dataChannel !== dc) return;
+
+      const signed = await authService.signChallenge(challenge);
+      if (this.dataChannel !== dc) return;
+
+      const authResult = await this.sendAuthRequest({
+        signature: signed.signature,
+        publicKey: signed.publicKey,
+        nonce: challenge.nonce,
+      });
+      if (this.dataChannel !== dc) return;
+
+      const access = authResult.accessToken;
+      const refresh = authResult.refreshToken;
+      authService.setJWT(access, authResult.accessExpiresAt - nowSeconds());
+      this.storeRefreshCredential(refresh);
+      this.config.jwtAuth = access;
+
+      console.log(`Authenticated as ${authResult.userId}`);
+      this.setState(ConnectionState.CONNECTED);
+      this.scheduleRefresh(dc, authResult.accessExpiresAt - nowSeconds());
+    } catch (error) {
+      if (this.dataChannel !== dc) return;
+      console.error('Authentication failed:', error);
+      this.setState(ConnectionState.ERROR);
+      dc.close();
+    }
+  }
+
+  /** Proactive JWT refresh — same policy as WebSocketClient.scheduleRefresh(). */
+  private scheduleRefresh(dc: RTCDataChannel, accessTtlSeconds: number): void {
+    this.clearRefreshTimer();
+    const delayMs = Math.max((accessTtlSeconds - 120) * 1000, 5000);
+
+    this.refreshTimer = window.setTimeout(async () => {
+      if (this.dataChannel !== dc || !this.refreshCredential) return;
+      try {
+        const result = await this.refreshJWT(this.refreshCredential);
+        if (this.dataChannel !== dc) return;
+        const authService = await getAuthService();
+        const access = result.accessToken;
+        const refresh = result.refreshToken;
+        authService.setJWT(access, result.accessExpiresAt - nowSeconds());
+        this.storeRefreshCredential(refresh);
+        this.config.jwtAuth = access;
+        this.scheduleRefresh(dc, result.accessExpiresAt - nowSeconds());
+      } catch (error) {
+        if (this.dataChannel !== dc) return;
+        console.warn('JWT refresh failed, re-authenticating:', error);
+        const authService = await getAuthService();
+        authService.clearJWT();
+        void this.authenticate(dc);
+      }
+    }, delayMs);
+  }
+
+  async sendChallengeRequest(): Promise<ChallengeResponse> {
+    const seqNum = ++this.sequenceNumber;
+    const envelope = { sequenceNumber: seqNum, challengeRequest: {} };
+    return this.sendRequestWithResponse(envelope, seqNum, 3000);
+  }
+
+  async sendAuthRequest(req: {
+    signature: Uint8Array;
+    publicKey: Uint8Array;
+    nonce: Uint8Array;
+  }): Promise<AuthResponse> {
+    const seqNum = ++this.sequenceNumber;
+    const envelope = {
+      sequenceNumber: seqNum,
+      authRequest: { signature: req.signature, publicKey: req.publicKey, nonce: req.nonce },
+    };
+    return this.sendRequestWithResponse(envelope, seqNum, 3000);
+  }
+
+  async refreshJWT(refresh: string): Promise<TokenRefreshResponse> {
+    const seqNum = ++this.sequenceNumber;
+    const envelope = { sequenceNumber: seqNum, tokenRefreshRequest: { refreshToken: refresh } };
+    return this.sendRequestWithResponse(envelope, seqNum, 5000);
+  }
+
+  private sendRequestWithResponse<T>(envelope: any, seqNum: number, timeoutMs: number): Promise<T> {
+    return new Promise((resolve, reject) => {
+      const timeout = window.setTimeout(() => {
+        this.pendingRequests.delete(seqNum);
+        reject(new Error('Request timeout'));
+      }, timeoutMs);
+
+      this.pendingRequests.set(seqNum, { resolve, reject, timeout });
+
+      try {
+        this.sendEnvelope(envelope);
+      } catch (error) {
+        clearTimeout(timeout);
+        this.pendingRequests.delete(seqNum);
+        reject(error);
+      }
+    });
+  }
+
   attach(
     sessionId: string,
     rows: number,
@@ -251,6 +401,11 @@ export class WebRtcClient {
       sequenceNumber: ++this.sequenceNumber,
       attachRequest: {
         sessionId: sessionId || '',
+        // protobufjs converts the wire field `auth_token` to camelCase
+        // `authToken` for JS access — see websocket-client.ts's attach()
+        // for the full story on why this must be `authToken`, not
+        // `auth_token` or `jwtAuth`.
+        authToken: jwt,
         rows,
         cols,
         lastSeenSequence: this.lastSeenSequence,
@@ -258,8 +413,6 @@ export class WebRtcClient {
         previousSessionName: previousSessionName || '',
       },
     };
-    // Set auth field dynamically to avoid hook
-    envelope.attachRequest['auth' + '_token'] = jwt;
 
     this.sendEnvelope(envelope);
     this.sessionId = sessionId;
@@ -270,9 +423,8 @@ export class WebRtcClient {
     const jwt = this.config.jwtAuth || '';
     const envelope: any = {
       sequenceNumber: ++this.sequenceNumber,
-      inputData: { data: bytes, paneId },
+      inputData: { data: bytes, paneId, authToken: jwt },
     };
-    envelope.inputData['auth' + '_token'] = jwt;
 
     this.sendEnvelope(envelope);
   }
@@ -281,9 +433,8 @@ export class WebRtcClient {
     const jwt = this.config.jwtAuth || '';
     const envelope: any = {
       sequenceNumber: ++this.sequenceNumber,
-      resizeRequest: { rows, cols, paneId },
+      resizeRequest: { rows, cols, paneId, authToken: jwt },
     };
-    envelope.resizeRequest['auth' + '_token'] = jwt;
 
     this.sendEnvelope(envelope);
   }
@@ -376,18 +527,32 @@ export class WebRtcClient {
         clearTimeout(pending.timeout);
         this.pendingRequests.delete(seqNum);
         pending.resolve(obj.detectionResponse);
+      } else if (obj.challengeResponse && pending) {
+        clearTimeout(pending.timeout);
+        this.pendingRequests.delete(seqNum);
+        pending.resolve(obj.challengeResponse);
+      } else if (obj.authResponse && pending) {
+        clearTimeout(pending.timeout);
+        this.pendingRequests.delete(seqNum);
+        pending.resolve(obj.authResponse);
+      } else if (obj.tokenRefreshResponse && pending) {
+        clearTimeout(pending.timeout);
+        this.pendingRequests.delete(seqNum);
+        pending.resolve(obj.tokenRefreshResponse);
       } else if (obj.attachResponse && this.messageHandlers.onAttachResponse) {
         this.messageHandlers.onAttachResponse(obj.attachResponse);
         this.sessionId = obj.attachResponse.sessionId;
       } else if (obj.outputData && this.messageHandlers.onOutputData) {
         this.lastSeenSequence = obj.outputData.sequence;
         this.messageHandlers.onOutputData(obj.outputData);
-      } else if (obj.errorResponse && this.messageHandlers.onErrorResponse) {
-        this.messageHandlers.onErrorResponse(obj.errorResponse);
+      } else if (obj.errorResponse) {
         if (pending) {
           clearTimeout(pending.timeout);
           this.pendingRequests.delete(seqNum);
           pending.reject(new Error(obj.errorResponse.message));
+        }
+        if (this.messageHandlers.onErrorResponse) {
+          this.messageHandlers.onErrorResponse(obj.errorResponse);
         }
       } else if (obj.layoutUpdate && this.messageHandlers.onLayoutUpdate) {
         this.messageHandlers.onLayoutUpdate(obj.layoutUpdate);

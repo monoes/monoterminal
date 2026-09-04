@@ -50,6 +50,7 @@ pub async fn handle_websocket(
     let mut attached_session: Option<SessionId> = None;
     let mut output_rx: Option<mpsc::Receiver<Vec<u8>>> = None;
     let mut conn_output_tx: Option<mpsc::Sender<Vec<u8>>> = None;
+    let mut pending_challenge: Option<crate::auth::Challenge> = None;
 
     // Main message loop
     loop {
@@ -92,6 +93,7 @@ pub async fn handle_websocket(
                                     &mut conn_output_tx,
                                     peer_addr,
                                     pairing_cache.as_ref(),
+                                    &mut pending_challenge,
                                 ).await {
                                     Ok(Some(response)) => {
                                         // Encode and send response
@@ -242,6 +244,7 @@ pub async fn handle_datachannel_session(
     let mut attached_session: Option<SessionId> = None;
     let mut output_rx: Option<mpsc::Receiver<Vec<u8>>> = None;
     let mut conn_output_tx: Option<mpsc::Sender<Vec<u8>>> = None;
+    let mut pending_challenge: Option<crate::auth::Challenge> = None;
 
     loop {
         tokio::select! {
@@ -274,6 +277,7 @@ pub async fn handle_datachannel_session(
                             &mut conn_output_tx,
                             peer_addr,
                             pairing_cache.as_ref(),
+                            &mut pending_challenge,
                         ).await {
                             Ok(Some(response)) => {
                                 let mut response_bytes = Vec::with_capacity(response.encoded_len());
@@ -373,6 +377,11 @@ async fn process_message(
     conn_output_tx: &mut Option<mpsc::Sender<Vec<u8>>>,
     peer_addr: SocketAddr,
     pairing_cache: Option<&Arc<PairingCodeCache>>,
+    // Ed25519 challenge-response auth: the nonce this connection was last
+    // issued via ChallengeRequest, if any and not yet consumed by an
+    // AuthRequest. A plain local like `attached_session` et al. above —
+    // connection-scoped, no new struct needed.
+    pending_challenge: &mut Option<crate::auth::Challenge>,
 ) -> Result<Option<Envelope>> {
     match envelope.message {
         Some(envelope::Message::AttachRequest(req)) => {
@@ -1018,6 +1027,142 @@ async fn process_message(
 
             Ok(Some(response))
         }
+        Some(envelope::Message::ChallengeRequest(_)) => {
+            // Ed25519 challenge-response auth (SRS §3.2.2) — pre-auth by
+            // design, same as DashboardRequest above: this is how a client
+            // *obtains* the JWT that every other arm requires.
+            debug!("Processing ChallengeRequest from {}", peer_addr);
+
+            let challenge = auth_service.create_challenge();
+            let expires_at = unix_now()
+                + challenge
+                    .time_remaining()
+                    .map(|d| d.as_secs() as i64)
+                    .unwrap_or(0);
+            *pending_challenge = Some(challenge.clone());
+
+            let response = Envelope {
+                sequence_number: envelope.sequence_number,
+                message: Some(envelope::Message::ChallengeResponse(
+                    monoterminal_protocol::ChallengeResponse {
+                        nonce: challenge.nonce.to_vec(),
+                        expires_at,
+                    },
+                )),
+            };
+
+            Ok(Some(response))
+        }
+        Some(envelope::Message::AuthRequest(req)) => {
+            debug!("Processing AuthRequest from {}", peer_addr);
+
+            // Single-use regardless of outcome — taken unconditionally,
+            // first thing, so a failed attempt can't be retried against the
+            // same challenge.
+            let challenge = pending_challenge.take();
+
+            // Auth failures here are returned as an in-band ErrorResponse
+            // envelope (not a bubbled ServerError) so the response carries
+            // this REQUEST's own sequence_number — the client's
+            // pendingRequests map is keyed by it, and the generic error
+            // path (create_error_envelope) uses the connection's own
+            // outbound counter instead, which would never match and leave
+            // the client hanging until its request timeout. Matches
+            // DashboardRequest's existing in-band-error convention above.
+            let auth_error = |message: String| {
+                Ok(Some(Envelope {
+                    sequence_number: envelope.sequence_number,
+                    message: Some(envelope::Message::ErrorResponse(
+                        monoterminal_protocol::ErrorResponse {
+                            code: ErrorCode::AuthFailed as i32,
+                            message,
+                        },
+                    )),
+                }))
+            };
+
+            let Some(challenge) = challenge else {
+                warn!("AuthRequest from {} with no outstanding challenge", peer_addr);
+                return auth_error("No outstanding challenge".to_string());
+            };
+            if req.nonce != challenge.nonce {
+                warn!("AuthRequest from {} answers a stale/foreign challenge", peer_addr);
+                return auth_error("Challenge mismatch".to_string());
+            }
+            let (Ok(signature), Ok(public_key)) = (
+                <[u8; 64]>::try_from(req.signature.as_slice()),
+                <[u8; 32]>::try_from(req.public_key.as_slice()),
+            ) else {
+                warn!("AuthRequest from {} has malformed signature/public_key length", peer_addr);
+                return auth_error("Malformed key or signature".to_string());
+            };
+
+            let user_id = match auth_service.verify_challenge_response(&challenge, &signature, &public_key) {
+                Ok(user_id) => user_id,
+                Err(e) => {
+                    warn!("AuthRequest from {} failed verification: {}", peer_addr, e);
+                    return auth_error(format!("Verification failed: {}", e));
+                }
+            };
+
+            let tokens = auth_service.issue_tokens(&user_id).map_err(|e| {
+                ServerError::InvalidMessage(format!("Failed to issue tokens: {}", e))
+            })?;
+
+            info!("Client {} authenticated as {}", peer_addr, user_id.as_ref());
+
+            let response = Envelope {
+                sequence_number: envelope.sequence_number,
+                message: Some(envelope::Message::AuthResponse(
+                    monoterminal_protocol::AuthResponse {
+                        access_token: tokens.access,
+                        refresh_token: tokens.refresh,
+                        access_expires_at: unix_now() + crate::auth::jwt::ACCESS_TTL_SECS,
+                        refresh_expires_at: unix_now() + crate::auth::jwt::REFRESH_TTL_SECS,
+                        user_id: user_id.0,
+                    },
+                )),
+            };
+
+            Ok(Some(response))
+        }
+        Some(envelope::Message::TokenRefreshRequest(req)) => {
+            debug!("Processing TokenRefreshRequest from {}", peer_addr);
+
+            // The refresh JTI single-use set lives in memory only (see
+            // JwtService) — it doesn't survive a daemon restart, but a
+            // restart already drops every live session anyway, so a
+            // technically-reusable pre-restart refresh token isn't a
+            // meaningful gap in practice.
+            match auth_service.refresh_access(&req.refresh_token) {
+                Ok(tokens) => {
+                    let response = Envelope {
+                        sequence_number: envelope.sequence_number,
+                        message: Some(envelope::Message::TokenRefreshResponse(
+                            monoterminal_protocol::TokenRefreshResponse {
+                                access_token: tokens.access,
+                                refresh_token: tokens.refresh,
+                                access_expires_at: unix_now() + crate::auth::jwt::ACCESS_TTL_SECS,
+                                refresh_expires_at: unix_now() + crate::auth::jwt::REFRESH_TTL_SECS,
+                            },
+                        )),
+                    };
+                    Ok(Some(response))
+                }
+                Err(e) => {
+                    warn!("TokenRefreshRequest from {} failed: {}", peer_addr, e);
+                    Ok(Some(Envelope {
+                        sequence_number: envelope.sequence_number,
+                        message: Some(envelope::Message::ErrorResponse(
+                            monoterminal_protocol::ErrorResponse {
+                                code: ErrorCode::AuthFailed as i32,
+                                message: format!("Refresh failed: {}", e),
+                            },
+                        )),
+                    }))
+                }
+            }
+        }
         Some(envelope::Message::ClipboardGetRequest(req)) => {
             // Phase 4 Week 2: Bidirectional Clipboard (ADR-020, task-74)
             debug!(
@@ -1144,6 +1289,9 @@ async fn process_message(
         | Some(envelope::Message::IceCandidate(_))
         | Some(envelope::Message::SearchResponse(_))
         | Some(envelope::Message::LayoutUpdate(_))
+        | Some(envelope::Message::ChallengeResponse(_))
+        | Some(envelope::Message::AuthResponse(_))
+        | Some(envelope::Message::TokenRefreshResponse(_))
         | Some(envelope::Message::ClipboardOsc52(_)) => {
             warn!(
                 "Received unexpected server->client or P2P message from {}",
@@ -1251,10 +1399,7 @@ async fn execute_monomind_command(
 fn execute_account_peer_id(pairing_cache: Option<&Arc<PairingCodeCache>>) -> (String, ErrorCode) {
     let Some(cache) = pairing_cache else {
         return (
-            serde_json::json!({
-                "error": "P2P is not enabled on this daemon (no --relay-url configured)"
-            })
-            .to_string(),
+            serde_json::json!({ "error": "daemon identity unavailable" }).to_string(),
             ErrorCode::ServerError,
         );
     };
@@ -1302,6 +1447,13 @@ async fn execute_account_pairing_code(
             )
         }
     }
+}
+
+fn unix_now() -> i64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs() as i64
 }
 
 /// Create error envelope from ServerError

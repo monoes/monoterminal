@@ -9,7 +9,8 @@ import { InstallPrompt } from './components/InstallPrompt';
 import { IconClose, IconMenu, IconPanel, IconPrompt } from './components/icons';
 import { ConnectionState, WebSocketClient } from './lib/websocket-client';
 import { getStoredAuth, linkComputer, listComputers } from './lib/accounts-client';
-import { useWorkspace } from './state/WorkspaceContext';
+import { getLocalDaemon, probeLocalDaemon, refreshLocalDaemon, subscribeLocalDaemon } from './lib/local-daemon';
+import { resolveRoutes, useWorkspace } from './state/WorkspaceContext';
 import './App.css';
 
 // Detect if running on mobile
@@ -18,7 +19,7 @@ const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/
 );
 
 function App() {
-  const { computers, workspaces, activeWorkspaceId } = useWorkspace();
+  const { computers, workspaces, activeWorkspaceId, adoptPeerId } = useWorkspace();
   const [showMonomindPanel, setShowMonomindPanel] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const sessionRefs = useRef<Map<string, WorkspaceSessionHandle | null>>(new Map());
@@ -39,10 +40,55 @@ function App() {
 
   const [monomindClient, setMonomindClient] = useState<WebSocketClient | null>(null);
 
+  // Detect a daemon reachable at wss://localhost:54321 once per app load —
+  // computers/transport code reads the result via getLocalDaemon() rather
+  // than through component state (see local-daemon.ts's module doc comment
+  // for why this is a singleton, not per-component state).
+  // Bumped whenever the local-daemon probe resolves/refreshes. Exposed as a
+  // value (not just used to force a render) so effects that read
+  // getLocalDaemon() — like the Monomind-panel one below — can list it as a
+  // dependency and actually re-run when the probe result changes; a bare
+  // re-render alone does not re-execute an effect whose deps didn't change.
+  const [probeTick, setProbeTick] = useState(0);
+  useEffect(() => {
+    probeLocalDaemon();
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') refreshLocalDaemon();
+    };
+    window.addEventListener('online', refreshLocalDaemon);
+    document.addEventListener('visibilitychange', onVisible);
+    const unsubscribe = subscribeLocalDaemon(() => setProbeTick((n) => n + 1));
+    return () => {
+      window.removeEventListener('online', refreshLocalDaemon);
+      document.removeEventListener('visibilitychange', onVisible);
+      unsubscribe();
+    };
+  }, []);
+
   useEffect(() => {
     if (!activeComputer) return;
+    // The Monomind panel talks straight to a daemon's WebSocket dashboard
+    // command channel, not through HybridTransport/P2P — it only has
+    // anything to connect to when this computer has a direct ws route
+    // (a configured wsUrl, or a locally-probed match). A p2p-only computer
+    // with no local match has no route here at all; the panel simply isn't
+    // rendered for it (see the `monomindClient &&` check below) rather than
+    // constructing a WebSocket against an empty URL, which used to throw
+    // silently and leave the panel permanently non-functional.
+    //
+    // Depends on `probeTick` too, not just `activeComputer` — without it,
+    // selecting a P2P-only computer *before* the local-daemon probe
+    // resolves would find no ws route once, hide the panel, and never
+    // re-check even after the probe later reveals the same daemon is also
+    // reachable locally (the effect only reruns when its deps change, and
+    // `activeComputer` itself wouldn't have changed).
+    const route = resolveRoutes(activeComputer, getLocalDaemon()).find((r) => r.kind === 'ws');
+    if (!route) {
+      setMonomindClient(null);
+      return;
+    }
     const client = new WebSocketClient({
-      url: activeComputer.wsUrl,
+      url: route.url,
       autoReconnect: true,
       reconnectInterval: 3000,
       maxReconnectAttempts: 5,
@@ -50,7 +96,7 @@ function App() {
     client.connect();
     setMonomindClient(client);
     return () => client.disconnect();
-  }, [activeComputer]);
+  }, [activeComputer, probeTick]);
 
   // Auto-link this machine to the logged-in monoes.me account the first
   // time we get a direct, authenticated connection to its daemon — opening
@@ -69,8 +115,16 @@ function App() {
       (async () => {
         try {
           const peerIdResp = await monomindClient.sendDashboardRequest({ command: 'account_peer_id' });
-          if (peerIdResp.error !== 0) return; // P2P not enabled on this daemon
+          if (peerIdResp.error !== 0) return; // daemon too old to answer (pre identity-unification)
           const { peer_id: peerId } = JSON.parse(peerIdResp.jsonData) as { peer_id: string };
+
+          // This computer is now provably reachable at this peer_id — give
+          // it that identity (or merge, if some other local entry already
+          // has it) even before checking whether the account itself has
+          // linked it yet. Generalizes identity unification beyond
+          // localhost: a VPN/tunnel direct URL to the same daemon gets
+          // folded in here too, the moment it's actually connected to.
+          adoptPeerId(activeComputer.id, peerId);
 
           const { computers: linked } = await listComputers();
           if (linked.some((c) => c.peer_id === peerId)) return; // already linked
@@ -97,7 +151,7 @@ function App() {
     });
 
     return unsubscribe;
-  }, [monomindClient, activeComputer]);
+  }, [monomindClient, activeComputer, adoptPeerId]);
 
   const handleMobileKey = useCallback(
     (key: string) => {

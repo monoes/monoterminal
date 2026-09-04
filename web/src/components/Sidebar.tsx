@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { useWorkspace } from '../state/WorkspaceContext';
+import { isSameHostPort, resolveRoutes, useWorkspace } from '../state/WorkspaceContext';
+import type { ComputerConfig } from '../state/WorkspaceContext';
+import { getLocalDaemon, subscribeLocalDaemon } from '../lib/local-daemon';
 import { IconClose, IconFolder, IconMonitor, IconPlus, IconPrompt } from './icons';
 import {
   createWorkspace,
@@ -9,12 +11,26 @@ import {
   listComputers,
   listWorkspaces,
   logout,
+  renameComputerRemote,
   renameWorkspaceRemote,
   toRelayWsUrl,
 } from '../lib/accounts-client';
 import type { LinkedComputer } from '../lib/accounts-client';
 import type { WorkspacePanes } from './WorkspaceSession';
 import './Sidebar.css';
+
+/** `null` when this computer has no known route at all (shouldn't happen in
+ * practice — every computer has at least a wsUrl or a peerId+relayUrl) or
+ * when its best route is a plain configured URL, matching today's "no
+ * badge for a direct computer" behavior. */
+function routeBadge(computer: ComputerConfig): 'Local' | 'P2P' | null {
+  const local = getLocalDaemon();
+  const top = resolveRoutes(computer, local)[0];
+  if (!top) return null;
+  if (top.kind === 'p2p') return 'P2P';
+  if (local && computer.peerId && local.peerId === computer.peerId) return 'Local';
+  return null;
+}
 
 interface SidebarProps {
   /** Mobile only: whether the off-canvas drawer is open. Ignored at desktop
@@ -44,6 +60,8 @@ export function Sidebar({ isOpen, onClose, panesByWorkspace, onSelectPane }: Sid
     addLinkedComputer,
     mergeServerWorkspaces,
     setWorkspaceServerId,
+    adoptPeerId,
+    mergeComputers,
     isFirstRun,
     removeComputer,
     renameComputer,
@@ -101,11 +119,11 @@ export function Sidebar({ isOpen, onClose, panesByWorkspace, onSelectPane }: Sid
   }
 
   useEffect(() => {
-    if (addingComputer && newComputerMode === 'p2p' && auth) {
+    if (addingComputer && auth) {
       refreshLinkedComputers();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [addingComputer, newComputerMode]);
+  }, [addingComputer]);
 
   // Auto-discover computers already linked to this account so they show up
   // in the sidebar without the user having to open "Add Computer" — that
@@ -166,10 +184,50 @@ export function Sidebar({ isOpen, onClose, panesByWorkspace, onSelectPane }: Sid
     }
   }, [isFirstRun, linkedComputers, computers, setActiveComputerId]);
 
+  // Once the local-daemon probe (local-daemon.ts) resolves, check whether it
+  // matches an already-synced computer (fold in any peerId-less duplicate —
+  // typically the seeded "This Machine" entry) or a still-unidentified
+  // direct computer (give it an identity, so the next account sync finds it
+  // by peerId instead of creating a real duplicate). Strictly host+port
+  // matched against the probe's own URL — never against any other direct
+  // URL — so a LAN address is never treated as "this machine" (localhost-
+  // only detection, per design).
+  const processedIdentityPairs = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    function reconcile() {
+      const local = getLocalDaemon();
+      if (!local) return;
+      const owner = computers.find((c) => c.peerId === local.peerId);
+      const candidates = computers.filter(
+        (c) => !c.peerId && c.wsUrl && isSameHostPort(c.wsUrl, local.url)
+      );
+      if (owner) {
+        for (const candidate of candidates) {
+          const key = `${local.peerId}:${candidate.id}`;
+          if (processedIdentityPairs.current.has(key)) continue;
+          processedIdentityPairs.current.add(key);
+          mergeComputers(owner.id, candidate.id);
+        }
+      } else if (candidates.length === 1) {
+        const key = `${local.peerId}:${candidates[0].id}`;
+        if (!processedIdentityPairs.current.has(key)) {
+          processedIdentityPairs.current.add(key);
+          adoptPeerId(candidates[0].id, local.peerId);
+        }
+      }
+    }
+    reconcile();
+    return subscribeLocalDaemon(reconcile);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [computers]);
+
   function handlePickLinkedComputer(c: LinkedComputer) {
-    if (!auth) return;
-    const name = c.name || `Computer ${c.id}`;
-    addComputer(name, { mode: 'p2p', peerId: c.peer_id, relayUrl: toRelayWsUrl(auth.baseUrl) });
+    // Auto-discovery (the effect above `refreshLinkedComputers` feeds) has
+    // already created a local ComputerConfig for every linked computer —
+    // this is a selector, not an adder. Using addComputer here used to
+    // create a genuine duplicate (never carrying serverId) alongside it.
+    const match = computers.find((comp) => comp.peerId === c.peer_id);
+    if (match) setActiveComputerId(match.id);
     setAddingComputer(false);
   }
 
@@ -276,7 +334,13 @@ export function Sidebar({ isOpen, onClose, panesByWorkspace, onSelectPane }: Sid
   function commitComputerRename() {
     if (renamingComputerId) {
       const name = computerNameDraft.trim();
-      if (name) renameComputer(renamingComputerId, name);
+      if (name) {
+        renameComputer(renamingComputerId, name);
+        const computer = computers.find((c) => c.id === renamingComputerId);
+        if (computer?.serverId) {
+          renameComputerRemote(computer.serverId, name).catch(() => {});
+        }
+      }
     }
     setRenamingComputerId(null);
   }
@@ -359,43 +423,13 @@ export function Sidebar({ isOpen, onClose, panesByWorkspace, onSelectPane }: Sid
 
         {addingComputer && (
           <div className="sidebar-add-form">
-            {!(newComputerMode === 'p2p' && auth) && (
-              <input
-                autoFocus
-                placeholder="Name"
-                value={newComputerName}
-                onChange={(e) => setNewComputerName(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleAddComputer()}
-              />
-            )}
-            <div className="sidebar-mode-toggle" role="radiogroup" aria-label="Connection type">
-              <button
-                type="button"
-                role="radio"
-                aria-checked={newComputerMode === 'direct'}
-                className={newComputerMode === 'direct' ? 'active' : ''}
-                onClick={() => setNewComputerMode('direct')}
-              >
-                Direct
-              </button>
-              <button
-                type="button"
-                role="radio"
-                aria-checked={newComputerMode === 'p2p'}
-                className={newComputerMode === 'p2p' ? 'active' : ''}
-                onClick={() => setNewComputerMode('p2p')}
-              >
-                P2P (remote)
-              </button>
-            </div>
-            {newComputerMode === 'direct' ? (
-              <input
-                placeholder="wss://host:54321"
-                value={newComputerUrl}
-                onChange={(e) => setNewComputerUrl(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleAddComputer()}
-              />
-            ) : auth ? (
+            {auth ? (
+              // Logged in: every computer worth adding has (or can get) an
+              // account-synced identity, so pairing-code linking is the
+              // only path — a hand-typed direct URL or raw peer/relay pair
+              // would just be a duplicate the merge effect above has to
+              // clean up later. The seeded local daemon (if any) still
+              // shows up here via auto-discovery, not a separate form.
               <div className="sidebar-linked-picker">
                 {loadingLinked && <div className="sidebar-empty">Loading your computers...</div>}
                 {linkedError && <div className="sidebar-linked-error">{linkedError}</div>}
@@ -453,33 +487,71 @@ export function Sidebar({ isOpen, onClose, panesByWorkspace, onSelectPane }: Sid
                     Link a new computer
                   </button>
                 )}
+
+                <div className="sidebar-add-actions">
+                  <button onClick={() => setAddingComputer(false)}>Close</button>
+                </div>
               </div>
             ) : (
+              // Logged out: nothing can be synced, so this stays exactly
+              // the original manual entry flow — direct URL or a raw
+              // peer/relay pair for someone running their own relay.
               <>
                 <input
-                  placeholder="Peer ID (from the daemon's tray/dashboard)"
-                  value={newComputerPeerId}
-                  onChange={(e) => setNewComputerPeerId(e.target.value)}
+                  autoFocus
+                  placeholder="Name"
+                  value={newComputerName}
+                  onChange={(e) => setNewComputerName(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleAddComputer()}
                 />
-                <input
-                  placeholder="Relay URL, e.g. ws://relay.example.com:9000"
-                  value={newComputerRelayUrl}
-                  onChange={(e) => setNewComputerRelayUrl(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAddComputer()}
-                />
+                <div className="sidebar-mode-toggle" role="radiogroup" aria-label="Connection type">
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={newComputerMode === 'direct'}
+                    className={newComputerMode === 'direct' ? 'active' : ''}
+                    onClick={() => setNewComputerMode('direct')}
+                  >
+                    Direct
+                  </button>
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={newComputerMode === 'p2p'}
+                    className={newComputerMode === 'p2p' ? 'active' : ''}
+                    onClick={() => setNewComputerMode('p2p')}
+                  >
+                    P2P (remote)
+                  </button>
+                </div>
+                {newComputerMode === 'direct' ? (
+                  <input
+                    placeholder="wss://host:54321"
+                    value={newComputerUrl}
+                    onChange={(e) => setNewComputerUrl(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddComputer()}
+                  />
+                ) : (
+                  <>
+                    <input
+                      placeholder="Peer ID (from the daemon's tray/dashboard)"
+                      value={newComputerPeerId}
+                      onChange={(e) => setNewComputerPeerId(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleAddComputer()}
+                    />
+                    <input
+                      placeholder="Relay URL, e.g. ws://relay.example.com:9000"
+                      value={newComputerRelayUrl}
+                      onChange={(e) => setNewComputerRelayUrl(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleAddComputer()}
+                    />
+                  </>
+                )}
+                <div className="sidebar-add-actions">
+                  <button onClick={handleAddComputer}>Add</button>
+                  <button onClick={() => setAddingComputer(false)}>Cancel</button>
+                </div>
               </>
-            )}
-            {!(newComputerMode === 'p2p' && auth) && (
-              <div className="sidebar-add-actions">
-                <button onClick={handleAddComputer}>Add</button>
-                <button onClick={() => setAddingComputer(false)}>Cancel</button>
-              </div>
-            )}
-            {newComputerMode === 'p2p' && auth && (
-              <div className="sidebar-add-actions">
-                <button onClick={() => setAddingComputer(false)}>Close</button>
-              </div>
             )}
           </div>
         )}
@@ -518,16 +590,23 @@ export function Sidebar({ isOpen, onClose, panesByWorkspace, onSelectPane }: Sid
                   ) : (
                     <span
                       className="sidebar-label"
-                      title={computer.mode === 'p2p' ? `P2P: ${computer.peerId}` : computer.wsUrl}
+                      title={computer.wsUrl || (computer.peerId ? `P2P: ${computer.peerId}` : undefined)}
                       onDoubleClick={(e) => {
                         e.stopPropagation();
                         startComputerRename(computer.id, computer.name);
                       }}
                     >
                       {computer.name}
-                      {computer.mode === 'p2p' && (
-                        <span className="sidebar-mode-badge" title="Connected via WebRTC P2P">
-                          P2P
+                      {routeBadge(computer) && (
+                        <span
+                          className="sidebar-mode-badge"
+                          title={
+                            routeBadge(computer) === 'Local'
+                              ? 'Connected directly to this machine’s daemon'
+                              : 'Connected via WebRTC P2P'
+                          }
+                        >
+                          {routeBadge(computer)}
                         </span>
                       )}
                     </span>

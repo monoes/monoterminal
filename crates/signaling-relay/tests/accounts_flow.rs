@@ -301,6 +301,50 @@ async fn workspace_endpoints_reject_non_owner() {
 }
 
 #[tokio::test]
+async fn rename_computer_flow_and_ownership_check() {
+    let server = spawn_server().await;
+    let owner_cred = login_as(&server, "monoes-user-mia", "mia@example.com");
+    let computer_id = link_a_computer(&server, &owner_cred, "peer-mia").await;
+
+    let rename_resp = client()
+        .patch(format!("{}/api/computers/{}", server.base_url, computer_id))
+        .bearer_auth(&owner_cred)
+        .json(&serde_json::json!({"name": "Studio"}))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(rename_resp.status(), 200);
+
+    let list_resp = client()
+        .get(format!("{}/api/computers", server.base_url))
+        .bearer_auth(&owner_cred)
+        .send()
+        .await
+        .unwrap();
+    let list_body: serde_json::Value = list_resp.json().await.unwrap();
+    assert_eq!(list_body["computers"][0]["name"], "Studio");
+
+    let intruder_cred = login_as(&server, "monoes-user-noah", "noah@example.com");
+    let rename_as_intruder = client()
+        .patch(format!("{}/api/computers/{}", server.base_url, computer_id))
+        .bearer_auth(&intruder_cred)
+        .json(&serde_json::json!({"name": "Hijacked"}))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(rename_as_intruder.status(), 404);
+
+    let rename_empty = client()
+        .patch(format!("{}/api/computers/{}", server.base_url, computer_id))
+        .bearer_auth(&owner_cred)
+        .json(&serde_json::json!({"name": "   "}))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(rename_empty.status(), 400);
+}
+
+#[tokio::test]
 async fn consumed_or_expired_code_is_rejected() {
     let server = spawn_server().await;
     let credential = login_as(&server, "monoes-user-erin", "erin@example.com");

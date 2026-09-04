@@ -111,6 +111,159 @@ impl TestWsClient {
         self.stream.is_some()
     }
 
+    /// Performs the real Ed25519 challenge-response handshake (SRS §3.2.2)
+    /// over this connection: ChallengeRequest -> sign the returned nonce
+    /// with `signing_key` -> AuthRequest -> AuthResponse. Returns the
+    /// full response (both tokens + their expiry + the derived user_id) so
+    /// callers can exercise refresh/reuse scenarios too.
+    #[allow(dead_code)]
+    pub async fn authenticate(
+        &mut self,
+        signing_key: &ed25519_dalek::SigningKey,
+    ) -> Result<monoterminal_protocol::AuthResponse> {
+        use ed25519_dalek::Signer;
+        use prost::Message as ProstMessage;
+
+        let challenge_envelope = monoterminal_protocol::Envelope {
+            sequence_number: 100,
+            message: Some(monoterminal_protocol::envelope::Message::ChallengeRequest(
+                monoterminal_protocol::ChallengeRequest {},
+            )),
+        };
+        let mut buf = Vec::with_capacity(challenge_envelope.encoded_len());
+        challenge_envelope.encode(&mut buf)?;
+        self.send_binary(buf).await?;
+
+        let challenge = match self.recv().await? {
+            Message::Binary(data) => {
+                match monoterminal_protocol::Envelope::decode(&data[..])?.message {
+                    Some(monoterminal_protocol::envelope::Message::ChallengeResponse(c)) => c,
+                    Some(monoterminal_protocol::envelope::Message::ErrorResponse(err)) => {
+                        return Err(anyhow::anyhow!(
+                            "ChallengeRequest failed: {} (code: {})",
+                            err.message,
+                            err.code
+                        ))
+                    }
+                    _ => return Err(anyhow::anyhow!("Unexpected response to ChallengeRequest")),
+                }
+            }
+            _ => return Err(anyhow::anyhow!("Expected binary response")),
+        };
+
+        let signature = signing_key.sign(&challenge.nonce);
+
+        let auth_envelope = monoterminal_protocol::Envelope {
+            sequence_number: 101,
+            message: Some(monoterminal_protocol::envelope::Message::AuthRequest(
+                monoterminal_protocol::AuthRequest {
+                    signature: signature.to_bytes().to_vec(),
+                    public_key: signing_key.verifying_key().to_bytes().to_vec(),
+                    nonce: challenge.nonce,
+                },
+            )),
+        };
+        let mut buf = Vec::with_capacity(auth_envelope.encoded_len());
+        auth_envelope.encode(&mut buf)?;
+        self.send_binary(buf).await?;
+
+        match self.recv().await? {
+            Message::Binary(data) => {
+                match monoterminal_protocol::Envelope::decode(&data[..])?.message {
+                    Some(monoterminal_protocol::envelope::Message::AuthResponse(resp)) => Ok(resp),
+                    Some(monoterminal_protocol::envelope::Message::ErrorResponse(err)) => Err(
+                        anyhow::anyhow!("AuthRequest failed: {} (code: {})", err.message, err.code),
+                    ),
+                    _ => Err(anyhow::anyhow!("Unexpected response to AuthRequest")),
+                }
+            }
+            _ => Err(anyhow::anyhow!("Expected binary response")),
+        }
+    }
+
+    /// Sends a raw AuthRequest with caller-supplied fields, bypassing the
+    /// normal challenge round trip — for exercising malformed/mismatched
+    /// inputs directly (wrong nonce, wrong key, no prior challenge, etc.).
+    #[allow(dead_code)]
+    pub async fn send_raw_auth_request(
+        &mut self,
+        signature: Vec<u8>,
+        public_key: Vec<u8>,
+        nonce: Vec<u8>,
+    ) -> Result<Result<monoterminal_protocol::AuthResponse, monoterminal_protocol::ErrorResponse>>
+    {
+        use prost::Message as ProstMessage;
+
+        let envelope = monoterminal_protocol::Envelope {
+            sequence_number: 102,
+            message: Some(monoterminal_protocol::envelope::Message::AuthRequest(
+                monoterminal_protocol::AuthRequest {
+                    signature,
+                    public_key,
+                    nonce,
+                },
+            )),
+        };
+        let mut buf = Vec::with_capacity(envelope.encoded_len());
+        envelope.encode(&mut buf)?;
+        self.send_binary(buf).await?;
+
+        match self.recv().await? {
+            Message::Binary(data) => {
+                match monoterminal_protocol::Envelope::decode(&data[..])?.message {
+                    Some(monoterminal_protocol::envelope::Message::AuthResponse(resp)) => {
+                        Ok(Ok(resp))
+                    }
+                    Some(monoterminal_protocol::envelope::Message::ErrorResponse(err)) => {
+                        Ok(Err(err))
+                    }
+                    _ => Err(anyhow::anyhow!("Unexpected response to AuthRequest")),
+                }
+            }
+            _ => Err(anyhow::anyhow!("Expected binary response")),
+        }
+    }
+
+    /// Sends a TokenRefreshRequest and returns either the new token pair or
+    /// the server's ErrorResponse (refresh failures are expected/asserted
+    /// on in some tests, not just treated as a hard error).
+    #[allow(dead_code)]
+    pub async fn refresh_token(
+        &mut self,
+        refresh_token: &str,
+    ) -> Result<
+        Result<monoterminal_protocol::TokenRefreshResponse, monoterminal_protocol::ErrorResponse>,
+    > {
+        use prost::Message as ProstMessage;
+
+        let envelope = monoterminal_protocol::Envelope {
+            sequence_number: 103,
+            message: Some(monoterminal_protocol::envelope::Message::TokenRefreshRequest(
+                monoterminal_protocol::TokenRefreshRequest {
+                    refresh_token: refresh_token.to_string(),
+                },
+            )),
+        };
+        let mut buf = Vec::with_capacity(envelope.encoded_len());
+        envelope.encode(&mut buf)?;
+        self.send_binary(buf).await?;
+
+        match self.recv().await? {
+            Message::Binary(data) => {
+                match monoterminal_protocol::Envelope::decode(&data[..])?.message {
+                    Some(monoterminal_protocol::envelope::Message::TokenRefreshResponse(resp)) => {
+                        Ok(Ok(resp))
+                    }
+                    Some(monoterminal_protocol::envelope::Message::ErrorResponse(err)) => {
+                        Ok(Err(err))
+                    }
+                    _ => Err(anyhow::anyhow!("Unexpected response to TokenRefreshRequest")),
+                }
+            }
+            _ => Err(anyhow::anyhow!("Expected binary response")),
+        }
+    }
+
     /// Send AttachRequest and wait for AttachResponse
     #[allow(dead_code)]
     pub async fn attach(
@@ -129,6 +282,7 @@ impl TestWsClient {
             cols,
             last_seen_sequence: 0,
             session_name: String::new(),
+            previous_session_name: String::new(),
         };
 
         let envelope = monoterminal_protocol::Envelope {

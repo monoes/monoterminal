@@ -47,6 +47,18 @@ message Envelope {
     ClipboardGetResponse clipboard_get_response = 37;
     ClipboardSetRequest clipboard_set_request = 38;
     ClipboardOSC52 clipboard_osc52 = 39;
+
+    // Ed25519 challenge-response auth (SRS §3.2.2) — direct/local transport
+    // only. Fields 18-20/22 were previously marked "reserved for future
+    // Phase 2 messages" but that reservation was never used and the
+    // adjacent 21/23 are already live (SearchResponse/SearchRequest), so
+    // these start past every existing field instead.
+    ChallengeRequest challenge_request = 40;
+    ChallengeResponse challenge_response = 41;
+    AuthRequest auth_request = 42;
+    AuthResponse auth_response = 43;
+    TokenRefreshRequest token_refresh_request = 44;
+    TokenRefreshResponse token_refresh_response = 45;
   }
 }
 
@@ -104,6 +116,47 @@ message DetachRequest {
 message ErrorResponse {
   ErrorCode code = 1;
   string message = 2;
+}
+
+// Ed25519 challenge-response auth (SRS §3.2.2). Flow: ChallengeRequest ->
+// ChallengeResponse (server-issued nonce) -> client signs the raw nonce ->
+// AuthRequest -> AuthResponse (JWT pair). Every *_at field below is Unix
+// seconds, matching Claims.exp/iat.
+message ChallengeRequest {}
+
+message ChallengeResponse {
+  bytes nonce = 1;       // exactly 32 bytes, signed verbatim (no domain
+                          // separation prefix) by the client
+  int64 expires_at = 2;
+}
+
+message AuthRequest {
+  bytes signature = 1;   // 64 bytes, over `nonce`
+  bytes public_key = 2;  // 32 bytes
+  bytes nonce = 3;        // echoes ChallengeResponse.nonce, so the server
+                          // can reject an answer to a stale/foreign challenge
+                          // with a specific error instead of an opaque
+                          // signature failure
+}
+
+message AuthResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  int64 access_expires_at = 3;
+  int64 refresh_expires_at = 4;
+  string user_id = 5;     // derived continuity identity (see auth::challenge),
+                          // so the client can display it without decoding the JWT
+}
+
+message TokenRefreshRequest {
+  string refresh_token = 1;
+}
+
+message TokenRefreshResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  int64 access_expires_at = 3;
+  int64 refresh_expires_at = 4;
 }
 
 message DashboardRequest {

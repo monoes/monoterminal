@@ -207,6 +207,19 @@ async fn run_once(
 
                     RelayMessage::PeerConnectRequest => {
                         info!("Incoming P2P connection request");
+                        // A second request while one is already in flight
+                        // (e.g. the browser's own HybridTransport cascade
+                        // retrying after its 12s connect timeout) replaces
+                        // `negotiation` below — without explicitly closing
+                        // the stale PeerConnection first, its ICE agent kept
+                        // running in the background (still holding a live
+                        // Arc via its own candidate-gathering task), so its
+                        // old STUN traffic collided with the new session's,
+                        // surfacing as ErrMismatchUsername on the wire.
+                        if let Some(stale) = negotiation.take() {
+                            warn!("Replacing a still-active P2P negotiation with a new one");
+                            let _ = stale.pc.close().await;
+                        }
                         // Best-effort: if the relay's TURN endpoint is
                         // unreachable, fall back to STUN-only rather than
                         // failing the connection outright — matches today's

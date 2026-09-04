@@ -193,6 +193,26 @@ export async function unlinkComputer(id: number): Promise<{ ok: true }> {
   return parseJsonOrThrow<{ ok: true }>(res);
 }
 
+/** Named `*Remote` to avoid colliding with `WorkspaceContext`'s local
+ * `renameComputer` — `Sidebar.tsx` imports both (matches
+ * `renameWorkspaceRemote`'s naming). Propagates a computer rename to every
+ * other device synced to the same account — the daemon resolves a session
+ * by "<computer>/<workspace>" name, so without this, two devices can
+ * silently attach to two different sessions once one of them renames a
+ * computer locally. */
+export async function renameComputerRemote(id: number, name: string): Promise<{ ok: true }> {
+  const auth = requireAuth();
+  const res = await fetch(`${trimBaseUrl(auth.baseUrl)}/api/computers/${id}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${auth.token}`,
+    },
+    body: JSON.stringify({ name }),
+  });
+  return parseJsonOrThrow<{ ok: true }>(res);
+}
+
 export interface ServerWorkspace {
   id: number;
   name: string;

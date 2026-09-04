@@ -112,7 +112,10 @@ pub fn build_router_with_state(state: Arc<SharedState>) -> Router {
         .route("/api/pairing-codes", post(accounts::create_pairing_code))
         .route("/api/link", post(accounts::link_computer))
         .route("/api/computers", get(accounts::list_computers))
-        .route("/api/computers/:id", delete(accounts::delete_computer))
+        .route(
+            "/api/computers/:id",
+            patch(accounts::rename_computer).delete(accounts::delete_computer),
+        )
         .route(
             "/api/computers/:id/workspaces",
             get(accounts::list_workspaces).post(accounts::create_workspace),

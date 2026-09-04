@@ -5,7 +5,7 @@ pub struct Envelope {
     pub sequence_number: u64,
     #[prost(
         oneof = "envelope::Message",
-        tags = "2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 21, 23, 25, 26, 27, 32, 33, 34, 35, 36, 37, 38, 39"
+        tags = "2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 21, 23, 25, 26, 27, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45"
     )]
     pub message: ::core::option::Option<envelope::Message>,
 }
@@ -82,6 +82,23 @@ pub mod envelope {
         ClipboardSetRequest(super::ClipboardSetRequest),
         #[prost(message, tag = "39")]
         ClipboardOsc52(super::ClipboardOsc52),
+        /// Ed25519 challenge-response auth (SRS §3.2.2) — direct/local transport
+        /// only. Fields 18-20/22 were previously marked "reserved for future
+        /// Phase 2 messages" but that reservation was never used and the
+        /// adjacent 21/23 are already live (SearchResponse/SearchRequest), so
+        /// these start past every existing field instead.
+        #[prost(message, tag = "40")]
+        ChallengeRequest(super::ChallengeRequest),
+        #[prost(message, tag = "41")]
+        ChallengeResponse(super::ChallengeResponse),
+        #[prost(message, tag = "42")]
+        AuthRequest(super::AuthRequest),
+        #[prost(message, tag = "43")]
+        AuthResponse(super::AuthResponse),
+        #[prost(message, tag = "44")]
+        TokenRefreshRequest(super::TokenRefreshRequest),
+        #[prost(message, tag = "45")]
+        TokenRefreshResponse(super::TokenRefreshResponse),
     }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -172,6 +189,63 @@ pub struct ErrorResponse {
     pub code: i32,
     #[prost(string, tag = "2")]
     pub message: ::prost::alloc::string::String,
+}
+/// Ed25519 challenge-response auth (SRS §3.2.2). Flow: ChallengeRequest ->
+/// ChallengeResponse (server-issued nonce) -> client signs the raw nonce ->
+/// AuthRequest -> AuthResponse (JWT pair). Every *_at field below is Unix
+/// seconds, matching Claims.exp/iat.
+#[derive(Clone, Copy, PartialEq, ::prost::Message)]
+pub struct ChallengeRequest {}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ChallengeResponse {
+    /// exactly 32 bytes, signed verbatim (no domain
+    #[prost(bytes = "vec", tag = "1")]
+    pub nonce: ::prost::alloc::vec::Vec<u8>,
+    /// separation prefix) by the client
+    #[prost(int64, tag = "2")]
+    pub expires_at: i64,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct AuthRequest {
+    /// 64 bytes, over `nonce`
+    #[prost(bytes = "vec", tag = "1")]
+    pub signature: ::prost::alloc::vec::Vec<u8>,
+    /// 32 bytes
+    #[prost(bytes = "vec", tag = "2")]
+    pub public_key: ::prost::alloc::vec::Vec<u8>,
+    /// echoes ChallengeResponse.nonce, so the server
+    #[prost(bytes = "vec", tag = "3")]
+    pub nonce: ::prost::alloc::vec::Vec<u8>,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct AuthResponse {
+    #[prost(string, tag = "1")]
+    pub access_token: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub refresh_token: ::prost::alloc::string::String,
+    #[prost(int64, tag = "3")]
+    pub access_expires_at: i64,
+    #[prost(int64, tag = "4")]
+    pub refresh_expires_at: i64,
+    /// derived continuity identity (see auth::challenge),
+    #[prost(string, tag = "5")]
+    pub user_id: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct TokenRefreshRequest {
+    #[prost(string, tag = "1")]
+    pub refresh_token: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct TokenRefreshResponse {
+    #[prost(string, tag = "1")]
+    pub access_token: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub refresh_token: ::prost::alloc::string::String,
+    #[prost(int64, tag = "3")]
+    pub access_expires_at: i64,
+    #[prost(int64, tag = "4")]
+    pub refresh_expires_at: i64,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct DashboardRequest {

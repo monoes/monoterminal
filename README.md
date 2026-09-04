@@ -128,21 +128,36 @@ systemd deployment, and TURN credential minting for restrictive NATs.
 
 ## Architecture
 
+```mermaid
+flowchart LR
+    subgraph Browser["Web Client (React + PWA)"]
+        UI["xterm.js panes"]
+    end
+
+    subgraph Daemon["Master Daemon (Rust)"]
+        WS["WebSocket server<br/>TLS 1.3"]
+        RTC["WebRTC DataChannel<br/>peer"]
+        AUTH["Ed25519 + JWT auth"]
+        SESS["Session Manager<br/>PTY · Layout · Scrollback (SQLite)"]
+    end
+
+    subgraph Relay["Signaling Relay (axum)"]
+        SIG["Offer / Answer / ICE (JSON)"]
+        TURN["TURN credential minting"]
+    end
+
+    UI -- "direct WebSocket, same LAN<br/>Protobuf Envelope" --> WS
+    UI -- "WebRTC negotiation" --> SIG
+    SIG -- "pairs peers" --> RTC
+    UI == "DataChannel, once paired<br/>(STUN, TURN fallback)" ==> RTC
+    WS --> AUTH
+    RTC --> AUTH
+    AUTH --> SESS
 ```
-┌────────────────┐   direct WebSocket (TLS 1.3)   ┌──────────────────────┐
-│  Web Client     │◄───────────────────────────────┤   Master Daemon      │
-│  (React + PWA)  │        Protobuf Envelope        │   (Rust)             │
-│  xterm.js       │                                 │                      │
-└───────┬─────────┘                                 │  PTY (ConPTY/Unix)   │
-        │                                            │  Session Manager    │
-        │  WebRTC DataChannel (STUN/TURN)             │  Layout (splits)    │
-        ▼                                            │  SQLite scrollback  │
-┌────────────────┐    Offer/Answer/ICE (JSON)        │  Ed25519 + JWT auth │
-│ Signaling Relay │◄───────────────────────────────►│                      │
-│ (axum, stateless│                                 └──────────────────────┘
-│  once P2P is up)│
-└────────────────┘
-```
+
+Both transports speak the exact same Protobuf `Envelope` protocol and the
+exact same auth handshake — the relay only ever sees SDP/ICE JSON to pair two
+peers, never terminal traffic or credentials.
 
 **Key crates** (`crates/`):
 
@@ -152,6 +167,40 @@ systemd deployment, and TURN credential minting for restrictive NATs.
 - `signaling-relay` — the P2P pairing/TURN-credential relay (axum), deployable
   standalone via Docker or systemd
 - `monomind-bridge` — project health checks surfaced in the terminal UI
+
+### Authentication
+
+Every connection — direct WebSocket or P2P DataChannel — completes the same
+Ed25519 challenge-response handshake before it can attach to a session. There
+is no shared secret and no password: the daemon proves a client controls a
+specific private key, and issues a short-lived JWT for the rest of that
+connection's lifetime.
+
+```mermaid
+sequenceDiagram
+    participant C as Client (browser)
+    participant D as Daemon
+
+    C->>D: ChallengeRequest
+    D-->>C: ChallengeResponse (32-byte nonce, expiry)
+    C->>C: sign(nonce) with Ed25519 private key
+    C->>D: AuthRequest (signature, public key, nonce)
+    D->>D: verify signature · derive user_id from pubkey
+    D-->>C: AuthResponse (access token, refresh token)
+    C->>D: AttachRequest (access token)
+    D-->>C: AttachResponse (scrollback, session metadata)
+    Note over C,D: Access token ~15 min · refreshed proactively.<br/>Refresh token single-use, rotates on every use.
+```
+
+The client's Ed25519 keypair is generated once and persisted locally
+(IndexedDB in the browser); the daemon never sees the private key, only a
+signature it can verify against the public key presented alongside it. The
+derived `user_id` (`ed25519:<sha256(pubkey)[..16]>`) is a stable *continuity*
+identity, not an allowlist — any client that completes the challenge
+correctly gets a token, matching the trust model of "can open a socket to
+this daemon" already implied by direct/local access. `--dev-mode` skips this
+entirely (auto-issues tokens with no signature check) and is for local
+testing only — never run it on anything reachable outside your own machine.
 
 ## Documentation
 

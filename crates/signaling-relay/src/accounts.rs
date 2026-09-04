@@ -225,6 +225,47 @@ pub async fn delete_computer(
 }
 
 #[derive(Deserialize)]
+pub struct RenameComputerRequest {
+    name: String,
+}
+
+/// Renames a linked computer — propagates across every device synced to
+/// this account (see `Sidebar.tsx`'s `commitComputerRename`). The daemon
+/// resolves a session by "<computer>/<workspace>" name, so without this a
+/// rename on one device would silently diverge from what other devices
+/// still call that computer, and they'd end up attached to two different
+/// underlying sessions for what looks like the same workspace.
+pub async fn rename_computer(
+    State(state): State<Arc<SharedState>>,
+    auth_user: AuthUser,
+    Path(id): Path<i64>,
+    Json(req): Json<RenameComputerRequest>,
+) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
+    let name = req.name.trim();
+    if name.is_empty() {
+        return Err(err(StatusCode::BAD_REQUEST, "name required"));
+    }
+
+    let conn = state
+        .db
+        .get_conn()
+        .map_err(|_| err(StatusCode::INTERNAL_SERVER_ERROR, "database unavailable"))?;
+
+    let affected = conn
+        .execute(
+            "UPDATE linked_computers SET name = ?1 WHERE id = ?2 AND user_id = ?3",
+            rusqlite::params![name, id, auth_user.user_id],
+        )
+        .map_err(|_| err(StatusCode::INTERNAL_SERVER_ERROR, "database error"))?;
+
+    if affected == 0 {
+        return Err(err(StatusCode::NOT_FOUND, "not found"));
+    }
+
+    Ok(Json(json!({ "ok": true })))
+}
+
+#[derive(Deserialize)]
 pub struct WorkspaceRequest {
     name: String,
 }

@@ -55,7 +55,13 @@ export const WorkspaceSession = forwardRef<WorkspaceSessionHandle, WorkspaceSess
     const [connectionState, setConnectionState] = useState<ConnectionState>(
       ConnectionState.DISCONNECTED
     );
-    const [client] = useState<TerminalTransport>(() => createTransport(computer));
+    // Read via a ref, not the `computer` prop directly, inside the
+    // transport's route thunk (see createTransport's doc comment) — the
+    // transport is built once and outlives any later identity update
+    // (mergeComputers/adoptPeerId) to this same computer.
+    const computerRef = useRef(computer);
+    computerRef.current = computer;
+    const [client] = useState<TerminalTransport>(() => createTransport(() => computerRef.current));
     const [layoutUpdate, setLayoutUpdate] = useState<LayoutUpdate | null>(null);
     const terminalRefs = useRef<Map<string, TerminalHandle | null>>(new Map());
     // Every pane's output, buffered client-side (capped) so it can be

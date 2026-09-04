@@ -404,6 +404,14 @@ async fn run_daemon(args: Args) -> Result<()> {
         .context("Failed to load Ed25519 keypair")?;
     tracing::info!("Ed25519 keypair loaded");
 
+    // This daemon's P2P identity — always derived, regardless of whether
+    // --relay-url is set, so a browser on the same machine can always ask
+    // "what's your peer_id" (see PairingCodeCache below) even for a daemon
+    // running in pure local/direct mode. Logged at startup since a daemon
+    // with no relay configured has no other way to surface this value.
+    let peer_id = hex::encode(keypair.verifying_bytes());
+    tracing::info!("Daemon peer_id: {}", peer_id);
+
     // 2. Create authentication service (Ed25519 + JWT)
     let auth_service = Arc::new(Ed25519AuthService::new(&keypair)?);
     tracing::info!("Ed25519 authentication service initialized");
@@ -463,10 +471,15 @@ async fn run_daemon(args: Args) -> Result<()> {
     // without port-forwarding/VPN — see docs/decisions/011-p2p-networking-architecture.md).
     // Dials out to a signaling relay; the relay never sees terminal traffic,
     // only the SDP/ICE handshake needed to open a direct DataChannel.
-    let mut pairing_cache: Option<Arc<webrtc::PairingCodeCache>> = None;
+    // SaaS device-pairing code cache — always constructed so any daemon can
+    // answer "what's your peer_id" over the dashboard command path (used by
+    // the browser's local-daemon probe), independent of whether P2P/account
+    // linking is actually enabled. `get_or_refresh()` (the only relay-
+    // dependent operation) errors immediately when no --relay-url was given.
+    let pairing_cache = webrtc::PairingCodeCache::new(args.relay_url.clone(), peer_id.clone());
+
     if let Some(relay_url) = args.relay_url.clone() {
-        let signing_key = ed25519_dalek::SigningKey::from_bytes(keypair.signing_bytes());
-        let peer_id = hex::encode(signing_key.verifying_key().to_bytes());
+        let signing_key = Arc::new(ed25519_dalek::SigningKey::from_bytes(keypair.signing_bytes()));
         let p2p_session_manager = session_manager.clone();
         let p2p_auth_service = auth_service.clone() as Arc<dyn auth::AuthService>;
         // A separate ClipboardManager instance from the WebSocket server's —
@@ -474,14 +487,9 @@ async fn run_daemon(args: Args) -> Result<()> {
         // UUIDs), so there's no cross-talk between the two transports.
         let p2p_clipboard_manager = Arc::new(clipboard::ClipboardManager::new());
         let p2p_dev_mode = args.dev_mode;
-
-        // SaaS device-pairing code cache — lets the dashboard ask this daemon
-        // for a code to link it to an account, via the relay's REST API.
-        let cache = webrtc::PairingCodeCache::new(relay_url.clone(), peer_id);
-        pairing_cache = Some(cache.clone());
+        let cache = pairing_cache.clone();
 
         tracing::info!("P2P signaling enabled, relay: {}", relay_url);
-        let signing_key = Arc::new(signing_key);
         tokio::spawn(async move {
             // `signaling_client::run` already reconnects forever on any
             // ordinary connection error — it should never return. If it
@@ -535,7 +543,7 @@ async fn run_daemon(args: Args) -> Result<()> {
         rate_limiter,
         auth_service,
         health_tx,
-        pairing_cache,
+        Some(pairing_cache),
     )?;
     tracing::info!("WebSocket server created");
 
