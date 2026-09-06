@@ -56,7 +56,7 @@ jobs:
           components: rustfmt, clippy
 
       - name: Cache Cargo registry
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cargo/registry
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
@@ -64,7 +64,7 @@ jobs:
             ${{ runner.os }}-cargo-registry-
 
       - name: Cache Cargo index
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cargo/git
           key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
@@ -72,7 +72,7 @@ jobs:
             ${{ runner.os }}-cargo-index-
 
       - name: Cache target directory
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: target
           key: ${{ runner.os }}-target-bench-${{ hashFiles('**/Cargo.lock') }}
@@ -100,7 +100,7 @@ jobs:
 
       - name: Upload Windows benchmark results
         if: github.event.inputs.upload_artifacts == 'true' || github.event_name == 'schedule'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: windows-benchmarks
           path: |
@@ -110,7 +110,7 @@ jobs:
 
       - name: Upload Windows criterion reports
         if: github.event.inputs.upload_artifacts == 'true' || github.event_name == 'schedule'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: windows-criterion-html
           path: target/criterion/*/report/index.html
@@ -146,7 +146,7 @@ jobs:
             libxcb-xfixes0-dev
 
       - name: Cache Cargo registry
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cargo/registry
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
@@ -154,7 +154,7 @@ jobs:
             ${{ runner.os }}-cargo-registry-
 
       - name: Cache target directory
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: target
           key: ${{ runner.os }}-target-bench-${{ hashFiles('**/Cargo.lock') }}
@@ -181,7 +181,7 @@ jobs:
 
       - name: Upload Linux benchmark results
         if: github.event.inputs.upload_artifacts == 'true' || github.event_name == 'schedule'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: linux-benchmarks
           path: |
@@ -209,7 +209,7 @@ jobs:
           components: rustfmt, clippy
 
       - name: Cache Cargo registry
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cargo/registry
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
@@ -217,7 +217,7 @@ jobs:
             ${{ runner.os }}-cargo-registry-
 
       - name: Cache target directory
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: target
           key: ${{ runner.os }}-target-bench-${{ hashFiles('**/Cargo.lock') }}
@@ -244,7 +244,7 @@ jobs:
 
       - name: Upload macOS benchmark results
         if: github.event.inputs.upload_artifacts == 'true' || github.event_name == 'schedule'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: macos-benchmarks
           path: |
@@ -265,7 +265,7 @@ jobs:
 
       - name: Download Windows benchmarks
         if: needs.benchmark-windows.result == 'success'
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: windows-benchmarks
           path: results/windows
@@ -273,7 +273,7 @@ jobs:
 
       - name: Download Linux benchmarks
         if: needs.benchmark-linux.result == 'success'
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: linux-benchmarks
           path: results/linux
@@ -281,7 +281,7 @@ jobs:
 
       - name: Download macOS benchmarks
         if: needs.benchmark-macos.result == 'success'
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: macos-benchmarks
           path: results/macos
@@ -325,7 +325,7 @@ jobs:
           EOF
 
       - name: Upload comparison report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: platform-comparison-report
           path: PLATFORM-COMPARISON-REPORT.md
