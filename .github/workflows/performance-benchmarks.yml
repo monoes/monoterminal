@@ -50,6 +50,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -143,7 +148,9 @@ jobs:
             vulkan-tools \
             mesa-vulkan-drivers \
             libxcb-shape0-dev \
-            libxcb-xfixes0-dev
+            libxcb-xfixes0-dev \
+            libgtk-3-dev \
+            protobuf-compiler
 
       - name: Cache Cargo registry
         uses: actions/cache@v4
@@ -202,6 +209,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: brew install protobuf
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
