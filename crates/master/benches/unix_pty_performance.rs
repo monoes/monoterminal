@@ -14,7 +14,21 @@ use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criteri
 use monoterminal_master::pty::{PtyBackend, PtyConfig, UnixPtyBackend};
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::sync::Arc;
 use std::time::Duration;
+use tokio::sync::Mutex;
+
+/// Puts the shell's controlling terminal into raw mode with echo disabled.
+///
+/// Required before benchmarking raw `write()` throughput: in the default
+/// cooked/echo mode, the kernel tty driver echoes every input byte back into
+/// the PTY's output buffer. Nobody drains that buffer during a write
+/// benchmark, so it fills and subsequent writes block indefinitely. Raw mode
+/// with echo off avoids generating that output in the first place.
+async fn disable_echo(pty: &mut UnixPtyBackend) {
+    pty.write(b"stty raw -echo\n").await.unwrap();
+    tokio::time::sleep(Duration::from_millis(200)).await;
+}
 
 /// Benchmark PTY creation time
 /// Target: <100ms per SRS §6.1
@@ -59,25 +73,30 @@ fn bench_read_throughput(c: &mut Criterion) {
         environment: HashMap::new(),
     };
 
-    let mut pty = runtime.block_on(async {
+    let pty = runtime.block_on(async {
         let mut p = UnixPtyBackend::create(config).await.unwrap();
 
-        // Write command that generates output
-        p.write(b"yes | head -n 100000\n").await.unwrap();
+        // Write command that generates continuous output (never runs dry mid-benchmark)
+        p.write(b"yes\n").await.unwrap();
 
         // Wait for command to start
         tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
 
         p
     });
+    let pty = Arc::new(Mutex::new(pty));
 
     // Benchmark reading with 4KB buffer (SRS §3.1.4)
     group.throughput(Throughput::Bytes(4096));
     group.bench_function("read_4kb_buffer", |b| {
-        b.to_async(&runtime).iter(|| async {
-            let mut buf = vec![0u8; 4096];
-            let n = pty.read(&mut buf).await.unwrap_or(0);
-            black_box(&buf[..n])
+        let pty = pty.clone();
+        b.to_async(&runtime).iter(move || {
+            let pty = pty.clone();
+            async move {
+                let mut buf = vec![0u8; 4096];
+                let n = pty.lock().await.read(&mut buf).await.unwrap_or(0);
+                black_box(n)
+            }
         })
     });
 
@@ -100,6 +119,8 @@ fn bench_write_throughput(c: &mut Criterion) {
     };
 
     let mut pty = runtime.block_on(async { UnixPtyBackend::create(config).await.unwrap() });
+    runtime.block_on(disable_echo(&mut pty));
+    let pty = Arc::new(Mutex::new(pty));
 
     // Test different write sizes
     for size in [64, 256, 1024, 4096].iter() {
@@ -107,8 +128,13 @@ fn bench_write_throughput(c: &mut Criterion) {
 
         group.throughput(Throughput::Bytes(*size as u64));
         group.bench_with_input(BenchmarkId::from_parameter(size), &data, |b, data| {
-            b.to_async(&runtime).iter(|| async {
-                pty.write(black_box(data)).await.unwrap();
+            let pty = pty.clone();
+            b.to_async(&runtime).iter(move || {
+                let pty = pty.clone();
+                let data = data.clone();
+                async move {
+                    pty.lock().await.write(black_box(&data)).await.unwrap();
+                }
             })
         });
     }
@@ -166,17 +192,27 @@ fn bench_concurrent_operations(c: &mut Criterion) {
     };
 
     let mut pty = runtime.block_on(async { UnixPtyBackend::create(config).await.unwrap() });
+    runtime.block_on(disable_echo(&mut pty));
+    let pty = Arc::new(Mutex::new(pty));
 
     group.bench_function("write_and_resize", |b| {
-        let mut rows = 24u16;
+        let pty = pty.clone();
+        let rows = Arc::new(Mutex::new(24u16));
 
-        b.to_async(&runtime).iter(|| async {
-            // Write command
-            pty.write(b"echo test\n").await.unwrap();
+        b.to_async(&runtime).iter(move || {
+            let pty = pty.clone();
+            let rows = rows.clone();
+            async move {
+                // Write data (no trailing newline: the shell is in raw mode
+                // from disable_echo(), so this never triggers command
+                // execution/output that would go unread and fill the buffer)
+                pty.lock().await.write(b"echo test").await.unwrap();
 
-            // Resize immediately after
-            rows = if rows == 24 { 40 } else { 24 };
-            pty.resize(black_box(rows), 80).unwrap();
+                // Resize immediately after
+                let mut rows = rows.lock().await;
+                *rows = if *rows == 24 { 40 } else { 24 };
+                pty.lock().await.resize(black_box(*rows), 80).unwrap();
+            }
         })
     });
 

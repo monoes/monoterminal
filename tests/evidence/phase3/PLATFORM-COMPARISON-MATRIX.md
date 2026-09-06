@@ -2,19 +2,22 @@
 
 **Phase:** 3 Week 7  
 **Task:** task-64  
-**Date:** 2026-08-20  
-**Status:** Week 7 Day 1 - Windows baseline complete, Linux/macOS pending
+**Date:** 2026-08-20 (Windows), updated 2026-09-05 (macOS)  
+**Status:** Windows + macOS PTY/rendering measured, Linux pending, memory/network still pending on all platforms
 
 ---
 
 ## Executive Summary
 
 **Platforms Profiled:**
-- ✅ Windows (baseline complete)
-- ⏳ Linux (pending - CI execution planned)
-- ⏳ macOS (pending - CI execution planned)
+- ✅ Windows (PTY/rendering baseline complete 2026-08-20)
+- ⏳ Linux (pending - CI workflow exists (`performance-benchmarks.yml`) but has never been triggered)
+- ✅ macOS PTY + rendering (measured 2026-09-05 — see `macos-pty-fps-benchmarks-20260905.md`)
+- ⏳ macOS/Linux memory + network (still not measured — only Windows + predictions exist)
 
-**Status:** Windows baseline established. All metrics within expected ranges.
+**Status:** Windows and macOS PTY/rendering numbers are real measurements. Linux numbers are
+still `[PENDING]` — the CI workflow that would produce them has a `workflow_dispatch` trigger
+but has never actually been run.
 
 ---
 
@@ -78,22 +81,28 @@
 | Platform | Backend | Target | Measured | Status |
 |----------|---------|--------|----------|--------|
 | Windows  | ConPTY  | <100ms | [NOT TESTED - requires actual PTY spawn] | ⏸️ PENDING |
-| Linux    | portable-pty | <100ms | [PENDING] | ⏸️ PENDING |
-| macOS    | portable-pty | <100ms | [PENDING] | ⏸️ PENDING |
+| Linux    | portable-pty | <100ms | [PENDING - CI not yet triggered] | ⏸️ PENDING |
+| macOS    | portable-pty | <100ms | **60.2 ms** (measured 2026-09-05) | ✅ PASS |
 
-**Note:** PTY creation benchmarks require actual process spawning (not included in current pty_throughput benchmark). See `unix_pty_performance.rs` for Unix implementation.
+**Note:** `unix_pty_performance.rs` had never actually compiled or run before 2026-09-05 (see
+`macos-pty-fps-benchmarks-20260905.md` for the bugs found and fixed: missing criterion feature,
+borrow-checker errors, and two genuine hangs). Windows/Linux ConPTY-equivalent live-PTY spawn
+benchmarks still don't exist.
 
 ### Read/Write Throughput
 
 | Operation | Buffer | Target | Windows (ConPTY) | Linux (portable-pty) | macOS (portable-pty) | Status |
 |-----------|--------|--------|------------------|----------------------|----------------------|--------|
-| Read      | 4KB    | [SRS §3.1.4] | [NOT TESTED - requires live PTY] | [PENDING] | [PENDING] | ⏸️ PENDING |
-| Write     | 64B    | [baseline] | [NOT TESTED - requires live PTY] | [PENDING] | [PENDING] | ⏸️ PENDING |
-| Write     | 256B   | [baseline] | [NOT TESTED - requires live PTY] | [PENDING] | [PENDING] | ⏸️ PENDING |
-| Write     | 1KB    | [baseline] | [NOT TESTED - requires live PTY] | [PENDING] | [PENDING] | ⏸️ PENDING |
-| Write     | 4KB    | [baseline] | [NOT TESTED - requires live PTY] | [PENDING] | [PENDING] | ⏸️ PENDING |
+| Read      | 4KB    | [SRS §3.1.4] | [NOT TESTED - requires live PTY] | [PENDING] | **14.2 µs** (~273 MiB/s) | ✅ |
+| Write     | 64B    | [baseline] | [NOT TESTED - requires live PTY] | [PENDING] | **87.8 µs** | ✅ |
+| Write     | 256B   | [baseline] | [NOT TESTED - requires live PTY] | [PENDING] | **366.5 µs** | ✅ |
+| Write     | 1KB    | [baseline] | [NOT TESTED - requires live PTY] | [PENDING] | **1.49 ms** | ✅ |
+| Write     | 4KB    | [baseline] | [NOT TESTED - requires live PTY] | [PENDING] | **6.03 ms** ⚠️ | ✅ (see note) |
 
-**Note:** Live PTY I/O benchmarks require `unix_pty_performance.rs` (Unix) and Windows ConPTY equivalent.
+**Note:** macOS write latency scales linearly with size (~1.4-1.5 µs/byte), consistent with
+`UnixPtyBackend::write` doing a separate `write_all().await` + `flush().await` per call
+(`crates/master/src/pty/unix.rs:299-303`). No SRS target exists for write latency, but 6ms for
+a 4KB write is notably slower than the 14µs read side — worth a look if this is ever a hot path.
 
 ### Resize Latency
 
@@ -101,7 +110,7 @@
 |----------|---------|--------|----------|--------|
 | Windows  | ConPTY  | <10ms  | [NOT TESTED] | ⏸️ PENDING |
 | Linux    | portable-pty | <10ms | [PENDING] | ⏸️ PENDING |
-| macOS    | portable-pty | <10ms | [PENDING] | ⏸️ PENDING |
+| macOS    | portable-pty | <10ms | **5.85 µs** (measured 2026-09-05) | ✅ PASS (1700x faster) |
 
 ---
 
@@ -109,13 +118,19 @@
 
 ### FPS Rendering (60 Hz target = 16.67ms frame budget)
 
-| Component | Target | Windows (DX12) | Linux (Vulkan) | macOS (Metal) | Status |
+| Component | Target | Windows (DX12) | Linux (Vulkan) | macOS (CPU sim)\* | Status |
 |-----------|--------|----------------|----------------|---------------|--------|
-| Dirty cell tracking (80x24) | <0.5ms | **1.40 µs** (357x faster) | [PENDING] | [PENDING] | ✅ **PASS** |
-| Glyph cache lookup (ASCII) | <1ms | **376.7 ns** (2654x faster) | [PENDING] | [PENDING] | ✅ **PASS** |
-| Glyph cache lookup (Unicode) | <1ms | **287.4 ns** (3480x faster) | [PENDING] | [PENDING] | ✅ **PASS** |
-| GPU command submission (80x24) | <8ms | **38.0 µs** (211x faster) | [PENDING] | [PENDING] | ✅ **PASS** |
-| Full frame (60 FPS) | <16.67ms | **30.17 µs** (553x faster) | [PENDING] | [PENDING] | ✅ **PASS** |
+| Dirty cell tracking (80x24) | <0.5ms | **1.40 µs** (357x faster) | [PENDING] | **1.34 µs** (373x faster) | ✅ **PASS** |
+| Glyph cache lookup (ASCII) | <1ms | **376.7 ns** (2654x faster) | [PENDING] | **512.7 ns** (1951x faster) | ✅ **PASS** |
+| Glyph cache lookup (Unicode) | <1ms | **287.4 ns** (3480x faster) | [PENDING] | **380.2 ns** (2630x faster) | ✅ **PASS** |
+| GPU command submission (80x24) | <8ms | **38.0 µs** (211x faster) | [PENDING] | **40.9 µs** (196x faster) | ✅ **PASS** |
+| Full frame (60 FPS) | <16.67ms | **30.17 µs** (553x faster) | [PENDING] | **35.6 µs** (468x faster) | ✅ **PASS** |
+
+**\*Note:** `fps_rendering.rs` is a CPU-side simulation of buffer-building logic, not a real
+wgpu/Metal draw-call benchmark — it does not exercise the actual Metal backend. Measured
+2026-09-05 on local macOS hardware (see `macos-pty-fps-benchmarks-20260905.md`); different
+physical machine than the Windows baseline, so the ~15-20% gap is not a clean platform
+comparison, just two different sets of hardware.
 
 **Windows Analysis:**
 - **Full frame simulation:** 30.17 µs (0.03ms) for 80x24 terminal
@@ -129,14 +144,14 @@
 
 ### Incremental Rendering
 
-| Dirty Region | Target | Windows (DX12) | Linux (Vulkan) | macOS (Metal) | Status |
+| Dirty Region | Target | Windows (DX12) | Linux (Vulkan) | macOS (CPU sim) | Status |
 |--------------|--------|----------------|----------------|---------------|--------|
-| 1% dirty (19 cells)    | [baseline] | **165.2 ns** | [PENDING] | [PENDING] | ✅ Baseline |
-| 5% dirty (96 cells)    | [baseline] | **814.3 ns** | [PENDING] | [PENDING] | ✅ Baseline |
-| 10% dirty (192 cells)  | [baseline] | **1.40 µs** | [PENDING] | [PENDING] | ✅ Baseline |
-| 25% dirty (480 cells)  | [baseline] | **3.33 µs** | [PENDING] | [PENDING] | ✅ Baseline |
-| 50% dirty (960 cells)  | [baseline] | **6.99 µs** | [PENDING] | [PENDING] | ✅ Baseline |
-| 100% dirty (1920 cells)| [baseline] | **12.49 µs** | [PENDING] | [PENDING] | ✅ Baseline |
+| 1% dirty (19 cells)    | [baseline] | **165.2 ns** | [PENDING] | **195.4 ns** | ✅ Baseline |
+| 5% dirty (96 cells)    | [baseline] | **814.3 ns** | [PENDING] | **863.5 ns** | ✅ Baseline |
+| 10% dirty (192 cells)  | [baseline] | **1.40 µs** | [PENDING] | **1.98 µs** | ✅ Baseline |
+| 25% dirty (480 cells)  | [baseline] | **3.33 µs** | [PENDING] | **4.26 µs** | ✅ Baseline |
+| 50% dirty (960 cells)  | [baseline] | **6.99 µs** | [PENDING] | **8.42 µs** | ✅ Baseline |
+| 100% dirty (1920 cells)| [baseline] | **12.49 µs** | [PENDING] | **16.39 µs** | ✅ Baseline |
 
 **Windows Analysis:**
 - **Scaling:** Near-linear with dirty cell count

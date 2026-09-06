@@ -70,7 +70,7 @@ protoc-bin-vendored = "3.0"
 # Testing dependencies (dev-dependencies)
 proptest = "1.4"
 insta = "1.34"
-criterion = "0.5"
+criterion = { version = "0.5", features = ["async_tokio"] }
 tempfile = "3.8"
 tokio-tungstenite = "0.21"
 mockall = "0.12"
