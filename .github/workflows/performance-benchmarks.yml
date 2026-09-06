@@ -135,6 +135,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -149,8 +154,7 @@ jobs:
             mesa-vulkan-drivers \
             libxcb-shape0-dev \
             libxcb-xfixes0-dev \
-            libgtk-3-dev \
-            protobuf-compiler
+            libgtk-3-dev
 
       - name: Cache Cargo registry
         uses: actions/cache@v4
