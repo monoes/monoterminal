@@ -71,7 +71,7 @@ jobs:
           tar czf ../../../monoterminal-${{ matrix.target }}.tar.gz ${{ matrix.binary }}
 
       - name: Upload release artifacts
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             monoterminal-${{ matrix.target }}.zip
