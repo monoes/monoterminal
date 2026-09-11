@@ -25,7 +25,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, macos-13, windows-latest]
+        os: [ubuntu-22.04, macos-14, windows-latest]
         rust: [stable]
 
     steps:
@@ -52,7 +52,7 @@ jobs:
           protoc --version
 
       - name: Install protoc (macOS)
-        if: matrix.os == 'macos-13'
+        if: matrix.os == 'macos-14'
         run: |
           brew install protobuf
           protoc --version
@@ -84,12 +84,12 @@ jobs:
           echo "✓ Ubuntu 22.04 LTS verified"
 
       - name: Check platform (macOS)
-        if: matrix.os == 'macos-13'
+        if: matrix.os == 'macos-14'
         run: |
           echo "Platform: macOS"
           sw_vers
           uname -a
-          echo "✓ macOS 13 verified"
+          echo "✓ macOS 14 verified"
 
       # Build verification
       - name: Check formatting
@@ -126,7 +126,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, macos-13, windows-latest]
+        os: [ubuntu-22.04, macos-14, windows-latest]
 
     steps:
       - name: Checkout repository
@@ -173,7 +173,7 @@ jobs:
         run: cargo test --package monoterminal-master --lib ui::test_support_integration::test_linux_vulkan_backend --features test-support -- --exact --nocapture
 
       - name: Validate Metal backend (macOS)
-        if: matrix.os == 'macos-13'
+        if: matrix.os == 'macos-14'
         run: cargo test --package monoterminal-master --lib ui::test_support_integration::test_macos_metal_backend --features test-support -- --exact --nocapture
 
   summary:
@@ -200,7 +200,7 @@ jobs:
           echo ""
           echo "Platform Matrix:"
           echo "  - Ubuntu 22.04 LTS (Vulkan/OpenGL): ✓"
-          echo "  - macOS 13 (Metal): ✓"
+          echo "  - macOS 14 (Metal): ✓"
           echo "  - Windows latest (DirectX 12): ✓"
           echo ""
           echo "Phase 3 Week 6: Cross-platform rendering validation complete"
