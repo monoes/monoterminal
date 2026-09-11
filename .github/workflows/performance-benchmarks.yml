@@ -21,10 +21,6 @@ on:
         required: false
         default: 'true'
 
-  # Weekly scheduled profiling for regression tracking
-  schedule:
-    - cron: '0 0 * * 0' # Every Sunday at midnight UTC
-
   # Optional: Run on specific branches
   # push:
   #   branches: [main, phase3-profiling]
@@ -42,7 +38,6 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 30
     if: |
-      github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' &&
       contains(github.event.inputs.platforms, 'windows')
 
@@ -104,7 +99,7 @@ jobs:
       # Future: Add conpty_performance.rs benchmark
 
       - name: Upload Windows benchmark results
-        if: github.event.inputs.upload_artifacts == 'true' || github.event_name == 'schedule'
+        if: github.event.inputs.upload_artifacts == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: windows-benchmarks
@@ -114,7 +109,7 @@ jobs:
           retention-days: 30
 
       - name: Upload Windows criterion reports
-        if: github.event.inputs.upload_artifacts == 'true' || github.event_name == 'schedule'
+        if: github.event.inputs.upload_artifacts == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: windows-criterion-html
@@ -127,7 +122,6 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     if: |
-      github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' &&
       contains(github.event.inputs.platforms, 'linux')
 
@@ -191,7 +185,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload Linux benchmark results
-        if: github.event.inputs.upload_artifacts == 'true' || github.event_name == 'schedule'
+        if: github.event.inputs.upload_artifacts == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: linux-benchmarks
@@ -206,7 +200,6 @@ jobs:
     runs-on: macos-13
     timeout-minutes: 30
     if: |
-      github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' &&
       contains(github.event.inputs.platforms, 'macos')
 
@@ -257,7 +250,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload macOS benchmark results
-        if: github.event.inputs.upload_artifacts == 'true' || github.event_name == 'schedule'
+        if: github.event.inputs.upload_artifacts == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: macos-benchmarks
