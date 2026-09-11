@@ -260,7 +260,7 @@ jobs:
   soak-test:
     name: Soak Test - 24 Hours
     runs-on: ubuntu-latest
-    if: false  # Scheduled trigger removed; enable manually via workflow_dispatch if needed
+    if: github.event_name == 'workflow_dispatch'  # No schedule trigger anymore; add one back to re-enable
 
     steps:
       - name: Checkout code
